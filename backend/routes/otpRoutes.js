@@ -1,46 +1,150 @@
 const express = require("express");
 const router = express.Router();
+
+const nodemailer = require("nodemailer");
+
 const Otp = require("../models/Otp");
 
-// SEND OTP
-router.post("/send-otp", async (req, res) => {
-    try {
-        const { identifier } = req.body;
+/* MAIL TRANSPORTER */
 
-        if (!identifier) {
-            return res.status(400).json({ message: "Enter email/mobile" });
-        }
+const transporter = nodemailer.createTransport({
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    service: "gmail",
 
-        console.log("OTP:", otp); // IMPORTANT
+    auth: {
 
-        await Otp.create({ identifier, otp });
+        user: process.env.EMAIL_USER,
 
-        res.json({ message: "OTP sent successfully" });
+        pass: process.env.EMAIL_PASS
 
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: "Server error" });
     }
+
 });
 
-// VERIFY OTP
-router.post("/verify-otp", async (req, res) => {
+/* SEND OTP */
+
+router.post("/send-otp", async (req, res) => {
+
     try {
-        const { identifier, otp } = req.body;
 
-        const data = await Otp.findOne({ identifier, otp });
+        const { identifier } = req.body;
 
-        if (!data) {
-            return res.status(400).json({ message: "Invalid OTP" });
+        if(!identifier){
+
+            return res.status(400).json({
+
+                message:"Enter email"
+
+            });
+
         }
 
-        res.json({ message: "OTP verified" });
+        const otp =
+        Math.floor(
+            100000 +
+            Math.random() * 900000
+        ).toString();
 
-    } catch (err) {
-        res.status(500).json({ message: "Server error" });
+        await Otp.create({
+
+            identifier,
+            otp
+
+        });
+
+        await transporter.sendMail({
+
+            from: process.env.EMAIL_USER,
+
+            to: identifier,
+
+            subject: "Verma Enterprises OTP",
+
+            html: `
+
+                <h2>
+                    Verma Enterprises
+                </h2>
+
+                <p>
+                    Your OTP is:
+                </p>
+
+                <h1>
+                    ${otp}
+                </h1>
+
+                <p>
+                    Valid for 5 minutes.
+                </p>
+
+            `
+
+        });
+
+        res.json({
+
+            message:
+            "OTP sent successfully"
+
+        });
+
+    } catch(err){
+
+        console.log(err);
+
+        res.status(500).json({
+
+            message:"Server error"
+
+        });
+
     }
+
+});
+
+/* VERIFY OTP */
+
+router.post("/verify-otp", async (req, res) => {
+
+    try {
+
+        const { identifier, otp } = req.body;
+
+        const data =
+        await Otp.findOne({
+
+            identifier,
+            otp
+
+        });
+
+        if(!data){
+
+            return res.status(400).json({
+
+                message:"Invalid OTP"
+
+            });
+
+        }
+
+        res.json({
+
+            message:"OTP verified"
+
+        });
+
+    } catch(err){
+
+        res.status(500).json({
+
+            message:"Server error"
+
+        });
+
+    }
+
 });
 
 module.exports = router;
