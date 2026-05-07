@@ -1,35 +1,16 @@
 const express = require("express");
+
 const router = express.Router();
 
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 const Otp = require("../models/Otp");
 
-/* MAIL TRANSPORTER */
+/* RESEND */
 
-const transporter = nodemailer.createTransport({
-
-    host: "smtp.gmail.com",
-
-    port: 587,
-
-    secure: false,
-
-    auth: {
-
-        user: process.env.EMAIL_USER,
-
-        pass: process.env.EMAIL_PASS
-
-    },
-
-    tls: {
-
-        rejectUnauthorized: false
-
-    }
-
-});
+const resend = new Resend(
+    process.env.RESEND_API_KEY
+);
 
 /* SEND OTP */
 
@@ -62,13 +43,15 @@ router.post("/send-otp", async (req, res) => {
 
         });
 
-        await transporter.sendMail({
+        await resend.emails.send({
 
-            from: process.env.EMAIL_USER,
+            from:
+            "Verma Enterprises <onboarding@resend.dev>",
 
             to: identifier,
 
-            subject: "Verma Enterprises OTP",
+            subject:
+            "Your OTP - Verma Enterprises",
 
             html: `
 
@@ -105,7 +88,8 @@ router.post("/send-otp", async (req, res) => {
 
         res.status(500).json({
 
-            message:"Server error"
+            message:
+            "Server error"
 
         });
 
@@ -141,7 +125,8 @@ router.post("/verify-otp", async (req, res) => {
 
         res.json({
 
-            message:"OTP verified"
+            message:
+            "OTP verified"
 
         });
 
@@ -149,7 +134,8 @@ router.post("/verify-otp", async (req, res) => {
 
         res.status(500).json({
 
-            message:"Server error"
+            message:
+            "Server error"
 
         });
 
