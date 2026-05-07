@@ -2106,8 +2106,8 @@ input, select {
         padding: 36px 28px !important;
     }
 
-    .auth-brand-verma { font-size: 52px !important; }
-    .auth-brand-ent   { font-size: 28px !important; }
+    .auth-brand-verma { font-size: 36px !important; }
+    .auth-brand-ent   { font-size: 20px !important; }
 
     /* Flip card — full width */
     .card {
@@ -2193,8 +2193,8 @@ input, select {
     .footer-box     { min-height: auto; }
 }
 @media (max-width: 420px) {
-    .auth-brand-verma { font-size: 38px !important; }
-    .auth-brand-ent   { font-size: 21px !important; }
+    .auth-brand-verma { font-size: 30px !important; }
+    .auth-brand-ent   { font-size: 17px !important; }
 
     .auth-left {
         padding: 24px 18px !important;
@@ -2259,7 +2259,7 @@ input, select {
     }
 
     .topbar .right {
-        position: static !important;
+        position: relative !important;   /* anchor for profile-menu dropdown */
         width: auto !important;
         flex-direction: row !important;
         gap: 8px;
@@ -2270,6 +2270,16 @@ input, select {
     /* Hide search in topbar on mobile — it's redundant on small screens */
     .topbar .right input {
         display: none !important;
+    }
+
+    /* Profile dropdown — float above page content, not inside flow */
+    .profile-menu {
+        position: fixed !important;
+        top: 64px !important;
+        right: 12px !important;
+        left: auto !important;
+        z-index: 9999 !important;
+        min-width: 160px;
     }
 
     /* Content area — no left margin when sidebar is hidden */
@@ -2323,87 +2333,87 @@ input, select {
 }
 
 /* =============================================================
-   ADMIN PANEL — MOBILE SIDEBAR DRAWER
-   Override the existing "stacked block" approach with a proper
-   slide-out drawer pattern, matching the user sidebar.
+   ADMIN PANEL — MOBILE LAYOUT
+   Simple stacked layout: sidebar on top, content below.
+   No JS changes needed — works out of the box.
    ============================================================= */
 @media (max-width: 1024px) {
 
-    /* Proper drawer — hidden off-screen by default */
-    .admin-sidebar {
-        position: fixed !important;
-        left: -280px !important;
-        top: 0 !important;
-        width: 270px !important;
-        height: 100vh !important;
-        z-index: 200;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        transition: left 0.3s ease !important;
-    }
-
-    /* Open state toggled by JS */
-    .admin-sidebar.mobile-open {
-        left: 0 !important;
-    }
-
-    /* Main content takes full width */
     .admin-body {
         display: block !important;
     }
 
+    /* Sidebar — full-width strip across the top */
+    .admin-sidebar {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(153, 186, 187, .18);
+        transition: none !important;
+    }
+
+    /* Brand — compact horizontal row */
+    .admin-brand-premium {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 12px 16px !important;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .brand-logo-ring   { width: 44px; height: 44px; }
+    .brand-logo-icon   { font-size: 16px; }
+    .brand-verma       { font-size: 18px; }
+    .brand-enterprises { font-size: 8px; letter-spacing: 2px; }
+    .brand-tagline     { font-size: 8px; }
+
+    /* Nav menu — horizontal scrollable row */
+    .admin-menu {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        max-height: none !important;
+        gap: 6px !important;
+        padding: 0 12px 12px !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .admin-menu::-webkit-scrollbar { display: none; }
+
+    .admin-menu a {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        min-height: 40px !important;
+        padding: 8px 14px !important;
+        border-radius: 10px !important;
+        font-size: 13px !important;
+        /* disable slide animation that breaks horizontal layout */
+        transform: none !important;
+    }
+
+    .admin-menu a:hover,
+    .admin-menu a.active {
+        transform: none !important;
+    }
+
+    .menu-icon { font-size: 14px; width: 16px; }
+
+    /* Main content — full width, no left margin */
     .admin-main {
         margin-left: 0 !important;
         width: 100% !important;
     }
 
-    /* Mobile topbar for admin — shown only on mobile */
-    #adminMobileBar {
-        display: flex !important;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 20px;
-        background: #0d1e27;
-        border-bottom: 1px solid rgba(153, 186, 187, .18);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-    }
-
-    #adminMenuToggle {
-        font-size: 26px;
-        cursor: pointer;
-        color: #99BABB;
-        flex-shrink: 0;
-        line-height: 1;
-    }
-
-    #adminMobileTitle {
-        font-family: 'Space Grotesk', system-ui, sans-serif;
-        font-size: 17px;
-        font-weight: 700;
-        color: #fff;
-        flex: 1;
-    }
-
-    /* Backdrop overlay */
-    #adminOverlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, .65);
-        z-index: 199;
-        display: none;
-    }
-
-    #adminOverlay.active {
-        display: block;
-    }
-}
-
-/* Hide mobile bar on desktop */
-@media (min-width: 1025px) {
-    #adminMobileBar { display: none !important; }
-    #adminOverlay   { display: none !important; }
+    /* Hide the mobile bar/overlay elements that were added in a previous iteration */
+    #adminMobileBar  { display: none !important; }
+    #adminOverlay    { display: none !important; }
 }
 
 /* =============================================================
@@ -2534,122 +2544,4 @@ input, select {
     .admin-stats {
         grid-template-columns: 1fr !important;
     }
-}
-
-/* =============================================================
-   TARGETED FIXES — Profile menu, Admin sidebar, Auth badges
-   ============================================================= */
-
-/* Fix 1: Profile menu drops behind content — topbar needs z-index
-   so its children (profile-menu) stack above .content below it  */
-.topbar {
-    z-index: 150;
-}
-
-.profile-area {
-    position: relative;
-}
-
-.profile-menu {
-    z-index: 9999 !important;
-    position: absolute !important;
-    top: 62px !important;
-    right: 0 !important;
-}
-
-/* Fix 2: Auth badges — stack to 2-column on small phones
-   so they never overflow the card width                        */
-@media (max-width: 480px) {
-    .auth-badges {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important;
-    }
-
-    .auth-badge {
-        flex: unset !important;
-        min-width: unset !important;
-        width: 100% !important;
-        padding: 10px 12px !important;
-    }
-
-    /* 3rd badge (Secure) spans full width */
-    .auth-badge:last-child {
-        grid-column: 1 / -1;
-    }
-
-    /* Scale down brand name further if still tight */
-    .auth-brand-verma { font-size: 34px !important; }
-    .auth-brand-ent   { font-size: 18px !important; }
-    .auth-logo-wrap   { gap: 10px; }
-}
-
-/* Fix 3: Admin sidebar mobile — drawer CSS for the toggle
-   (toggle button is injected into admin.html below)            */
-@media (max-width: 1024px) {
-    .admin-sidebar {
-        position: fixed !important;
-        left: -280px !important;
-        top: 0 !important;
-        width: 270px !important;
-        height: 100vh !important;
-        z-index: 200 !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        transition: left 0.3s ease !important;
-    }
-
-    .admin-sidebar.mobile-open {
-        left: 0 !important;
-    }
-
-    .admin-main {
-        margin-left: 0 !important;
-        width: 100% !important;
-    }
-
-    #adminMobileBar {
-        display: flex !important;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 20px;
-        background: #0d1e27;
-        border-bottom: 1px solid rgba(153, 186, 187, .18);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-    }
-
-    #adminMenuToggle {
-        font-size: 26px;
-        cursor: pointer;
-        color: #99BABB;
-        flex-shrink: 0;
-        line-height: 1;
-    }
-
-    #adminMobileTitle {
-        font-family: 'Space Grotesk', system-ui, sans-serif;
-        font-size: 17px;
-        font-weight: 700;
-        color: #fff;
-        flex: 1;
-    }
-
-    #adminOverlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, .65);
-        z-index: 199;
-        display: none;
-    }
-
-    #adminOverlay.active {
-        display: block;
-    }
-}
-
-@media (min-width: 1025px) {
-    #adminMobileBar { display: none !important; }
-    #adminOverlay   { display: none !important; }
 }
