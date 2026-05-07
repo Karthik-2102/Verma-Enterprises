@@ -2041,6 +2041,14 @@ input, select {
 }
 
 /* =============================================================
+   GLOBAL — prevent horizontal overflow on every screen size
+   ============================================================= */
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* =============================================================
    RESPONSIVE — TABLET (≤ 1024px)
    ============================================================= */
 @media (max-width: 1024px) {
@@ -2048,43 +2056,89 @@ input, select {
     /* Admin layout — stacked sidebar above content */
     .admin-body { display: block; }
 
+    /* Admin sidebar becomes a full-width top bar */
     .admin-sidebar {
-        position: relative;
-        width: 100%;
-        height: auto;
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
         overflow: visible !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(153, 186, 187, .18);
     }
 
+    /* Admin nav — horizontal scrollable row */
     .admin-menu {
-        max-height: none;
-        overflow: visible;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        max-height: none !important;
+        gap: 8px !important;
+        padding: 0 14px 14px !important;
+        -webkit-overflow-scrolling: touch;
     }
+
+    .admin-menu::-webkit-scrollbar { height: 3px; }
+
+    .admin-menu a {
+        flex-shrink: 0 !important;
+        white-space: nowrap;
+        min-height: 44px !important;
+        padding: 10px 14px !important;
+        border-radius: 12px !important;
+        font-size: 13px !important;
+        transform: none !important;
+    }
+
+    .admin-menu a:hover,
+    .admin-menu a.active {
+        transform: none !important;
+    }
+
+    .menu-icon { font-size: 15px; width: 18px; }
 
     .admin-main {
-        margin-left: 0;
-        width: 100%;
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 
-    /* Admin brand — horizontal layout on tablet */
+    /* Admin brand — horizontal compact layout */
     .admin-brand-premium {
-        flex-direction: row;
+        flex-direction: row !important;
         flex-wrap: wrap;
         justify-content: center;
-        padding: 18px;
-        gap: 12px;
+        padding: 14px 16px !important;
+        gap: 10px;
+        margin-bottom: 10px;
     }
 
-    .brand-text-block { align-items: flex-start; }
-    .brand-verma      { font-size: 22px; }
-    .brand-enterprises { font-size: 9px; }
+    .brand-text-block  { align-items: flex-start; }
+    .brand-verma       { font-size: 20px; }
+    .brand-enterprises { font-size: 8px; letter-spacing: 3px; }
+    .brand-tagline     { font-size: 8px; letter-spacing: 1px; }
 
-    .brand-logo-ring { width: 56px; height: 56px; }
-    .brand-logo-icon { font-size: 20px; }
+    .brand-logo-ring { width: 48px; height: 48px; }
+    .brand-logo-icon { font-size: 18px; }
 
-    /* User sidebar — slide-out drawer on tablet */
-    .user-sidebar { left: -280px; }
-    .user-sidebar.active { left: 0; }
-    .dashboard .content { margin-left: 0; }
+    /* User sidebar — slide-out drawer; hidden off-screen by default */
+    .user-sidebar {
+        left: -280px !important;
+        width: 260px !important;
+        position: fixed !important;
+        top: 0 !important;
+        height: 100% !important;
+        z-index: 300 !important;
+        transition: left 0.3s ease !important;
+        overflow-y: auto !important;
+    }
+
+    .user-sidebar.active {
+        left: 0 !important;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, .55);
+    }
+
+    /* Content must NOT be offset by sidebar on tablet/mobile */
+    .dashboard .content { margin-left: 0 !important; }
 }
 
 /* =============================================================
@@ -2092,103 +2146,413 @@ input, select {
    ============================================================= */
 @media (max-width: 768px) {
 
-    /* Auth layout — vertical stack on small screens */
+    /* ----------------------------------------------------------
+       AUTH PAGE
+       ---------------------------------------------------------- */
     .auth-container {
         flex-direction: column;
-        align-items: center;
-        gap: 30px;
-        padding: 20px;
+        align-items: stretch;
+        gap: 20px;
+        padding: 16px;
+        min-height: 100dvh;
     }
 
     .auth-left {
-        min-width: unset;
-        max-width: 100%;
-        padding: 36px 28px !important;
+        min-width: unset !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 24px 20px !important;
+        border-radius: 20px !important;
+        /* Disable heavy 3-D entry animation on small screens */
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
     }
 
-    .auth-brand-verma { font-size: 52px !important; }
-    .auth-brand-ent   { font-size: 28px !important; }
+    .auth-logo-wrap {
+        gap: 10px;
+        margin-bottom: 20px !important;
+        flex-wrap: wrap;
+    }
+
+    .auth-logo-wrap .brand-logo {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    /* Scale down oversized brand text */
+    .auth-brand-verma { font-size: 36px !important; letter-spacing: 1px; }
+    .auth-brand-ent   { font-size: 20px !important; letter-spacing: 2px; }
+
+    .auth-tagline {
+        font-size: 13px;
+        line-height: 1.7;
+        margin-bottom: 20px;
+    }
+
+    /* Badges — 2-column grid */
+    .auth-badges {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .auth-badge {
+        min-width: unset;
+        padding: 10px 12px;
+        border-radius: 12px;
+    }
+
+    .auth-left-footer {
+        margin-top: 16px;
+        font-size: 11px;
+    }
 
     /* Flip card — full width */
     .card {
         width: 100% !important;
-        max-width: 420px;
-        min-height: 620px !important;
+        max-width: 100% !important;
+        min-height: unset !important;
     }
 
-    /* Topbar — vertical stack layout */
+    .front,
+    .back {
+        padding: 28px 20px !important;
+        border-radius: 20px;
+    }
+
+    .front h2,
+    .back h2 {
+        font-size: 26px;
+        margin-bottom: 16px;
+    }
+
+    .auth-input-wrap {
+        height: 56px !important;
+        padding: 0 14px !important;
+        gap: 12px !important;
+        border-radius: 14px !important;
+        margin-bottom: 14px !important;
+    }
+
+    .auth-btn {
+        height: 48px;
+        font-size: 14px;
+    }
+
+    .auth-switch-text {
+        font-size: 13px;
+        margin-top: 14px !important;
+    }
+
+    /* ----------------------------------------------------------
+       USER DASHBOARD — TOPBAR
+       ---------------------------------------------------------- */
     .topbar {
-        height: auto;
-        padding: 16px;
-        flex-direction: column;
+        height: auto !important;
+        padding: 12px 16px !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 10px !important;
+        flex-wrap: nowrap !important;
+        position: sticky;
+        top: 0;
+        z-index: 200;
+    }
+
+    /* Hide search bar from topbar — too cramped on mobile */
+    .topbar .right input { display: none !important; }
+
+    .topbar .right {
+        position: static !important;
+        width: auto !important;
+        flex-direction: row !important;
+        gap: 8px !important;
+    }
+
+    .topbar h2 {
+        font-size: 18px !important;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 160px;
+    }
+
+    .menu-btn {
+        position: static !important;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .avatar-btn {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 16px !important;
+    }
+
+    /* ----------------------------------------------------------
+       USER DASHBOARD — MAIN CONTENT
+       ---------------------------------------------------------- */
+    .content {
+        padding: 16px !important;
+    }
+
+    .about-box {
+        padding: 18px;
+        font-size: 14px;
+        line-height: 1.85;
+    }
+
+    #aboutSection h2,
+    #servicesSection h2,
+    #ordersSection h2 {
+        font-size: 22px;
+    }
+
+    /* Services grid — single column */
+    .services-grid {
+        grid-template-columns: 1fr !important;
         gap: 14px;
     }
 
-    .topbar .right {
-        position: static;
+    .service-card  { padding: 18px; }
+    .service-card h3 { font-size: 15px; }
+    .service-price { font-size: 17px; }
+
+    /* Category tabs — horizontal scroll */
+    .category-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+        gap: 8px;
+    }
+
+    .cat-tab {
+        flex-shrink: 0;
+        font-size: 12px;
+        padding: 7px 14px;
+    }
+
+    /* Order cards */
+    .order-card-small { padding: 16px; }
+
+    .order-right {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .order-right a,
+    .invoice-btn {
         width: 100%;
-        flex-direction: column;
+        text-align: center;
     }
 
-    .topbar .right input { width: 100%; }
-
-    /* Content padding */
-    .content,
-    .admin-main { padding: 18px; }
-
-    /* Single-column grids */
-    .services-grid,
-    .admin-stats,
-    .admin-services-grid {
-        grid-template-columns: 1fr;
+    /* ----------------------------------------------------------
+       MODALS (service + profile)
+       ---------------------------------------------------------- */
+    .modal {
+        padding: 12px !important;
+        align-items: flex-end;
     }
 
-    /* Admin topbar */
+    .modal-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        padding: 22px 18px !important;
+        max-height: 88vh !important;
+    }
+
+    .modal-box h2     { font-size: 22px; }
+    .modal-box button { height: 48px; font-size: 14px; }
+
+    .profile-modal-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 22px 18px !important;
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .profile-modal-box h2   { font-size: 22px; }
+    .profile-modal-box input { height: 48px; font-size: 14px; }
+
+    .profile-save-btn,
+    .profile-close-btn { height: 44px; font-size: 14px; }
+
+    /* Admin modals — bottom sheet */
+    #editServiceModal,
+    #adminProfileModal {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+
+    #editServiceModal .profile-modal-box,
+    #adminProfileModal .profile-modal-box {
+        border-radius: 20px 20px 0 0 !important;
+        padding: 22px 16px !important;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    #editServiceModal select {
+        width: 100% !important;
+        height: 48px !important;
+        font-size: 14px !important;
+    }
+
+    /* Forgot password box */
+    #forgotBox {
+        width: calc(100% - 24px) !important;
+        padding: 22px 16px !important;
+        border-radius: 18px !important;
+    }
+
+    #forgotBox input,
+    #forgotBox button { height: 48px; font-size: 14px; }
+
+    /* ----------------------------------------------------------
+       ADMIN TOPBAR
+       ---------------------------------------------------------- */
     .admin-topbar {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        padding: 18px !important;
+        margin-bottom: 16px !important;
     }
+
+    .admin-topbar h1 { font-size: 22px !important; }
+    .admin-topbar p  { font-size: 12px; }
 
     .admin-search {
-        width: 100%;
-        min-width: 100%;
+        width: 100% !important;
+        min-width: unset !important;
     }
 
-    /* Admin navigation — compact mobile layout */
-    .admin-sidebar { padding: 24px 18px; }
-    .admin-menu    { gap: 10px; }
+    .admin-search input { width: 100%; height: 46px; }
 
-    .admin-menu a {
-        font-size: 15px;
-        padding: 14px 16px;
-        border-radius: 14px;
-        transform: none !important;
+    /* ----------------------------------------------------------
+       ADMIN — STATS, SECTIONS, FORMS
+       ---------------------------------------------------------- */
+    .admin-stats {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px;
     }
 
-    /* Service filter bar */
-    .service-filter-bar { flex-direction: column; align-items: stretch; }
-    .service-search-wrap { min-width: unset; }
-    .sf-select { min-width: unset; width: 100%; }
+    .admin-card          { padding: 16px; }
+    .admin-card h3       { font-size: 24px !important; }
+    .admin-card p        { font-size: 12px; }
 
-    /* Admin brand */
-    .admin-brand-premium { padding: 16px; gap: 10px; }
+    .admin-section       { padding: 18px !important; margin-top: 16px !important; }
+    .admin-section h2    { font-size: 24px !important; margin-bottom: 18px !important; }
+
+    .admin-form {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .admin-form input,
+    .admin-form button { height: 48px; font-size: 14px; }
+
+    .total-price-display { padding: 12px 14px; }
+
+    /* Filter bar — vertical stack */
+    .service-filter-bar {
+        flex-direction: column !important;
+        padding: 14px !important;
+        gap: 10px !important;
+    }
+
+    .service-search-wrap { min-width: unset !important; width: 100%; }
+    .sf-select { min-width: unset !important; width: 100% !important; height: 46px !important; }
+
+    /* Services + orders grids */
+    .admin-services-grid { grid-template-columns: 1fr !important; gap: 14px; }
+
+    .admin-service-card  { padding: 18px !important; }
+    .admin-order-card    { padding: 18px !important; }
+    .admin-order-card h3 { font-size: 15px !important; }
+
+    /* Admin action row — stack vertically */
+    .admin-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .admin-actions input:not([type="file"]) {
+        min-width: unset !important;
+        width: 100% !important;
+    }
+
+    .admin-actions input[type="file"] {
+        min-width: unset !important;
+        width: 100% !important;
+    }
+
+    .admin-actions button {
+        width: 100% !important;
+        height: 46px !important;
+    }
+
+    .admin-order-right { flex-direction: column; gap: 8px; }
+
+    .user-file-btn,
+    .final-work-btn { width: 100%; text-align: center; }
 
     /* Charts */
     .chart-grid { grid-template-columns: 1fr; }
-    .chart-card canvas { height: 260px !important; }
+    .chart-card { padding: 16px; }
+    .chart-card canvas { height: 220px !important; }
 
-    /* Footer */
-    .footer-grid   { grid-template-columns: 1fr 1fr; gap: 12px; }
-    .footer-box    { min-height: 82px; padding: 14px; }
-    .footer-box h4 { font-size: 13px; }
-    .footer-copy   { font-size: 12px; }
+    /* ----------------------------------------------------------
+       CONTACT FOOTER
+       ---------------------------------------------------------- */
+    .footer-contact {
+        margin-top: 30px;
+        padding: 18px 14px 14px !important;
+        border-radius: 18px 18px 0 0;
+    }
+
+    .footer-grid { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+    .footer-box  { padding: 12px; min-height: 80px; border-radius: 14px; }
+    .footer-box h4  { font-size: 12px; }
+    .footer-box p,
+    .footer-box a   { font-size: 13px; }
+    .footer-copy    { font-size: 11px; margin-top: 12px; }
+
+    /* ----------------------------------------------------------
+       TOAST
+       ---------------------------------------------------------- */
+    #adminToast {
+        bottom: 16px !important;
+        right: 12px !important;
+        left: 12px !important;
+        text-align: center;
+        font-size: 13px;
+        padding: 12px 16px;
+        border-radius: 12px;
+    }
 }
 
 /* =============================================================
    RESPONSIVE — SMALL MOBILE (≤ 480px)
    ============================================================= */
 @media (max-width: 480px) {
-    .footer-grid    { grid-template-columns: 1fr; }
+    .auth-brand-verma { font-size: 28px !important; }
+    .auth-brand-ent   { font-size: 16px !important; }
+    .auth-badges      { grid-template-columns: 1fr; }
+
+    .admin-stats { grid-template-columns: 1fr !important; }
+    .admin-card h3 { font-size: 20px !important; }
+
+    .footer-grid    { grid-template-columns: 1fr !important; }
     .footer-contact { padding: 18px 14px 12px; }
     .footer-box     { min-height: auto; }
 }
