@@ -51,24 +51,19 @@ new mongoose.Schema({
     },
 
     category: {
-
         type: String,
-
-        enum:
-        SERVICE_CATEGORIES,
-
-        default:
-        "Government Services"
-
+        enum: SERVICE_CATEGORIES,
+        default: "Government Services"
     }
 
 }, {
     timestamps: true
 });
 
-/* Prevent Model Overwrite */
+/* Reuse Existing Model */
 
 const Service =
+
 mongoose.models.Service ||
 
 mongoose.model(
