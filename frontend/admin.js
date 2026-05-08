@@ -9,6 +9,29 @@ const SERVICE_CATEGORIES = [
     "Banking Services"
 ];
 
+const ADMIN_SEARCH_SUGGESTIONS = [
+
+    "PAN Card",
+
+    "PAN Correction",
+
+    "PAN Reprint",
+
+    "Aadhar Update",
+
+    "Passport",
+
+    "Voter ID",
+
+    "Income Certificate",
+
+    "Caste Certificate",
+
+    "Residence Certificate"
+
+];
+
+
 /* =====================================
 INIT
 ===================================== */
@@ -34,11 +57,156 @@ function initAdmin() {
     }
 
     loadServices();
+
     loadOrders();
+
     setupPriceCalculator();
+
     setupServiceSearch();
+
+    setupAdminSuggestions();
 }
 
+function getAdminSuggestions(
+    keyword
+) {
+
+    if (!keyword.trim()) {
+        return [];
+    }
+
+    return ADMIN_SEARCH_SUGGESTIONS
+    .filter(item =>
+
+        item
+        .toLowerCase()
+        .includes(
+            keyword.toLowerCase()
+        )
+
+    );
+
+}
+
+function renderAdminSuggestions(
+    suggestions
+) {
+
+    let dropdown =
+    document.getElementById(
+        "adminSuggestionBox"
+    );
+
+    if (!dropdown) {
+
+        dropdown =
+        document.createElement(
+            "div"
+        );
+
+        dropdown.id =
+        "adminSuggestionBox";
+
+        dropdown.style.cssText = `
+            position:absolute;
+            width:100%;
+            background:#1A2C37;
+            border:1px solid rgba(153,186,187,.2);
+            border-radius:12px;
+            max-height:250px;
+            overflow-y:auto;
+            z-index:999;
+            margin-top:8px;
+        `;
+
+        const input =
+        document.getElementById(
+            "searchBox"
+        );
+
+        input.parentNode.appendChild(
+            dropdown
+        );
+
+    }
+
+    dropdown.innerHTML = "";
+
+    if (!suggestions.length) {
+
+        dropdown.style.display =
+        "none";
+
+        return;
+
+    }
+
+    dropdown.style.display =
+    "block";
+
+    suggestions.forEach(item => {
+
+        const option =
+        document.createElement(
+            "div"
+        );
+
+        option.style.cssText = `
+            padding:12px 16px;
+            cursor:pointer;
+            color:#fff;
+        `;
+
+        option.innerText =
+        item;
+
+        option.onclick = () => {
+
+            document.getElementById(
+                "searchBox"
+            ).value = item;
+
+            dropdown.style.display =
+            "none";
+
+            loadOrders();
+
+        };
+
+        dropdown.appendChild(
+            option
+        );
+
+    });
+
+}
+
+function setupAdminSuggestions(){
+
+    const input =
+    document.getElementById(
+        "searchBox"
+    );
+
+    if (!input) return;
+
+    input.addEventListener(
+        "input",
+        function(){
+
+            const matches =
+            getAdminSuggestions(
+                this.value
+            );
+
+            renderAdminSuggestions(
+                matches
+            );
+
+        }
+    );
+
+}
 /* =====================================
 PRICE CALCULATOR
 ===================================== */

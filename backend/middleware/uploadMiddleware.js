@@ -1,50 +1,56 @@
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const multer =
+require("multer");
 
-/* Ensure uploads folder exists */
-const uploadDir = "uploads";
+const {
+    CloudinaryStorage
+} = require(
+    "multer-storage-cloudinary"
+);
 
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+const cloudinary =
+require("../config/cloudinary");
 
-/* STORAGE */
-const storage = multer.diskStorage({
+/* Upload Storage Configuration */
 
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
+const storage =
+new CloudinaryStorage({
 
-    filename: function (req, file, cb) {
+    cloudinary,
 
-        const ext = path.extname(file.originalname);
-        const cleanName = Date.now() + "-" + Math.round(Math.random() * 1e9) + ext;
+    params: {
 
-        cb(null, cleanName);
+        folder:
+        "verma-enterprises",
+
+        allowed_formats: [
+
+            "jpg",
+
+            "jpeg",
+
+            "png",
+
+            "pdf"
+
+        ]
+
     }
+
 });
 
-/* FILTER */
-const fileFilter = (req, file, cb) => {
+const upload =
+multer({
 
-    const allowedExt = /pdf|jpg|jpeg|png/i;
-    const ext = path.extname(file.originalname).toLowerCase();
-
-    if (allowedExt.test(ext)) {
-        cb(null, true);
-    } else {
-        cb(new Error("Only PDF, JPG, JPEG, PNG files allowed"));
-    }
-};
-
-/* MULTER */
-const upload = multer({
     storage,
-    fileFilter,
+
     limits: {
-        fileSize: 10 * 1024 * 1024
+
+        fileSize:
+        10 * 1024 * 1024
+
     }
+
 });
 
-module.exports = upload;
+module.exports =
+upload;

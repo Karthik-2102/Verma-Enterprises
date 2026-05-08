@@ -6,13 +6,13 @@ const { Resend } = require("resend");
 
 const Otp = require("../models/Otp");
 
-/* RESEND */
+/* Email Service Configuration */
 
 const resend = new Resend(
     process.env.RESEND_API_KEY
 );
 
-/* SEND OTP */
+/* Send OTP */
 
 router.post("/send-otp", async (req, res) => {
 
@@ -20,11 +20,12 @@ router.post("/send-otp", async (req, res) => {
 
         const { identifier } = req.body;
 
-        if(!identifier){
+        if (!identifier) {
 
             return res.status(400).json({
 
-                message:"Enter email"
+                message:
+                "Enter email"
 
             });
 
@@ -39,6 +40,7 @@ router.post("/send-otp", async (req, res) => {
         await Otp.create({
 
             identifier,
+
             otp
 
         });
@@ -48,28 +50,56 @@ router.post("/send-otp", async (req, res) => {
             from:
             "Verma Enterprises <onboarding@resend.dev>",
 
-            to: identifier,
+            to:
+            identifier,
 
             subject:
             "Your OTP - Verma Enterprises",
 
             html: `
 
-                <h2>
-                    Verma Enterprises
-                </h2>
+                <div style="
+                    font-family: Arial, sans-serif;
+                    padding: 30px;
+                    background: #f8f8f8;
+                    border-radius: 12px;
+                    max-width: 500px;
+                    margin: auto;
+                    border: 1px solid #e5e5e5;
+                ">
 
-                <p>
-                    Your OTP is:
-                </p>
+                    <h2 style="
+                        color: #D0060D;
+                        margin-bottom: 20px;
+                    ">
+                        Verma Enterprises
+                    </h2>
 
-                <h1>
-                    ${otp}
-                </h1>
+                    <p style="
+                        color: #333;
+                        font-size: 16px;
+                        margin-bottom: 10px;
+                    ">
+                        Your verification code:
+                    </p>
 
-                <p>
-                    Valid for 5 minutes.
-                </p>
+                    <h1 style="
+                        font-size: 32px;
+                        letter-spacing: 4px;
+                        color: #111;
+                        margin: 15px 0;
+                    ">
+                        ${otp}
+                    </h1>
+
+                    <p style="
+                        color: #666;
+                        font-size: 14px;
+                    ">
+                        Valid for 5 minutes.
+                    </p>
+
+                </div>
 
             `
 
@@ -77,16 +107,23 @@ router.post("/send-otp", async (req, res) => {
 
         res.json({
 
+            success: true,
+
             message:
             "OTP sent successfully"
 
         });
 
-    } catch(err){
+    } catch (err) {
 
-        console.log(err);
+        console.log(
+            "OTP SEND ERROR:",
+            err
+        );
 
         res.status(500).json({
+
+            success: false,
 
             message:
             "Server error"
@@ -97,27 +134,34 @@ router.post("/send-otp", async (req, res) => {
 
 });
 
-/* VERIFY OTP */
+/* Verify OTP */
 
 router.post("/verify-otp", async (req, res) => {
 
     try {
 
-        const { identifier, otp } = req.body;
+        const {
+            identifier,
+            otp
+        } = req.body;
 
         const data =
         await Otp.findOne({
 
             identifier,
+
             otp
 
         });
 
-        if(!data){
+        if (!data) {
 
             return res.status(400).json({
 
-                message:"Invalid OTP"
+                success: false,
+
+                message:
+                "Invalid OTP"
 
             });
 
@@ -125,14 +169,23 @@ router.post("/verify-otp", async (req, res) => {
 
         res.json({
 
+            success: true,
+
             message:
             "OTP verified"
 
         });
 
-    } catch(err){
+    } catch (err) {
+
+        console.log(
+            "OTP VERIFY ERROR:",
+            err
+        );
 
         res.status(500).json({
+
+            success: false,
 
             message:
             "Server error"
@@ -143,4 +196,5 @@ router.post("/verify-otp", async (req, res) => {
 
 });
 
-module.exports = router;
+module.exports =
+router;

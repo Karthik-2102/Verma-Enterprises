@@ -1,15 +1,74 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema({
-    name: String,
-    identifier: String,
-    password: String,
+const SERVICE_CATEGORIES = [
 
-    // 🔥 MUST
-    role: {
+    "Government Services",
+
+    "Education Services",
+
+    "Printing Services",
+
+    "Banking Services",
+
+    "Documentation Services"
+
+];
+
+const serviceSchema =
+new mongoose.Schema({
+
+    name: {
         type: String,
-        default: "user"
+        required: true,
+        trim: true
+    },
+
+    basePrice: {
+        type: Number,
+        default: 0
+    },
+
+    finalPrice: {
+        type: Number,
+        default: 0
+    },
+
+    applicationCharge: {
+        type: Number,
+        default: 0
+    },
+
+    serviceCharge: {
+        type: Number,
+        default: 0
+    },
+
+    documents: {
+        type: [String],
+        default: []
+    },
+
+    category: {
+
+        type: String,
+
+        enum: SERVICE_CATEGORIES,
+
+        default:
+        "Government Services"
+
     }
+
+}, {
+    timestamps: true
 });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports =
+mongoose.model(
+    "Service",
+    serviceSchema
+);
+
+module.exports
+.SERVICE_CATEGORIES =
+SERVICE_CATEGORIES;

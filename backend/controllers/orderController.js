@@ -86,32 +86,107 @@ exports.getAllOrders = async (req, res) => {
 };
 
 /* ================= UPDATE STATUS ================= */
-exports.updateOrderStatus = async (req, res) => {
-    try {
-        const { status, reason } = req.body;
+const logAdminActivity =
+require("../utils/logAdminActivity");
 
-        const order = await Order.findByIdAndUpdate(
-            req.params.id,
-            {
-                status,
-                reason: reason || ""
-            },
-            { new: true }
+exports.updateOrderStatus =
+async (req, res) => {
+
+    try {
+
+        const {
+            timelineIndex,
+            status,
+            reason
+        } = req.body;
+
+        const order =
+        await Order.findById(
+            req.params.id
+        );
+
+        if (!order) {
+
+            return res.status(404)
+            .json({
+                success:false,
+                message:"Order not found"
+            });
+
+        }
+
+        if (
+            typeof timelineIndex ===
+            "number"
+        ) {
+
+            order.timeline[
+                timelineIndex
+            ].completed = true;
+
+            order.timeline[
+                timelineIndex
+            ].updatedAt =
+            new Date();
+
+            if (
+                timelineIndex === 4
+            ) {
+
+                order.status =
+                "completed";
+
+            }
+
+        }
+
+        if(status){
+
+            order.status =
+            status;
+
+        }
+
+        if(reason){
+
+            order.reason =
+            reason;
+
+        }
+
+        await order.save();
+
+        await logAdminActivity(
+
+            req.user.id,
+
+            "Order Status Updated",
+
+            `Order ID: ${order._id}`
+
         );
 
         res.json({
-            success: true,
-            message: "Order updated successfully",
+
+            success:true,
+
             order
+
         });
 
-    } catch (error) {
-        console.error("UPDATE ERROR:", error);
-        res.status(500).json({
-            success: false,
-            message: error.message
+    } catch(error){
+
+        res.status(500)
+        .json({
+
+            success:false,
+
+            message:error.message
+
         });
+
     }
+
 };
 const PDFDocument = require("pdfkit");
 

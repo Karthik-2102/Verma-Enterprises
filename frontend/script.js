@@ -4,7 +4,10 @@ const API =
 /* =====================================
 INIT
 ===================================== */
-document.addEventListener("DOMContentLoaded", initApp);
+document.addEventListener(
+    "DOMContentLoaded", 
+    initApp
+);
 
 function initApp() {
     hideUserSections();
@@ -305,8 +308,12 @@ function enterSite() {
     document.getElementById("ordersSection").classList.remove("hidden");
 
     loadServices();
+
     loadUserOrders();
+
     loadProfile();
+
+    setupUserSuggestions();
 }
 
 /* =====================================
@@ -338,6 +345,23 @@ const SERVICE_CATEGORIES = [
     "Printing Services",
     "ID Card Services",
     "Banking Services"
+];
+const USER_SEARCH_SUGGESTIONS = [
+
+    "PAN Card",
+
+    "PAN Correction",
+
+    "PAN Reprint",
+
+    "Aadhar Update",
+
+    "Passport",
+
+    "Voter ID",
+
+    "Income Certificate"
+
 ];
 
 async function loadServices() {
@@ -383,6 +407,148 @@ function filterByCategory(cat, el) {
 
 function filterUserServices() {
     renderUserServices();
+}
+
+function getUserSuggestions(
+    keyword
+) {
+
+    if (!keyword.trim()) {
+        return [];
+    }
+
+    return USER_SEARCH_SUGGESTIONS
+    .filter(item =>
+
+        item
+        .toLowerCase()
+        .includes(
+            keyword.toLowerCase()
+        )
+
+    );
+
+}
+
+function renderUserSuggestions(
+    suggestions
+) {
+
+    let dropdown =
+    document.getElementById(
+        "userSuggestionBox"
+    );
+
+    if (!dropdown) {
+
+        dropdown =
+        document.createElement(
+            "div"
+        );
+
+        dropdown.id =
+        "userSuggestionBox";
+
+        dropdown.style.cssText = `
+            position:absolute;
+            width:100%;
+            max-height:250px;
+            overflow-y:auto;
+            background:#1A2C37;
+            border:1px solid rgba(153,186,187,.2);
+            border-radius:12px;
+            z-index:999;
+            margin-top:8px;
+        `;
+
+        const input =
+        document.getElementById(
+            "userSearchInput"
+        );
+
+        input.parentNode.appendChild(
+            dropdown
+        );
+
+    }
+
+    dropdown.innerHTML = "";
+
+    if (!suggestions.length) {
+
+        dropdown.style.display =
+        "none";
+
+        return;
+
+    }
+
+    dropdown.style.display =
+    "block";
+
+    suggestions.forEach(item => {
+
+        const option =
+        document.createElement(
+            "div"
+        );
+
+        option.style.cssText = `
+            padding:12px 16px;
+            cursor:pointer;
+            color:#fff;
+            border-bottom:1px solid rgba(255,255,255,.05);
+        `;
+
+        option.innerText =
+        item;
+
+        option.onclick = () => {
+
+            document.getElementById(
+                "userSearchInput"
+            ).value = item;
+
+            dropdown.style.display =
+            "none";
+
+            renderUserServices();
+
+        };
+
+        dropdown.appendChild(
+            option
+        );
+
+    });
+
+}
+
+function setupUserSuggestions() {
+
+    const input =
+    document.getElementById(
+        "userSearchInput"
+    );
+
+    if (!input) return;
+
+    input.addEventListener(
+        "input",
+        function(){
+
+            const matches =
+            getUserSuggestions(
+                this.value
+            );
+
+            renderUserSuggestions(
+                matches
+            );
+
+        }
+    );
+
 }
 
 function renderUserServices() {
