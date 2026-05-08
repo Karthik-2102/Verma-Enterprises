@@ -99,8 +99,7 @@ async function sendOTP(type){
 
         identifier =
         document.getElementById("signupIdentifier")
-        ?.value
-        ?.trim() || "";
+        .value.trim().toLowerCase()
 
     }
 
@@ -164,9 +163,14 @@ async function register() {
 
     const name =
     document.getElementById("name").value.trim();
-
     const identifier =
-    document.getElementById("signupIdentifier").value.trim();
+    document
+    .getElementById(
+        "signupIdentifier"
+    )
+    .value
+    .trim()
+    .toLowerCase();
 
     const password =
     document.getElementById("signupPassword").value;
@@ -214,24 +218,54 @@ LOGIN
 async function login() {
 
     const payload = {
-        identifier: document.getElementById("loginIdentifier")?.value || "",
-        password:   document.getElementById("loginPassword")?.value || ""
+
+        identifier:
+        document
+        .getElementById(
+            "loginIdentifier"
+        )
+        .value.trim().toLowerCase(),
+
+        password:
+        document
+        .getElementById(
+            "loginPassword"
+        )
+        ?.value
+        ?.trim()
+
     };
 
-    const res = await fetch(`${API}/auth/login`, {
-        method: "POST",
-        headers: jsonHeaders(),
-        body: JSON.stringify(payload)
-    });
+    const res = await fetch(
+        `${API}/auth/login`,
+        {
+            method: "POST",
+            headers: jsonHeaders(),
+            body: JSON.stringify(
+                payload
+            )
+        }
+    );
 
-    const data = await res.json();
+    const data =
+    await res.json();
 
     if (!data.success) {
-        return alert(data.message || "Login failed ❌");
+
+        return alert(
+            data.message ||
+            "Login failed ❌"
+        );
+
     }
 
-    localStorage.setItem("token", data.token);
+    localStorage.setItem(
+        "token",
+        data.token
+    );
+
     enterSite();
+
 }
 
 /* =====================================
@@ -249,7 +283,7 @@ function closeForgot() {
 async function resetPassword(){
 
     const identifier =
-    document.getElementById("fpIdentifier").value.trim();
+    document.getElementById("fpIdentifier").value.trim().toLowerCase();
 
     const otp =
     document.getElementById("fpOtp").value.trim();
