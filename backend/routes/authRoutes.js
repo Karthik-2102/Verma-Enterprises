@@ -33,9 +33,9 @@ router.post("/register", async (req, res) => {
         } = req.body;
 
         identifier =
-        normalizeIdentifier(
-            identifier
-        );
+        identifier
+        ?.trim()
+        ?.toLowerCase();
 
         const valid =
         await Otp.findOne({

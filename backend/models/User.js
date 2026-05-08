@@ -1,21 +1,8 @@
 const mongoose = require("mongoose");
 
-const SERVICE_CATEGORIES = [
+/* User Schema */
 
-    "Government Services",
-
-    "Education Services",
-
-    "Printing Services",
-
-    "Banking Services",
-
-    "Documentation Services"
-
-];
-
-const serviceSchema =
-new mongoose.Schema({
+const userSchema = new mongoose.Schema({
 
     name: {
         type: String,
@@ -23,52 +10,37 @@ new mongoose.Schema({
         trim: true
     },
 
-    basePrice: {
-        type: Number,
-        default: 0
-    },
-
-    finalPrice: {
-        type: Number,
-        default: 0
-    },
-
-    applicationCharge: {
-        type: Number,
-        default: 0
-    },
-
-    serviceCharge: {
-        type: Number,
-        default: 0
-    },
-
-    documents: {
-        type: [String],
-        default: []
-    },
-
-    category: {
-
+    identifier: {
         type: String,
+        required: true,
+        unique: true,
+        trim: true,
+        lowercase: true
+    },
 
-        enum: SERVICE_CATEGORIES,
+    password: {
+        type: String,
+        required: true
+    },
 
-        default:
-        "Government Services"
-
+    role: {
+        type: String,
+        default: "user"
     }
 
 }, {
     timestamps: true
 });
 
-module.exports =
+/* Prevent Model Overwrite */
+
+const User =
+
+mongoose.models.User ||
+
 mongoose.model(
-    "Service",
-    serviceSchema
+    "User",
+    userSchema
 );
 
-module.exports
-.SERVICE_CATEGORIES =
-SERVICE_CATEGORIES;
+module.exports = User;
