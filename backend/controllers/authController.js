@@ -1,67 +1,161 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 
-/* ================= GENERATE TOKEN ================= */
+/* Generate Authentication Token */
+
 const generateToken = (user) => {
+
     return jwt.sign(
+
         {
-            id: user._id,        // 🔥 FIX (MOST IMPORTANT)
+            id: user._id,
             role: user.role
         },
-        "secret123",
-        { expiresIn: "7d" }
-    );
-};
 
-/* ================= REGISTER ================= */
-exports.register = async (req, res) => {
-    try {
-        const { name, identifier, password } = req.body;
+        "verma_enterprises_secure_2003",
 
-        const existing = await User.findOne({ identifier });
-        if (existing) {
-            return res.json({ success: false, message: "User already exists" });
+        {
+            expiresIn: "7d"
         }
 
-        const user = await User.create({
+    );
+
+};
+
+/* Register */
+
+exports.register = async (req, res) => {
+
+    try {
+
+        const {
             name,
             identifier,
             password
+        } = req.body;
+
+        const existing =
+        await User.findOne({
+            identifier
         });
 
-        const token = generateToken(user);
+        if (existing) {
 
-        res.json({
-            success: true,
-            message: "Registered successfully",
-            token
-        });
+            return res.json({
 
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
+                success: false,
 
-/* ================= LOGIN ================= */
-exports.login = async (req, res) => {
-    try {
-        const { identifier, password } = req.body;
+                message:
+                "User already exists"
 
-        const user = await User.findOne({ identifier });
+            });
 
-        if (!user || user.password !== password) {
-            return res.json({ success: false, message: "Invalid credentials" });
         }
 
-        const token = generateToken(user);
+        const user =
+        await User.create({
 
-        res.json({
-            success: true,
-            message: "Login successful",
-            token
+            name,
+
+            identifier,
+
+            password
+
         });
 
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        const token =
+        generateToken(user);
+
+        res.json({
+
+            success: true,
+
+            message:
+            "Registered successfully",
+
+            token
+
+        });
+
     }
+
+    catch (error) {
+
+        res.status(500).json({
+
+            success: false,
+
+            message:
+            error.message
+
+        });
+
+    }
+
+};
+
+/* Login */
+
+exports.login = async (req, res) => {
+
+    try {
+
+        const {
+            identifier,
+            password
+        } = req.body;
+
+        const user =
+        await User.findOne({
+            identifier
+        });
+
+        if (
+
+            !user ||
+
+            user.password !== password
+
+        ) {
+
+            return res.json({
+
+                success: false,
+
+                message:
+                "Invalid credentials"
+
+            });
+
+        }
+
+        const token =
+        generateToken(user);
+
+        res.json({
+
+            success: true,
+
+            message:
+            "Login successful",
+
+            token
+
+        });
+
+    }
+
+    catch (error) {
+
+        res.status(500).json({
+
+            success: false,
+
+            message:
+            error.message
+
+        });
+
+    }
+
 };
