@@ -608,39 +608,124 @@ async function rejectOrder(id) {
 }
 
 async function uploadWork(id) {
-    const input = document.getElementById(`work-${id}`);
 
-    if (!input.files.length) return alert("Choose file first");
+    const fileInput =
+    document.getElementById(
+        `upload-${id}`
+    );
 
-    const form = new FormData();
-    form.append("workFile", input.files[0]);
+    if (
 
-    const res = await fetch(`${API}/orders/upload-work/${id}`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: form
-    });
+        !fileInput ||
 
-    const data = await res.json();
+        !fileInput.files ||
 
-    if (data.success) {
-        showToast("Final work uploaded ✅");
+        !fileInput.files[0]
+
+    ) {
+
+        alert(
+            "Please select a file first ❌"
+        );
+
+        return;
 
     }
-    else {
-        console.error(
-            "Admin work upload failed:",data);
-    alert(
-        data.message ||
-        JSON.stringify(data) ||
-        "Upload failed ❌"
+
+    const formData =
+    new FormData();
+
+    formData.append(
+
+        "workFile",
+
+        fileInput.files[0]
 
     );
+
+    try {
+
+        const res =
+        await fetch(
+
+            `${API}/orders/upload-work/${id}`,
+
+            {
+
+                method:
+                "POST",
+
+                headers: {
+
+                    Authorization:
+                    getToken()
+
+                },
+
+                body:
+                formData
+
+            }
+
+        );
+
+        const data =
+        await res.json();
+
+        if (data.success) {
+
+            showToast(
+                "Final work uploaded ✅"
+            );
+
+            loadOrders();
+
+            return;
+
+        }
+
+        console.error(
+            "Admin Upload Error:",
+            data
+        );
+
+        alert(
+
+            typeof data.message === "string"
+
+            ?
+
+            data.message
+
+            :
+
+            JSON.stringify(
+                data,
+                null,
+                2
+            )
+
+        );
+
     }
 
+    catch (err) {
 
-    loadOrders();
-    loadActivityLogs();
+        console.error(
+            "Upload Request Failed:",
+            err
+        );
+
+        alert(
+
+            err.message ||
+
+            "Upload failed ❌"
+
+        );
+
+    }
+
 }
 
 /* =============================================

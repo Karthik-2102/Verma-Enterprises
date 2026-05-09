@@ -406,34 +406,152 @@ function closeModal() { document.getElementById("serviceModal").classList.add("h
    ORDER SUBMISSION
    ============================================= */
 async function submitService() {
-    const files    = document.getElementById("fileUpload").files;
-    const formData = new FormData();
-    formData.append("serviceId", currentServiceId);
-    for (const f of files) formData.append("documents", f);
 
-    const res  = await fetch(`${API}/orders/create`, {
-        method: "POST", headers: authHeaders(), body: formData
+    if (!currentServiceId) {
+
+        alert(
+            "Please select a service ❌"
+        );
+
+        return;
+
+    }
+
+    const fileInput =
+    document.getElementById(
+        "documents"
+    );
+
+    if (
+
+        !fileInput ||
+
+        !fileInput.files ||
+
+        !fileInput.files.length
+
+    ) {
+
+        alert(
+            "Please upload documents ❌"
+        );
+
+        return;
+
+    }
+
+    const formData =
+    new FormData();
+
+    formData.append(
+
+        "serviceId",
+
+        currentServiceId
+
+    );
+
+    Array.from(
+
+        fileInput.files
+
+    ).forEach(file => {
+
+        formData.append(
+
+            "documents",
+
+            file
+
+        );
+
     });
-    const data = await res.json();
 
-    if (data.success) { alert("Service submitted ✅"); loadUserOrders(); closeModal(); }
-    else {
+    try {
 
-    console.error(
-        "Upload Error:",
-        data
-    );
+        const res =
+        await fetch(
 
-    alert(
+            `${API}/orders/create`,
 
-        data.message ||
+            {
 
-        JSON.stringify(data) ||
+                method:
+                "POST",
 
-        "Upload failed ❌"
+                headers: {
 
-    );
-}
+                    Authorization:
+                    getToken()
+
+                },
+
+                body:
+                formData
+
+            }
+
+        );
+
+        const data =
+        await res.json();
+
+        if (data.success) {
+
+            alert(
+                "Order placed successfully ✅"
+            );
+
+            closeModal();
+
+            loadUserOrders();
+
+            return;
+
+        }
+
+        console.error(
+            "User Upload Error:",
+            data
+        );
+
+        alert(
+
+            typeof data.message === "string"
+
+            ?
+
+            data.message
+
+            :
+
+            JSON.stringify(
+                data,
+                null,
+                2
+            )
+
+        );
+
+    }
+
+    catch (err) {
+
+        console.error(
+            "User Upload Failed:",
+            err
+        );
+
+        alert(
+
+            err.message ||
+
+            "Upload failed ❌"
+
+        );
+
+    }
+
 }
 
 /* =============================================
