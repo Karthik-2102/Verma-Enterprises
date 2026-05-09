@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", initAdmin);
 
 function initAdmin() {
 
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
 
     if (!token) {
         location.href = "index.html";
@@ -111,7 +111,7 @@ function setText(id, value) {
    LOGOUT
    ============================================= */
 function logout() {
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
     location.href = "index.html";
 }
 
@@ -621,9 +621,19 @@ async function uploadWork(id) {
 
     if (data.success) {
         showToast("Final work uploaded ✅");
-    } else {
-        alert(data.message || "Upload failed");
+
     }
+    else {
+        console.error(
+            "Admin work upload failed:",data);
+    alert(
+        data.message ||
+        JSON.stringify(data) ||
+        "Upload failed ❌"
+
+    );
+    }
+
 
     loadOrders();
     loadActivityLogs();

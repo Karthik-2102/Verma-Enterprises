@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", initApp);
 
 function initApp() {
     hideUserSections();
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (token) enterSite();
 }
 
@@ -22,7 +22,7 @@ function hideUserSections() {
 /* =============================================
    UTILITIES
    ============================================= */
-function getToken()  { return localStorage.getItem("token"); }
+function getToken()  { return sessionStorage.getItem("token"); }
 
 function decodeToken(token) {
     try { return JSON.parse(atob(token.split(".")[1])); }
@@ -104,7 +104,7 @@ async function login() {
 
     if (!data.success) return alert(data.message || "Login failed ❌");
 
-    localStorage.setItem("token", data.token);
+    sessionStorage.setItem("token", data.token);
     enterSite();
 }
 
@@ -151,7 +151,7 @@ function enterSite() {
 }
 
 function logout() {
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
     location.href = "index.html";
 }
 
@@ -382,7 +382,23 @@ async function submitService() {
     const data = await res.json();
 
     if (data.success) { alert("Service submitted ✅"); loadUserOrders(); closeModal(); }
-    else alert(data.message || "Failed ❌");
+    else {
+
+    console.error(
+        "Upload Error:",
+        data
+    );
+
+    alert(
+
+        data.message ||
+
+        JSON.stringify(data) ||
+
+        "Upload failed ❌"
+
+    );
+}
 }
 
 /* =============================================
