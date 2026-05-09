@@ -29,7 +29,11 @@ const storage = new CloudinaryStorage({
         return {
             folder:        "verma-enterprises",
             resource_type: getResourceType(file.mimetype),
-            public_id:     `${safeName}_${Date.now()}`
+            public_id:     `${safeName}_${Date.now()}`,
+            format:file.mimetype === "application/pdf" ? "pdf" :
+                     file.mimetype === "image/png"        ? "png" :
+                     file.mimetype === "image/webp"       ? "webp" : "jpg"
+                     
         };
     }
 });

@@ -565,9 +565,11 @@ async function loadUserOrders() {
         if (order.status === "rejected")  { badgeColor = "#dc3545"; statusText = "Rejected"; }
 
         /* File URL — Cloudinary returns full https URL; legacy path needs BACKEND prefix */
-        const fw  = order.finalWorkFile || "";
-        const fwRaw = fw.startsWith("http") ? fw : fw ? `${BACKEND}/${fw}` : "";
-        const fwHref = fwRaw ? (fwRaw.includes("/raw/upload/") ? `https://docs.google.com/viewer?url=${encodeURIComponent(fwRaw)}&embedded=true` : fwRaw) : "";
+        const fw     = order.finalWorkFile || "";
+        const fwRaw  = fw.startsWith("http") ? fw : fw ? `${BACKEND}/${fw}` : "";
+        const isPDF  = fwRaw.includes("/raw/upload/") || fwRaw.endsWith(".pdf");
+        const fwView = isPDF ? `https://docs.google.com/viewer?url=${encodeURIComponent(fwRaw)}&embedded=true` : fwRaw;
+        const fwHref = fwRaw;
 
         const card = document.createElement("div");
         card.className = "order-card-small";
@@ -578,7 +580,10 @@ async function loadUserOrders() {
             ${order.reason ? `<p class="order-reject-reason">Reason: ${order.reason}</p>` : ""}
             ${buildTimelineHTML(order)}
             <div class="order-right">
-                ${fwHref ? `<a class="user-file-btn" target="_blank" href="${fwHref}">Final Work</a>` : ""}
+                ${fwRaw ? `
+                    <a class="user-file-btn" target="_blank" href="${fwView}">👁 View Final Work</a>
+                    <a class="user-file-btn" target="_blank" href="${fwRaw}" download>📥 Download</a>
+                ` : ""}
                 ${order.status === "completed" ? `<button class="invoice-btn" onclick="downloadInvoice('${order._id}')">Invoice</button>` : ""}
             </div>
         `;
