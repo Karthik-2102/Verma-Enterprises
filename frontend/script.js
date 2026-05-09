@@ -565,10 +565,11 @@ async function loadUserOrders() {
         if (order.status === "rejected")  { badgeColor = "#dc3545"; statusText = "Rejected"; }
 
         /* File URL — Cloudinary returns full https URL; legacy path needs BACKEND prefix */
-        const fw     = order.finalWorkFile || "";
-        const fwRaw  = fw.startsWith("http") ? fw : fw ? `${BACKEND}/${fw}` : "";
-        const isPDF  = fwRaw.includes("/raw/upload/") || fwRaw.endsWith(".pdf");
-        const fwView = isPDF ? `https://docs.google.com/viewer?url=${encodeURIComponent(fwRaw)}&embedded=true` : fwRaw;
+        const fw = order.finalWorkFile || "";
+        const fwRaw = fw.startsWith("http") ? fw : fw ? `${BACKEND}/${fw}` : "";
+
+        /* Always use direct Cloudinary URL */
+        const fwView = fwRaw;
         const fwHref = fwRaw;
 
         const card = document.createElement("div");
@@ -581,8 +582,20 @@ async function loadUserOrders() {
             ${buildTimelineHTML(order)}
             <div class="order-right">
                 ${fwRaw ? `
-                    <a class="user-file-btn" target="_blank" href="${fwView}">👁 View Final Work</a>
-                    <a class="user-file-btn" target="_blank" href="${fwRaw}" download>📥 Download</a>
+                    <a class="user-file-btn"
+                    href="${fwView}"
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    👁 View Final Work
+                    </a>
+
+                    <a class="user-file-btn"
+                    href="${fwHref}"
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    📥 Download
+                    </a>
                 ` : ""}
                 ${order.status === "completed" ? `<button class="invoice-btn" onclick="downloadInvoice('${order._id}')">Invoice</button>` : ""}
             </div>
