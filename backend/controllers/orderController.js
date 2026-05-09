@@ -3,6 +3,7 @@ const Service     = require("../models/Service");
 const User        = require("../models/User");
 const ActivityLog = require("../models/ActivityLog");
 const PDFDocument = require("pdfkit");
+const { json } = require("express");
 
 /* =============================================
    CREATE ORDER
@@ -31,7 +32,14 @@ async function createOrder(req, res) {
         res.json({ success: true, order });
 
     } catch (err) {
-        console.error("Create order error:", err);
+        console.error(
+            "Create order error;",
+            JSON.stringify(
+                err,
+                null,
+                2,
+            )
+        );
         res.status(500).json({ success: false, message: "Server error" });
     }
 }
@@ -155,7 +163,14 @@ async function uploadFinalWork(req, res) {
         res.json({ success: true, order });
 
     } catch (err) {
-        console.error("Upload work error:", err);
+        console.error(
+            "Upload work error;",
+            JSON.stringify(
+                err,
+                null,
+                2,
+            )
+        );
         res.status(500).json({ success: false, message: "Server error" });
     }
 }

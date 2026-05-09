@@ -16,22 +16,13 @@ new CloudinaryStorage({
 
     cloudinary,
 
-    params: (req, file) => {
-
-        const folder =
-        file.fieldname === "workFile"
-
-        ?
-
-        "verma-enterprises/final-work"
-
-        :
-
-        "verma-enterprises/user-documents";
+    params:
+    async (req, file) => {
 
         return {
 
-            folder,
+            folder:
+            "verma-enterprises",
 
             resource_type:
             "auto"
@@ -55,6 +46,25 @@ multer({
     }
 
 });
+
+/* Upload Error Debug */
+
+upload.handleError =
+(error) => {
+
+    console.error(
+
+        "Cloudinary Upload Error:",
+
+        JSON.stringify(
+            error,
+            null,
+            2
+        )
+
+    );
+
+};
 
 module.exports =
 upload;
