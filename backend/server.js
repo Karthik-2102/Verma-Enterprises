@@ -11,6 +11,9 @@ const authRoutes = require("./routes/authRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const orderRoutes = require("./routes/ordersRoutes");
 
+/* Upload Error Handler */
+const { handleUploadError } = require("./middleware/uploadMiddleware");
+
 /* Middleware */
 app.use(cors());
 app.use(express.json());
@@ -25,31 +28,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/orders", orderRoutes);
 
-/* Upload Error Handling */
-/* Upload Error Handling */
-app.use((error, req, res, next) => {
-
-    console.error("Upload Error Full Object:", error);
-
-    console.error(
-        "Upload Error JSON:",
-        JSON.stringify(error, null, 2)
-    );
-
-    console.error(
-        "Upload Error Stack:",
-        error?.stack || "No stack available"
-    );
-
-    return res.status(500).json({
-        success: false,
-        message:
-            error?.message ||
-            error?.error?.message ||
-            "Upload failed"
-    });
-
-});
+/* Upload Error Handling — must be after all routes */
+app.use(handleUploadError);
 
 /* Database Connection */
 mongoose.connect(process.env.MONGO_URI)
