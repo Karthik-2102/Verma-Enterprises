@@ -457,9 +457,11 @@ async function submitService() {
 
     try {
 
-        const res =
+        const response =
         await fetch(
+
             `${API}/orders/create`,
+
             {
                 method: "POST",
 
@@ -471,10 +473,37 @@ async function submitService() {
                 body:
                 formData
             }
+
         );
 
-        const data =
-        await res.json();
+        const rawResponse =
+        await response.text();
+
+        let data;
+
+        try {
+
+            data =
+            JSON.parse(
+                rawResponse
+            );
+
+        }
+
+        catch {
+
+            console.error(
+                "User Upload Raw Response:",
+                rawResponse
+            );
+
+            alert(
+                "Backend returned invalid response ❌"
+            );
+
+            return;
+
+        }
 
         if (data.success) {
 
@@ -489,11 +518,6 @@ async function submitService() {
             return;
 
         }
-
-        console.error(
-            "User Upload Error:",
-            data
-        );
 
         alert(
             data.message ||
@@ -510,7 +534,6 @@ async function submitService() {
         );
 
         alert(
-            error.message ||
             "Upload failed ❌"
         );
 

@@ -617,7 +617,7 @@ async function uploadWork(id) {
     if (
         !fileInput ||
         !fileInput.files ||
-        !fileInput.files.length
+        !fileInput.files[0]
     ) {
 
         alert(
@@ -638,9 +638,11 @@ async function uploadWork(id) {
 
     try {
 
-        const res =
+        const response =
         await fetch(
+
             `${API}/orders/upload-work/${id}`,
+
             {
                 method: "POST",
 
@@ -652,10 +654,37 @@ async function uploadWork(id) {
                 body:
                 formData
             }
+
         );
 
-        const data =
-        await res.json();
+        const rawResponse =
+        await response.text();
+
+        let data;
+
+        try {
+
+            data =
+            JSON.parse(
+                rawResponse
+            );
+
+        }
+
+        catch {
+
+            console.error(
+                "Admin Upload Raw Response:",
+                rawResponse
+            );
+
+            alert(
+                "Backend returned invalid response ❌"
+            );
+
+            return;
+
+        }
 
         if (data.success) {
 
@@ -665,14 +694,11 @@ async function uploadWork(id) {
 
             loadOrders();
 
+            loadActivityLogs();
+
             return;
 
         }
-
-        console.error(
-            "Admin Upload Error:",
-            data
-        );
 
         alert(
             data.message ||
@@ -684,12 +710,11 @@ async function uploadWork(id) {
     catch (error) {
 
         console.error(
-            "Upload Error:",
+            "Admin Upload Error:",
             error
         );
 
         alert(
-            error.message ||
             "Upload failed ❌"
         );
 
