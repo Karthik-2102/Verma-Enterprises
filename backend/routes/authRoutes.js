@@ -8,6 +8,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const auth = require("../middleware/authMiddleware");
+const ActivityLog = require("../models/ActivityLog");
 
 /* Normalize Login Identifier */
 
