@@ -13,10 +13,16 @@ function sanitizeFileName(originalName) {
 
 /* Detect correct Cloudinary resource_type by mimetype */
 function getResourceType(mimetype) {
-    if (mimetype === "application/pdf")              return "raw";
-    if (mimetype.startsWith("image/"))               return "image";
-    if (mimetype.startsWith("video/"))               return "video";
-    return "raw"; /* fallback for docs, etc. */
+
+    /* PDFs should be uploaded as image for browser preview support */
+    if (mimetype === "application/pdf") return "image";
+
+    if (mimetype.startsWith("image/")) return "image";
+
+    if (mimetype.startsWith("video/")) return "video";
+
+    return "raw";
+
 }
 
 /* Upload Storage Configuration */
