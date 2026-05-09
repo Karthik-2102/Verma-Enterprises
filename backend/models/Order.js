@@ -1,19 +1,13 @@
 const mongoose = require("mongoose");
 
-const timelineSchema = new mongoose.Schema({
-    stage: {
-        type: String,
-        required: true
-    },
-    completed: {
-        type: Boolean,
-        default: false
-    },
-    updatedAt: {
-        type: Date,
-        default: null
-    }
-}, { _id: false });
+/* Order Timeline Stages */
+const TIMELINE_STAGES = [
+    "Order Placed",
+    "Documents Verified",
+    "Processing",
+    "Ready for Delivery",
+    "Completed"
+];
 
 const orderSchema = new mongoose.Schema({
 
@@ -44,39 +38,25 @@ const orderSchema = new mongoose.Schema({
         default: "pending"
     },
 
-    timeline: {
-        type: [timelineSchema],
-        default: [
-            {
-                stage: "Order Placed",
-                completed: true,
-                updatedAt: new Date()
-            },
-            {
-                stage: "Documents Verified"
-            },
-            {
-                stage: "Processing"
-            },
-            {
-                stage: "Ready for Delivery"
-            },
-            {
-                stage: "Completed"
-            }
-        ]
+    /* Timeline Stage Tracking */
+    timelineStage: {
+        type: String,
+        enum: TIMELINE_STAGES,
+        default: "Order Placed"
     },
+
+    /* Timeline History with Timestamps */
+    timelineHistory: [{
+        stage: { type: String },
+        updatedAt: { type: Date, default: Date.now }
+    }],
 
     reason: {
         type: String,
         default: ""
     }
 
-}, {
-    timestamps: true
-});
+}, { timestamps: true });
 
-module.exports = mongoose.model(
-    "Order",
-    orderSchema
-);
+module.exports = mongoose.model("Order", orderSchema);
+module.exports.TIMELINE_STAGES = TIMELINE_STAGES;

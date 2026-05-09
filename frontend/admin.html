@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verma Enterprises Admin</title>
 
-    <!-- Premium font stack: Playfair Display · Space Grotesk · Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -16,17 +15,15 @@
     <link rel="stylesheet" href="mobile-fix.css">
     <link rel="stylesheet" href="admin-upgrade.css">
 
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
 
 <body class="admin-body">
 
-    <!-- SIDEBAR -->
+    <!-- Sidebar Navigation -->
     <aside class="admin-sidebar">
 
-        <!-- BRAND SECTION -->
         <div class="admin-brand-premium">
 
             <div class="brand-logo-ring">
@@ -66,6 +63,9 @@
             <a href="#revenueSection">
                 <span class="menu-icon">💰</span> Revenue
             </a>
+            <a href="#activitySection">
+                <span class="menu-icon">📝</span> Activity Logs
+            </a>
             <a href="#" onclick="openAdminProfile()">
                 <span class="menu-icon">👤</span> Profile
             </a>
@@ -76,24 +76,21 @@
 
     </aside>
 
-    <!-- MAIN -->
+    <!-- Main Content Area -->
     <main class="admin-main">
 
-        <!-- TOPBAR -->
+        <!-- Top Bar -->
         <header class="admin-topbar">
             <div>
                 <h1>Welcome, Admin</h1>
                 <p>Manage Verma Enterprises professionally</p>
             </div>
-            <div class="admin-search search-dropdown-wrapper">
-
-                <input id="searchBox" type="text" placeholder="🔍 Search orders..." autocomplete="off"
-                    onkeyup="loadOrders()">
-
+            <div class="admin-search">
+                <input id="searchBox" type="text" placeholder="🔍 Search orders..." onkeyup="loadOrders()">
             </div>
         </header>
 
-        <!-- DASHBOARD -->
+        <!-- Dashboard Stats -->
         <section id="dashboard">
             <div class="admin-stats">
                 <div class="admin-card gold">
@@ -115,13 +112,13 @@
             </div>
         </section>
 
-        <!-- ORDERS -->
+        <!-- Orders Management -->
         <section id="ordersSection" class="admin-section">
             <h2>All Orders</h2>
             <div id="orders"></div>
         </section>
 
-        <!-- SERVICES -->
+        <!-- Services Management -->
         <section id="servicesSection" class="admin-section">
 
             <h2>Add Service</h2>
@@ -130,7 +127,6 @@
 
                 <input id="name" type="text" placeholder="Service Name">
 
-                <!-- Category Dropdown -->
                 <select id="serviceCategory" class="admin-select">
                     <option value="Government Services">🏛️ Government Services</option>
                     <option value="Education Services">🎓 Education Services</option>
@@ -153,7 +149,7 @@
 
             </div>
 
-            <!--Search & Filter Bar -->
+            <!-- Service Search and Filter Bar -->
             <div class="service-filter-bar">
 
                 <div class="service-search-wrap">
@@ -185,7 +181,7 @@
 
         </section>
 
-        <!-- REVENUE -->
+        <!-- Revenue Analytics -->
         <section id="revenueSection" class="admin-section">
             <h2>Revenue Analytics</h2>
             <div class="admin-stats">
@@ -218,9 +214,26 @@
             </div>
         </section>
 
+        <!-- Activity Logs -->
+        <section id="activitySection" class="admin-section">
+
+            <h2>Activity Logs</h2>
+
+            <div class="activity-search-bar">
+                <input id="activitySearchInput" type="text" placeholder="Search logs by action..."
+                    oninput="loadActivityLogs()">
+                <button onclick="loadActivityLogs()">Refresh</button>
+            </div>
+
+            <div id="activityLogList" class="activity-log-list">
+                <div class="activity-log-empty">Loading activity logs...</div>
+            </div>
+
+        </section>
+
     </main>
 
-    <!-- ADMIN PROFILE MODAL -->
+    <!-- Admin Profile Modal -->
     <div id="adminProfileModal" class="modal hidden">
         <div class="profile-modal-box">
             <h2>Admin Profile</h2>
@@ -235,7 +248,7 @@
         </div>
     </div>
 
-    <!-- ✅ UPGRADED EDIT SERVICE MODAL with Category -->
+    <!-- Edit Service Modal -->
     <div id="editServiceModal" class="modal hidden">
         <div class="profile-modal-box">
 
@@ -243,7 +256,6 @@
 
             <input type="text" id="editName" placeholder="Service Name">
 
-            <!-- ✅ NEW: Category in edit modal -->
             <select id="editServiceCategory" class="admin-select"
                 style="height:52px;padding:0 16px;border-radius:14px;background:#1A2C37;border:1px solid rgba(153,186,187,.16);color:#fff;font-size:15px;">
                 <option value="Government Services">🏛️ Government Services</option>
@@ -266,7 +278,6 @@
             <input type="text" id="editDocuments" placeholder="Required docs (comma separated)">
 
             <button class="profile-save-btn" onclick="updateService()">Save Changes</button>
-
             <button class="profile-close-btn" onclick="closeEditService()">Cancel</button>
 
         </div>

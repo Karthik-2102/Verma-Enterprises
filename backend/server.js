@@ -5,26 +5,29 @@ require("dotenv").config();
 
 const app = express();
 
-/* ROUTES */
+/* Route Modules */
 const otpRoutes = require("./routes/otpRoutes");
 const authRoutes = require("./routes/authRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const orderRoutes = require("./routes/ordersRoutes");
 
-/* MIDDLEWARE */
+/* Middleware */
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-/* ROUTES USE */
+/* Ensure ActivityLog model is loaded */
+require("./models/ActivityLog");
+
+/* Route Registration */
 app.use("/api/otp", otpRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/orders", orderRoutes);
 
-/* DB */
+/* Database Connection */
 mongoose.connect(process.env.MONGO_URI)
-.then(()=> console.log("MongoDB Connected ✅"))
-.catch(err => console.log(err));
+    .then(() => console.log("MongoDB Connected"))
+    .catch(err => console.log(err));
 
-app.listen(5000, ()=> console.log("Server running on 5000"));
+app.listen(5000, () => console.log("Server running on port 5000"));

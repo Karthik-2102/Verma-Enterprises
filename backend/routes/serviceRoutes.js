@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const Service = require("../models/Service");
+const ActivityLog = require("../models/ActivityLog");
+const User = require("../models/User");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
 
-/* GET ALL */
+/* Service List with Category and Search Filters */
 router.get("/", async (req, res) => {
     try {
         const { category, search } = req.query;
@@ -31,7 +33,7 @@ router.get("/", async (req, res) => {
     }
 });
 
-/* GET ONE */
+/* Single Service by ID */
 router.get("/:id", async (req, res) => {
     try {
         const service = await Service.findById(req.params.id);
@@ -45,7 +47,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-/* CREATE (ADMIN ONLY) */
+/* Create Service (Admin Only) */
 router.post("/create", authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const {
@@ -68,6 +70,15 @@ router.post("/create", authMiddleware, adminMiddleware, async (req, res) => {
             category: category || "Government Services"
         });
 
+        /* Log Activity */
+        const admin = await User.findById(req.user.id);
+        await ActivityLog.create({
+            admin: req.user.id,
+            adminName: admin?.name || "Admin",
+            action: `Added service: ${name}`,
+            category: "service"
+        });
+
         res.json({ success: true, service });
     } catch (err) {
         console.error(err);
@@ -75,7 +86,7 @@ router.post("/create", authMiddleware, adminMiddleware, async (req, res) => {
     }
 });
 
-/* ✅ FIX: UPDATE SERVICE (ADMIN ONLY) — THIS ROUTE WAS MISSING */
+/* Update Service (Admin Only) */
 router.put("/update/:id", authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const {
@@ -106,17 +117,36 @@ router.put("/update/:id", authMiddleware, adminMiddleware, async (req, res) => {
             return res.status(404).json({ success: false, message: "Service not found" });
         }
 
+        /* Log Pricing Update Activity */
+        const admin = await User.findById(req.user.id);
+        await ActivityLog.create({
+            admin: req.user.id,
+            adminName: admin?.name || "Admin",
+            action: `Updated service: ${name} (₹${(applicationCharge || basePrice || 0) + (serviceCharge || 0)} total)`,
+            category: "pricing"
+        });
+
         res.json({ success: true, service: updatedService });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, message: "Server error ❌" });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
-/* DELETE (ADMIN ONLY) */
+/* Delete Service (Admin Only) */
 router.delete("/delete/:id", authMiddleware, adminMiddleware, async (req, res) => {
     try {
-        await Service.findByIdAndDelete(req.params.id);
+        const service = await Service.findByIdAndDelete(req.params.id);
+
+        /* Log Deletion Activity */
+        const admin = await User.findById(req.user.id);
+        await ActivityLog.create({
+            admin: req.user.id,
+            adminName: admin?.name || "Admin",
+            action: `Deleted service: ${service?.name || req.params.id}`,
+            category: "service"
+        });
+
         res.json({ success: true });
     } catch (err) {
         console.error(err);

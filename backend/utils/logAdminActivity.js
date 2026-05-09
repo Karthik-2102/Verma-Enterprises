@@ -1,4 +1,4 @@
-const AdminLog = require("../models/AdminLog");
+const AdminLog = require("../models/Activitylog ");
 
 async function logAdminActivity(
     adminId,

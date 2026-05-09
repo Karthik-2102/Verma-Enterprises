@@ -1,5 +1,11 @@
-const API =
-"https://verma-enterprises-backend.onrender.com/api";
+const API     = "https://verma-enterprises-backend.onrender.com/api";
+const BACKEND = "https://verma-enterprises-backend.onrender.com";
+
+/* Resolve file URL — handles both Cloudinary (full https) and legacy local paths */
+function resolveFileURL(path) {
+    if (!path) return "";
+    return path.startsWith("http") ? path : `${BACKEND}/${path}`;
+}
 
 const SERVICE_CATEGORIES = [
     "Government Services",
@@ -9,36 +15,18 @@ const SERVICE_CATEGORIES = [
     "Banking Services"
 ];
 
-const ADMIN_SEARCH_SUGGESTIONS = [
-
-    "PAN Card",
-
-    "PAN Correction",
-
-    "PAN Reprint",
-
-    "Aadhar Update",
-
-    "Passport",
-
-    "Voter ID",
-
-    "Income Certificate",
-
-    "Caste Certificate",
-
-    "Residence Certificate"
-
+const TIMELINE_STAGES = [
+    "Order Placed",
+    "Documents Verified",
+    "Processing",
+    "Ready for Delivery",
+    "Completed"
 ];
 
-
-/* =====================================
-INIT
-===================================== */
-document.addEventListener(
-    "DOMContentLoaded",
-    initAdmin
-);
+/* =============================================
+   INIT
+   ============================================= */
+document.addEventListener("DOMContentLoaded", initAdmin);
 
 function initAdmin() {
 
@@ -57,184 +45,40 @@ function initAdmin() {
     }
 
     loadServices();
-
     loadOrders();
-
+    loadActivityLogs();
     setupPriceCalculator();
-
     setupServiceSearch();
-
-    setupAdminSuggestions();
 }
 
-function getAdminSuggestions(
-    keyword
-) {
-
-    if (!keyword.trim()) {
-        return [];
-    }
-
-    return ADMIN_SEARCH_SUGGESTIONS
-    .filter(item =>
-
-        item
-        .toLowerCase()
-        .includes(
-            keyword.toLowerCase()
-        )
-
-    );
-
-}
-
-function renderAdminSuggestions(
-    suggestions
-) {
-
-    let dropdown =
-    document.getElementById(
-        "adminSuggestionBox"
-    );
-
-    if (!dropdown) {
-
-        dropdown =
-        document.createElement(
-            "div"
-        );
-
-        dropdown.id =
-        "adminSuggestionBox";
-
-        dropdown.style.cssText = `
-            position:absolute;
-            width:100%;
-            background:#1A2C37;
-            border:1px solid rgba(153,186,187,.2);
-            border-radius:12px;
-            max-height:250px;
-            overflow-y:auto;
-            z-index:999;
-            margin-top:8px;
-        `;
-
-        const input =
-        document.getElementById(
-            "searchBox"
-        );
-
-        input.parentNode.appendChild(
-            dropdown
-        );
-
-    }
-
-    dropdown.innerHTML = "";
-
-    if (!suggestions.length) {
-
-        dropdown.style.display =
-        "none";
-
-        return;
-
-    }
-
-    dropdown.style.display =
-    "block";
-
-    suggestions.forEach(item => {
-
-        const option =
-        document.createElement(
-            "div"
-        );
-
-        option.style.cssText = `
-            padding:12px 16px;
-            cursor:pointer;
-            color:#fff;
-        `;
-
-        option.innerText =
-        item;
-
-        option.onclick = () => {
-
-            document.getElementById(
-                "searchBox"
-            ).value = item;
-
-            dropdown.style.display =
-            "none";
-
-            loadOrders();
-
-        };
-
-        dropdown.appendChild(
-            option
-        );
-
-    });
-
-}
-
-function setupAdminSuggestions(){
-
-    const input =
-    document.getElementById(
-        "searchBox"
-    );
-
-    if (!input) return;
-
-    input.addEventListener(
-        "input",
-        function(){
-
-            const matches =
-            getAdminSuggestions(
-                this.value
-            );
-
-            renderAdminSuggestions(
-                matches
-            );
-
-        }
-    );
-
-}
-/* =====================================
-PRICE CALCULATOR
-===================================== */
+/* =============================================
+   PRICE CALCULATOR
+   ============================================= */
 function setupPriceCalculator() {
-    const appCharge = document.getElementById('applicationCharge');
-    const servCharge = document.getElementById('serviceCharge');
-    const total = document.getElementById('totalPriceDisplay');
+    const appCharge  = document.getElementById("applicationCharge");
+    const servCharge = document.getElementById("serviceCharge");
+    const total      = document.getElementById("totalPriceDisplay");
 
     if (appCharge && servCharge && total) {
         const calc = () => {
-            const app = parseFloat(appCharge.value) || 0;
+            const app  = parseFloat(appCharge.value) || 0;
             const serv = parseFloat(servCharge.value) || 0;
             total.textContent = app + serv;
         };
-        appCharge.addEventListener('input', calc);
-        servCharge.addEventListener('input', calc);
+        appCharge.addEventListener("input", calc);
+        servCharge.addEventListener("input", calc);
     }
 }
 
 function calculateEditTotal() {
-    const app = parseFloat(document.getElementById('editApplicationCharge').value) || 0;
-    const serv = parseFloat(document.getElementById('editServiceCharge').value) || 0;
-    document.getElementById('editTotalPriceDisplay').textContent = app + serv;
+    const app  = parseFloat(document.getElementById("editApplicationCharge").value) || 0;
+    const serv = parseFloat(document.getElementById("editServiceCharge").value) || 0;
+    document.getElementById("editTotalPriceDisplay").textContent = app + serv;
 }
 
-/* =====================================
-UTILS
-===================================== */
+/* =============================================
+   UTILITIES
+   ============================================= */
 function getToken() {
     return localStorage.getItem("token");
 }
@@ -263,17 +107,17 @@ function setText(id, value) {
     if (el) el.innerText = value;
 }
 
-/* =====================================
-LOGOUT
-===================================== */
+/* =============================================
+   LOGOUT
+   ============================================= */
 function logout() {
     localStorage.removeItem("token");
     location.href = "index.html";
 }
 
-/* =====================================
-SERVICE SEARCH & FILTER STATE
-===================================== */
+/* =============================================
+   SERVICE SEARCH & FILTER STATE
+   ============================================= */
 let serviceFilter = {
     search: "",
     category: "all",
@@ -283,10 +127,9 @@ let serviceFilter = {
 let allServices = [];
 
 function setupServiceSearch() {
-    // These elements are injected by admin.html upgrade
     const searchEl = document.getElementById("serviceSearchInput");
-    const catEl = document.getElementById("serviceCategoryFilter");
-    const sortEl = document.getElementById("serviceSortFilter");
+    const catEl    = document.getElementById("serviceCategoryFilter");
+    const sortEl   = document.getElementById("serviceSortFilter");
 
     if (searchEl) {
         searchEl.addEventListener("input", (e) => {
@@ -313,7 +156,6 @@ function setupServiceSearch() {
 function renderFilteredServices() {
     let filtered = [...allServices];
 
-    // Search filter
     if (serviceFilter.search) {
         filtered = filtered.filter(s =>
             s.name.toLowerCase().includes(serviceFilter.search) ||
@@ -321,14 +163,12 @@ function renderFilteredServices() {
         );
     }
 
-    // Category filter
     if (serviceFilter.category !== "all") {
         filtered = filtered.filter(s =>
             (s.category || "Government Services") === serviceFilter.category
         );
     }
 
-    // Sort
     if (serviceFilter.sort === "price-asc") {
         filtered.sort((a, b) => (a.finalPrice || 0) - (b.finalPrice || 0));
     } else if (serviceFilter.sort === "price-desc") {
@@ -340,9 +180,9 @@ function renderFilteredServices() {
     renderServiceList(filtered);
 }
 
-/* =====================================
-SERVICES
-===================================== */
+/* =============================================
+   SERVICES — LOAD & RENDER
+   ============================================= */
 async function loadServices() {
     try {
         const res = await fetch(`${API}/services`);
@@ -355,11 +195,11 @@ async function loadServices() {
 
 function getCategoryBadgeColor(category) {
     const colors = {
-        "Government Services":  { bg: "rgba(208,6,13,.18)",    border: "rgba(208,6,13,.40)",    text: "#ff6b6b" },
-        "Education Services":   { bg: "rgba(62,94,104,.25)",   border: "rgba(153,186,187,.40)", text: "#99BABB" },
-        "Printing Services":    { bg: "rgba(229,126,47,.18)",  border: "rgba(229,126,47,.40)",  text: "#E57E2F" },
-        "ID Card Services":     { bg: "rgba(80,160,80,.18)",   border: "rgba(80,200,80,.35)",   text: "#5cb85c" },
-        "Banking Services":     { bg: "rgba(70,100,200,.18)",  border: "rgba(100,140,255,.35)", text: "#7BAAF7" }
+        "Government Services": { bg: "rgba(208,6,13,.18)",   border: "rgba(208,6,13,.40)",   text: "#ff6b6b" },
+        "Education Services":  { bg: "rgba(62,94,104,.25)",  border: "rgba(153,186,187,.40)", text: "#99BABB" },
+        "Printing Services":   { bg: "rgba(229,126,47,.18)", border: "rgba(229,126,47,.40)",  text: "#E57E2F" },
+        "ID Card Services":    { bg: "rgba(80,160,80,.18)",  border: "rgba(80,200,80,.35)",   text: "#5cb85c" },
+        "Banking Services":    { bg: "rgba(70,100,200,.18)", border: "rgba(100,140,255,.35)", text: "#7BAAF7" }
     };
     return colors[category] || colors["Government Services"];
 }
@@ -377,10 +217,10 @@ function renderServiceList(services) {
     }
 
     services.forEach(service => {
-        const appCharge = service.applicationCharge || service.basePrice || 0;
+        const appCharge  = service.applicationCharge || service.basePrice || 0;
         const servCharge = service.serviceCharge || 0;
-        const total = service.finalPrice || (appCharge + servCharge);
-        const cat = service.category || "Government Services";
+        const total      = service.finalPrice || (appCharge + servCharge);
+        const cat        = service.category || "Government Services";
         const badgeColor = getCategoryBadgeColor(cat);
 
         box.innerHTML += `
@@ -412,15 +252,8 @@ function renderServiceList(services) {
             </div>
 
             <div class="service-actions">
-                <button
-                    class="edit-btn"
-                    onclick="openEditService('${service._id}')"
-                >Edit</button>
-
-                <button
-                    class="delete-btn"
-                    onclick="deleteService('${service._id}')"
-                >Delete</button>
+                <button class="edit-btn" onclick="openEditService('${service._id}')">Edit</button>
+                <button class="delete-btn" onclick="deleteService('${service._id}')">Delete</button>
             </div>
 
         </div>
@@ -430,9 +263,9 @@ function renderServiceList(services) {
 
 async function addService() {
 
-    const appCharge = parseFloat(document.getElementById("applicationCharge").value) || 0;
+    const appCharge  = parseFloat(document.getElementById("applicationCharge").value) || 0;
     const servCharge = parseFloat(document.getElementById("serviceCharge").value) || 0;
-    const category = document.getElementById("serviceCategory")?.value || "Government Services";
+    const category   = document.getElementById("serviceCategory")?.value || "Government Services";
 
     const payload = {
         name: document.getElementById("name").value.trim(),
@@ -472,6 +305,7 @@ async function addService() {
         }
 
         loadServices();
+        loadActivityLogs();
     } else {
         alert(data.message || "Failed to add service ❌");
     }
@@ -487,41 +321,33 @@ async function deleteService(id) {
 
     showToast("Service deleted ✅");
     loadServices();
+    loadActivityLogs();
 }
 
-/* =====================================
-EDIT SERVICE — ROOT CAUSE FIX
-The backend PUT /api/services/update/:id route was missing.
-It has now been added to serviceRoutes.js.
-===================================== */
+/* =============================================
+   EDIT SERVICE MODAL
+   ============================================= */
 let currentEditServiceId = null;
 
 async function openEditService(id) {
     currentEditServiceId = id;
 
-    const res = await fetch(`${API}/services/${id}`);
+    const res     = await fetch(`${API}/services/${id}`);
     const service = await res.json();
 
-    document.getElementById('editName').value = service.name || "";
-    document.getElementById('editApplicationCharge').value = service.applicationCharge || service.basePrice || 0;
-    document.getElementById('editServiceCharge').value = service.serviceCharge || 0;
-    document.getElementById('editDocuments').value = (service.documents || []).join(', ');
+    document.getElementById("editName").value              = service.name || "";
+    document.getElementById("editApplicationCharge").value = service.applicationCharge || service.basePrice || 0;
+    document.getElementById("editServiceCharge").value     = service.serviceCharge || 0;
+    document.getElementById("editDocuments").value         = (service.documents || []).join(", ");
 
-    // Set category if the select exists
-    const editCatEl = document.getElementById('editServiceCategory');
+    const editCatEl = document.getElementById("editServiceCategory");
     if (editCatEl) {
         editCatEl.value = service.category || "Government Services";
     }
 
     calculateEditTotal();
 
-    const appInput = document.getElementById('editApplicationCharge');
-    const servInput = document.getElementById('editServiceCharge');
-
-    appInput.oninput = calculateEditTotal;
-    servInput.oninput = calculateEditTotal;
-
-    document.getElementById('editServiceModal').classList.remove('hidden');
+    document.getElementById("editServiceModal").classList.remove("hidden");
 }
 
 async function updateService() {
@@ -530,10 +356,10 @@ async function updateService() {
         return alert("No service selected ❌");
     }
 
-    const appCharge = parseFloat(document.getElementById('editApplicationCharge').value) || 0;
-    const servCharge = parseFloat(document.getElementById('editServiceCharge').value) || 0;
-    const name = document.getElementById('editName').value.trim();
-    const category = document.getElementById('editServiceCategory')?.value || "Government Services";
+    const appCharge  = parseFloat(document.getElementById("editApplicationCharge").value) || 0;
+    const servCharge = parseFloat(document.getElementById("editServiceCharge").value) || 0;
+    const name       = document.getElementById("editName").value.trim();
+    const category   = document.getElementById("editServiceCategory")?.value || "Government Services";
 
     if (!name) {
         return alert("Please enter service name ❌");
@@ -545,31 +371,29 @@ async function updateService() {
         serviceCharge: servCharge,
         basePrice: appCharge,
         finalPrice: appCharge + servCharge,
-        documents: document.getElementById('editDocuments').value
-            .split(',')
+        documents: document.getElementById("editDocuments").value
+            .split(",")
             .map(d => d.trim())
             .filter(d => d),
         category
     };
 
     try {
-        const res = await fetch(
-            `${API}/services/update/${currentEditServiceId}`,
-            {
-                method: 'PUT',
-                headers: jsonHeaders(),
-                body: JSON.stringify(payload)
-            }
-        );
+        const res = await fetch(`${API}/services/update/${currentEditServiceId}`, {
+            method: "PUT",
+            headers: jsonHeaders(),
+            body: JSON.stringify(payload)
+        });
 
         const data = await res.json();
 
         if (data.success || data._id || data.service) {
-            showToast('Service updated successfully ✅');
+            showToast("Service updated successfully ✅");
             closeEditService();
             loadServices();
+            loadActivityLogs();
         } else {
-            alert(data.message || 'Failed to update service ❌');
+            alert(data.message || "Failed to update service ❌");
         }
     } catch (err) {
         console.error("Update failed:", err);
@@ -578,19 +402,16 @@ async function updateService() {
 }
 
 function closeEditService() {
-    document.getElementById('editServiceModal').classList.add('hidden');
+    document.getElementById("editServiceModal").classList.add("hidden");
     currentEditServiceId = null;
 }
 
-/* =====================================
-ORDERS
-===================================== */
+/* =============================================
+   ORDERS — LOAD & RENDER
+   ============================================= */
 async function loadOrders() {
 
-    const res = await fetch(`${API}/orders`, {
-        headers: authHeaders()
-    });
-
+    const res  = await fetch(`${API}/orders`, { headers: authHeaders() });
     const data = await res.json();
 
     const search = document.getElementById("searchBox")?.value?.toLowerCase() || "";
@@ -612,12 +433,12 @@ async function loadOrders() {
     setTimeout(() => { updateStats(orders); }, 100);
 }
 
-/* =====================================
-STATS
-===================================== */
+/* =============================================
+   STATS
+   ============================================= */
 function updateStats(orders) {
 
-    let total = orders.length;
+    let total     = orders.length;
     let pending   = orders.filter(x => x.status === "pending").length;
     let completed = orders.filter(x => x.status === "completed").length;
     let rejected  = orders.filter(x => x.status === "rejected").length;
@@ -632,7 +453,7 @@ function updateStats(orders) {
     orders.forEach(order => {
         if (order.status !== "completed") return;
 
-        const price = Number(order.service?.finalPrice || 0);
+        const price     = Number(order.service?.finalPrice || 0);
         const orderDate = new Date(order.createdAt);
 
         totalRevenue += price;
@@ -652,8 +473,8 @@ function updateStats(orders) {
         }
     });
 
-    setText("totalOrders",    total);
-    setText("pendingOrders",  pending);
+    setText("totalOrders",     total);
+    setText("pendingOrders",   pending);
     setText("completedOrders", completed);
     setText("rejectedOrders",  rejected);
     setText("todayRevenue",    `₹${todayRevenue}`);
@@ -664,9 +485,9 @@ function updateStats(orders) {
     drawCharts(todayRevenue, weeklyRevenue, monthlyRevenue, totalRevenue);
 }
 
-/* =====================================
-RENDER ORDERS
-===================================== */
+/* =============================================
+   RENDER ORDERS — WITH TIMELINE CONTROLS
+   ============================================= */
 function renderOrders(orders) {
 
     const box = document.getElementById("orders");
@@ -683,6 +504,13 @@ function renderOrders(orders) {
         if (order.status === "completed") color = "#28a745";
         if (order.status === "rejected")  color = "#dc3545";
 
+        const currentStage = order.timelineStage || "Order Placed";
+
+        /* Timeline stage selector for admin */
+        const timelineOptions = TIMELINE_STAGES.map(stage => `
+            <option value="${stage}" ${stage === currentStage ? "selected" : ""}>${stage}</option>
+        `).join("");
+
         box.innerHTML += `
         <div class="admin-order-card">
 
@@ -692,22 +520,36 @@ function renderOrders(orders) {
 
             <small>${new Date(order.createdAt).toLocaleString()}</small>
 
-            <div class="status-badge" style="background:${color}">
-                ${order.status}
+            <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+                <div class="status-badge" style="background:${color}">
+                    ${order.status}
+                </div>
+                <span class="admin-timeline-badge">${currentStage}</span>
             </div>
 
             ${order.reason ? `<p>Reason: ${order.reason}</p>` : ""}
 
+            <!-- Timeline Stage Control -->
+            <div class="timeline-control-wrap">
+                <label style="font-size:12px;opacity:.6;display:block;margin-bottom:6px;">Update Timeline Stage</label>
+                <select class="timeline-select" id="timeline-${order._id}">
+                    ${timelineOptions}
+                </select>
+                <button class="timeline-update-btn" onclick="updateTimeline('${order._id}')">
+                    Update Stage
+                </button>
+            </div>
+
             <div class="admin-order-right">
 
-                ${(order.files || []).map(file => `
-                    <a class="user-file-btn" target="_blank" href="https://verma-enterprises-backend.onrender.com/api/${file}">
-                        User File
+                ${(order.files || []).map((file, fi) => `
+                    <a class="user-file-btn" target="_blank" href="${resolveFileURL(file)}">
+                        User File ${order.files.length > 1 ? fi + 1 : ""}
                     </a>
                 `).join("")}
 
                 ${order.finalWorkFile ? `
-                    <a class="final-work-btn" target="_blank" href="https://verma-enterprises-backend.onrender.com/api/${order.finalWorkFile}">
+                    <a class="final-work-btn" target="_blank" href="${resolveFileURL(order.finalWorkFile)}">
                         Final Work
                     </a>
                 ` : ""}
@@ -734,9 +576,9 @@ function renderOrders(orders) {
     });
 }
 
-/* =====================================
-ORDER ACTIONS
-===================================== */
+/* =============================================
+   ORDER STATUS ACTIONS
+   ============================================= */
 async function completeOrder(id) {
     await fetch(`${API}/orders/update/${id}`, {
         method: "PUT",
@@ -744,6 +586,7 @@ async function completeOrder(id) {
         body: JSON.stringify({ status: "completed" })
     });
     loadOrders();
+    loadActivityLogs();
 }
 
 async function rejectOrder(id) {
@@ -757,6 +600,7 @@ async function rejectOrder(id) {
         body: JSON.stringify({ status: "rejected", reason })
     });
     loadOrders();
+    loadActivityLogs();
 }
 
 async function uploadWork(id) {
@@ -782,11 +626,44 @@ async function uploadWork(id) {
     }
 
     loadOrders();
+    loadActivityLogs();
 }
 
-/* =====================================
-CHARTS
-===================================== */
+/* =============================================
+   ORDER TIMELINE UPDATE
+   ============================================= */
+async function updateTimeline(orderId) {
+
+    const select = document.getElementById(`timeline-${orderId}`);
+    const stage  = select?.value;
+
+    if (!stage) return;
+
+    try {
+        const res = await fetch(`${API}/orders/timeline/${orderId}`, {
+            method: "PUT",
+            headers: jsonHeaders(),
+            body: JSON.stringify({ timelineStage: stage })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(`Timeline updated: ${stage} ✅`);
+            loadOrders();
+            loadActivityLogs();
+        } else {
+            alert(data.message || "Failed to update timeline");
+        }
+    } catch (err) {
+        console.error("Timeline update error:", err);
+        alert("Network error");
+    }
+}
+
+/* =============================================
+   CHARTS
+   ============================================= */
 let barChartInstance  = null;
 let lineChartInstance = null;
 
@@ -857,16 +734,71 @@ function drawCharts(today, week, month, total) {
     });
 }
 
-/* =====================================
-ADMIN PROFILE
-===================================== */
+/* =============================================
+   ACTIVITY LOGS
+   ============================================= */
+async function loadActivityLogs() {
+
+    const search    = document.getElementById("activitySearchInput")?.value?.trim() || "";
+    const container = document.getElementById("activityLogList");
+
+    if (!container) return;
+
+    try {
+        const url = search
+            ? `${API}/orders/activity-logs?search=${encodeURIComponent(search)}`
+            : `${API}/orders/activity-logs`;
+
+        const res  = await fetch(url, { headers: authHeaders() });
+        const data = await res.json();
+
+        if (!data.success || !data.logs.length) {
+            container.innerHTML = `<div class="activity-log-empty">No activity logs found.</div>`;
+            return;
+        }
+
+        const categoryIcons = {
+            service:  "⚙️",
+            order:    "📋",
+            pricing:  "💰",
+            upload:   "📤",
+            timeline: "🕐"
+        };
+
+        container.innerHTML = data.logs.map(log => {
+
+            const icon    = categoryIcons[log.category] || "📋";
+            const dateStr = new Date(log.createdAt).toLocaleString();
+
+            return `
+            <div class="activity-log-item" data-cat="${log.category}">
+                <div class="activity-log-icon">${icon}</div>
+                <div class="activity-log-body">
+                    <div class="activity-log-action">${log.action}</div>
+                    <div class="activity-log-meta">
+                        ${log.adminName} &nbsp;·&nbsp; ${dateStr}
+                    </div>
+                </div>
+            </div>`;
+
+        }).join("");
+
+    } catch (err) {
+        console.error("Activity log load error:", err);
+        container.innerHTML = `<div class="activity-log-empty">Failed to load activity logs.</div>`;
+    }
+}
+
+/* =============================================
+   ADMIN PROFILE
+   ============================================= */
 async function openAdminProfile() {
 
-    const res = await fetch(`${API}/auth/me`, { headers: authHeaders() });
+    const res  = await fetch(`${API}/auth/me`, { headers: authHeaders() });
     const data = await res.json();
 
     if (data.success) {
-        document.getElementById("adminName").value = data.user.name;
+        document.getElementById("adminName").value       = data.user.name;
         document.getElementById("adminIdentifier").value = data.user.identifier;
     }
 
@@ -878,7 +810,7 @@ function closeAdminProfile() {
 }
 
 async function sendAdminOtp() {
-    const res = await fetch(`${API}/auth/admin-send-otp`, {
+    const res  = await fetch(`${API}/auth/admin-send-otp`, {
         method: "POST",
         headers: jsonHeaders()
     });
@@ -905,9 +837,9 @@ async function changeAdminPassword() {
     if (data.success) closeAdminProfile();
 }
 
-/* =====================================
-TOAST NOTIFICATION
-===================================== */
+/* =============================================
+   TOAST NOTIFICATION
+   ============================================= */
 function showToast(msg) {
     let toast = document.getElementById("adminToast");
 
