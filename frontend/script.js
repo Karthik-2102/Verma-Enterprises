@@ -7,9 +7,44 @@ const BACKEND = "https://verma-enterprises-backend.onrender.com";
 document.addEventListener("DOMContentLoaded", initApp);
 
 function initApp() {
+
+    window.history.pushState(
+        null,
+        null,
+        window.location.href
+    );
+
+    window.onpopstate =
+    function () {
+
+        const token =
+        sessionStorage.getItem(
+            "token"
+        );
+
+        if (!token) {
+
+            location.replace(
+                "index.html"
+            );
+
+        }
+
+    };
+
     hideUserSections();
-    const token = sessionStorage.getItem("token");
-    if (token) enterSite();
+
+    const token =
+    sessionStorage.getItem(
+        "token"
+    );
+
+    if (token) {
+
+        enterSite();
+
+    }
+
 }
 
 function hideUserSections() {
