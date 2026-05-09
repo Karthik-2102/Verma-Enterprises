@@ -611,17 +611,13 @@ async function uploadWork(id) {
 
     const fileInput =
     document.getElementById(
-        `upload-${id}`
+        `work-${id}`
     );
 
     if (
-
         !fileInput ||
-
         !fileInput.files ||
-
-        !fileInput.files[0]
-
+        !fileInput.files.length
     ) {
 
         alert(
@@ -636,37 +632,26 @@ async function uploadWork(id) {
     new FormData();
 
     formData.append(
-
         "workFile",
-
         fileInput.files[0]
-
     );
 
     try {
 
         const res =
         await fetch(
-
             `${API}/orders/upload-work/${id}`,
-
             {
-
-                method:
-                "POST",
+                method: "POST",
 
                 headers: {
-
                     Authorization:
                     getToken()
-
                 },
 
                 body:
                 formData
-
             }
-
         );
 
         const data =
@@ -690,38 +675,22 @@ async function uploadWork(id) {
         );
 
         alert(
-
-            typeof data.message === "string"
-
-            ?
-
-            data.message
-
-            :
-
-            JSON.stringify(
-                data,
-                null,
-                2
-            )
-
+            data.message ||
+            "Upload failed ❌"
         );
 
     }
 
-    catch (err) {
+    catch (error) {
 
         console.error(
-            "Upload Request Failed:",
-            err
+            "Upload Error:",
+            error
         );
 
         alert(
-
-            err.message ||
-
+            error.message ||
             "Upload failed ❌"
-
         );
 
     }

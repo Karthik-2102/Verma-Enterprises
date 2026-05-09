@@ -419,17 +419,13 @@ async function submitService() {
 
     const fileInput =
     document.getElementById(
-        "documents"
+        "fileUpload"
     );
 
     if (
-
         !fileInput ||
-
         !fileInput.files ||
-
         !fileInput.files.length
-
     ) {
 
         alert(
@@ -444,25 +440,17 @@ async function submitService() {
     new FormData();
 
     formData.append(
-
         "serviceId",
-
         currentServiceId
-
     );
 
     Array.from(
-
         fileInput.files
-
     ).forEach(file => {
 
         formData.append(
-
             "documents",
-
             file
-
         );
 
     });
@@ -471,26 +459,18 @@ async function submitService() {
 
         const res =
         await fetch(
-
             `${API}/orders/create`,
-
             {
-
-                method:
-                "POST",
+                method: "POST",
 
                 headers: {
-
                     Authorization:
                     getToken()
-
                 },
 
                 body:
                 formData
-
             }
-
         );
 
         const data =
@@ -516,38 +496,22 @@ async function submitService() {
         );
 
         alert(
-
-            typeof data.message === "string"
-
-            ?
-
-            data.message
-
-            :
-
-            JSON.stringify(
-                data,
-                null,
-                2
-            )
-
+            data.message ||
+            "Upload failed ❌"
         );
 
     }
 
-    catch (err) {
+    catch (error) {
 
         console.error(
-            "User Upload Failed:",
-            err
+            "User Upload Error:",
+            error
         );
 
         alert(
-
-            err.message ||
-
+            error.message ||
             "Upload failed ❌"
-
         );
 
     }
