@@ -566,7 +566,8 @@ async function loadUserOrders() {
 
         /* File URL — Cloudinary returns full https URL; legacy path needs BACKEND prefix */
         const fw  = order.finalWorkFile || "";
-        const fwHref = fw.startsWith("http") ? fw : fw ? `${BACKEND}/${fw}` : "";
+        const fwRaw = fw.startsWith("http") ? fw : fw ? `${BACKEND}/${fw}` : "";
+        const fwHref = fwRaw ? (fwRaw.includes("/raw/upload/") ? `https://docs.google.com/viewer?url=${encodeURIComponent(fwRaw)}&embedded=true` : fwRaw) : "";
 
         const card = document.createElement("div");
         card.className = "order-card-small";
