@@ -26,17 +26,27 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/orders", orderRoutes);
 
 /* Upload Error Handling */
+/* Upload Error Handling */
 app.use((error, req, res, next) => {
 
-    console.error("Upload Error:", error.message);
+    console.error("Upload Error Full Object:", error);
 
-    if (error.stack) {
-        console.error(error.stack);
-    }
+    console.error(
+        "Upload Error JSON:",
+        JSON.stringify(error, null, 2)
+    );
+
+    console.error(
+        "Upload Error Stack:",
+        error?.stack || "No stack available"
+    );
 
     return res.status(500).json({
         success: false,
-        message: error.message || "Upload failed"
+        message:
+            error?.message ||
+            error?.error?.message ||
+            "Upload failed"
     });
 
 });
