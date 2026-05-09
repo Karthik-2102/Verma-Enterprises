@@ -33,12 +33,10 @@ async function createOrder(req, res) {
 
     } catch (err) {
         console.error(
-            "Create order error;",
-            JSON.stringify(
-                err,
-                null,
-                2,
-            )
+            "Upload work error:",
+            err.message || err,
+            err.stack || ""
+            
         );
         res.status(500).json({ success: false, message: "Server error" });
     }

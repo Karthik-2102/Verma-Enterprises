@@ -25,6 +25,22 @@ app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/orders", orderRoutes);
 
+/* Upload Error Handling */
+app.use((error, req, res, next) => {
+
+    console.error("Upload Error:", error.message);
+
+    if (error.stack) {
+        console.error(error.stack);
+    }
+
+    return res.status(500).json({
+        success: false,
+        message: error.message || "Upload failed"
+    });
+
+});
+
 /* Database Connection */
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("MongoDB Connected"))
