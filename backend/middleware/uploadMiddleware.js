@@ -14,8 +14,8 @@ function sanitizeFileName(originalName) {
 /* Detect correct Cloudinary resource_type by mimetype */
 function getResourceType(mimetype) {
 
-    /* PDFs should be uploaded as image for browser preview support */
-    if (mimetype === "application/pdf") return "image";
+    /* Keep PDFs as raw for stable uploads */
+    if (mimetype === "application/pdf") return "raw";
 
     if (mimetype.startsWith("image/")) return "image";
 
