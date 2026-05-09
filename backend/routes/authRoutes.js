@@ -160,7 +160,7 @@ router.post("/login", async (req, res) => {
 
             return res.json({
 
-                success:false,
+                success: false,
 
                 message:
                 "User not found ❌"
@@ -182,7 +182,7 @@ router.post("/login", async (req, res) => {
 
             return res.json({
 
-                success:false,
+                success: false,
 
                 message:
                 "Wrong password ❌"
@@ -191,25 +191,35 @@ router.post("/login", async (req, res) => {
 
         }
 
+        /* Generate JWT Token */
+
         const token =
-        jwt.sign({
+        jwt.sign(
 
-            id:
-            user._id,
+            {
 
-            role:
-            user.role
+                id:
+                user._id,
 
-        },
-        "secret123",
-        {
-            expiresIn:
-            "1d"
-        });
+                role:
+                user.role
+
+            },
+
+            "verma_enterprises_secure_2003",
+
+            {
+
+                expiresIn:
+                "1d"
+
+            }
+
+        );
 
         res.json({
 
-            success:true,
+            success: true,
 
             token,
 
@@ -218,13 +228,15 @@ router.post("/login", async (req, res) => {
 
         });
 
-    } catch(err){
+    }
+
+    catch (err) {
 
         console.error(err);
 
         res.json({
 
-            success:false,
+            success: false,
 
             message:
             "Server error ❌"
@@ -321,6 +333,53 @@ router.post("/reset-password", async (req, res) => {
 
             message:
             "Server error ❌"
+
+        });
+
+    }
+
+});
+
+/* Current User Profile */
+
+router.get("/me", auth, async (req, res) => {
+
+    try {
+
+        const user =
+        await User.findById(
+            req.user.id
+        ).select("-password");
+
+        if (!user) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message: "User not found"
+
+            });
+
+        }
+
+        res.json({
+
+            success: true,
+
+            user
+
+        });
+
+    }
+
+    catch (error) {
+
+        res.status(500).json({
+
+            success: false,
+
+            message: "Server error"
 
         });
 

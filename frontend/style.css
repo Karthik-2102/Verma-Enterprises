@@ -3102,3 +3102,27 @@ input, select {
         font-size: 16px;
     }
 }
+@media (max-width: 768px) {
+
+    .auth-badges {
+
+        display: grid;
+
+        grid-template-columns:
+        repeat(2, 1fr);
+
+        gap: 8px;
+
+    }
+
+    .auth-badge {
+
+        min-width: unset;
+
+        width: 100%;
+
+        padding: 10px;
+
+    }
+
+}
