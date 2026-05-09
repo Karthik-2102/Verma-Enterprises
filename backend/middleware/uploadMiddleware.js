@@ -5,10 +5,18 @@ const cloudinary = require("../config/cloudinary");
 /* Sanitize file name — allows any name, removes unsafe characters */
 function sanitizeFileName(originalName) {
     return originalName
-        .replace(/\s+/g, "_")           /* spaces → underscore */
+        .replace(/\s+/g, "_")            /* spaces → underscore */
         .replace(/[^a-zA-Z0-9._\-]/g, "") /* remove unsafe special chars */
-        .replace(/_{2,}/g, "_")          /* collapse multiple underscores */
+        .replace(/_{2,}/g, "_")           /* collapse multiple underscores */
         .toLowerCase();
+}
+
+/* Detect correct Cloudinary resource_type by mimetype */
+function getResourceType(mimetype) {
+    if (mimetype === "application/pdf")              return "raw";
+    if (mimetype.startsWith("image/"))               return "image";
+    if (mimetype.startsWith("video/"))               return "video";
+    return "raw"; /* fallback for docs, etc. */
 }
 
 /* Upload Storage Configuration */
@@ -20,21 +28,41 @@ const storage = new CloudinaryStorage({
         );
         return {
             folder:        "verma-enterprises",
-            resource_type: "auto",
+            resource_type: getResourceType(file.mimetype),
             public_id:     `${safeName}_${Date.now()}`
         };
     }
 });
 
+/* File Filter — accept PDF, JPG, PNG, JPEG, WEBP */
+function fileFilter(req, file, cb) {
+    const allowedTypes = [
+        "application/pdf",
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp"
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);  /* accept */
+    } else {
+        cb(new Error(
+            `File type not supported. Allowed: PDF, JPG, PNG, WEBP. Got: ${file.mimetype}`
+        ), false);
+    }
+}
+
 const upload = multer({
     storage,
     limits: {
         fileSize: 10 * 1024 * 1024  /* 10 MB */
-    }
+    },
+    fileFilter
 });
 
-/* Password-protected PDF error handler middleware */
-/* Use this AFTER your upload route middleware */
+/* Upload Error Handler Middleware */
+/* Use this AFTER all routes in server.js */
 function handleUploadError(err, req, res, next) {
 
     console.error("Upload Error Full Object:", err);
@@ -57,6 +85,14 @@ function handleUploadError(err, req, res, next) {
         return res.status(400).json({
             success: false,
             message: "This file appears to be corrupted or is not a valid PDF. Please try a different file."
+        });
+    }
+
+    /* Unsupported file type */
+    if (err?.message?.toLowerCase().includes("file type not supported")) {
+        return res.status(400).json({
+            success: false,
+            message: err.message
         });
     }
 
