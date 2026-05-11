@@ -12,7 +12,7 @@ const SERVICE_CATEGORIES = [
     "Education Services",
     "Printing Services",
     "ID Card Services",
-    "Banking Services"
+    "Pension & Welfare Services"
 ];
 
 const TIMELINE_STAGES = [
@@ -266,7 +266,6 @@ function renderServiceList(services) {
 }
 
 async function addService() {
-
     const appCharge  = parseFloat(document.getElementById("applicationCharge").value) || 0;
     const servCharge = parseFloat(document.getElementById("serviceCharge").value) || 0;
     const category   = document.getElementById("serviceCategory")?.value || "Government Services";
@@ -288,30 +287,35 @@ async function addService() {
         return alert("Please enter service name ❌");
     }
 
-    const res = await fetch(`${API}/services/create`, {
-        method: "POST",
-        headers: jsonHeaders(),
-        body: JSON.stringify(payload)
-    });
+    try {
+        const res = await fetch(`${API}/services/create`, {
+            method: "POST",
+            headers: jsonHeaders(),
+            body: JSON.stringify(payload)
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (data.success || data._id) {
-        showToast("Service added successfully ✅");
+        if (data.success || data._id) {
+            showToast("Service added successfully ✅");
 
-        document.getElementById("name").value = "";
-        document.getElementById("applicationCharge").value = "";
-        document.getElementById("serviceCharge").value = "";
-        document.getElementById("documents").value = "";
-        document.getElementById("totalPriceDisplay").textContent = "0";
-        if (document.getElementById("serviceCategory")) {
-            document.getElementById("serviceCategory").value = "Government Services";
+            document.getElementById("name").value = "";
+            document.getElementById("applicationCharge").value = "";
+            document.getElementById("serviceCharge").value = "";
+            document.getElementById("documents").value = "";
+            document.getElementById("totalPriceDisplay").textContent = "0";
+            if (document.getElementById("serviceCategory")) {
+                document.getElementById("serviceCategory").value = "Government Services";
+            }
+
+            loadServices();
+            loadActivityLogs();
+        } else {
+            alert(data.message || "Failed to add service ❌");
         }
-
-        loadServices();
-        loadActivityLogs();
-    } else {
-        alert(data.message || "Failed to add service ❌");
+    } catch (err) {
+        console.error("Add service failed:", err);
+        alert("Network error. Please check your connection ❌");
     }
 }
 

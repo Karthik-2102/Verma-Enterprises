@@ -8,9 +8,9 @@ const SERVICE_CATEGORIES = [
 
     "Printing Services",
 
-    "Banking Services",
+    "Id Card Services",
 
-    "Documentation Services"
+    "Pension & Welfare Services",
 
 ];
 
