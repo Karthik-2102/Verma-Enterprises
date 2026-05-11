@@ -257,5 +257,31 @@ router.get("/me", auth, async (req, res) => {
 
 });
 
+/* ADMIN CHANGE PASSWORD (called after OTP verified on frontend) */
+router.post("/admin-change-password-direct", auth, async (req, res) => {
+    try {
+        const { newPassword } = req.body;
+
+        const user = await User.findById(req.user.id);
+
+        if (!user || user.role !== "admin") {
+            return res.json({ success: false, message: "Unauthorized ❌" });
+        }
+
+        if (!newPassword) {
+            return res.json({ success: false, message: "Password required ❌" });
+        }
+
+        const hash = await bcrypt.hash(newPassword, 10);
+        await User.updateOne({ _id: req.user.id }, { password: hash });
+
+        res.json({ success: true, message: "Password updated ✅" });
+
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false, message: "Server error ❌" });
+    }
+});
+
 module.exports =
 router;

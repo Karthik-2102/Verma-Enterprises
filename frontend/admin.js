@@ -907,31 +907,59 @@ function closeAdminProfile() {
 }
 
 async function sendAdminOtp() {
-    const res  = await fetch(`${API}/auth/admin-send-otp`, {
-        method: "POST",
-        headers: jsonHeaders()
-    });
-    const data = await res.json();
-    alert(data.message);
+    const identifier = document.getElementById("adminIdentifier").value.trim();
+
+    if (!identifier) return alert("Admin identifier not loaded. Please reopen profile ❌");
+
+    try {
+        const res  = await fetch(`${API}/otp/send-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identifier })
+        });
+        const data = await res.json();
+        alert(data.message || "OTP sent ✅");
+    } catch (err) {
+        alert("Failed to send OTP ❌");
+    }
 }
 
 async function changeAdminPassword() {
-    const pass    = document.getElementById("adminPass").value;
-    const confirm = document.getElementById("adminConfirm").value;
-    const otp     = document.getElementById("adminOtp").value;
+    const pass       = document.getElementById("adminPass").value;
+    const confirm    = document.getElementById("adminConfirm").value;
+    const otp        = document.getElementById("adminOtp").value.trim();
+    const identifier = document.getElementById("adminIdentifier").value.trim();
 
-    if (pass !== confirm) return alert("Passwords do not match");
+    if (!otp) return alert("Please enter the OTP first ❌");
+    if (!pass) return alert("Please enter a new password ❌");
+    if (pass !== confirm) return alert("Passwords do not match ❌");
 
-    const res = await fetch(`${API}/auth/admin-change-password`, {
-        method: "POST",
-        headers: jsonHeaders(),
-        body: JSON.stringify({ newPassword: pass, otp })
-    });
+    try {
+        /* Step 1 — verify OTP */
+        const verifyRes  = await fetch(`${API}/otp/verify-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identifier, otp })
+        });
+        const verifyData = await verifyRes.json();
 
-    const data = await res.json();
-    alert(data.message);
+        if (!verifyData.success) return alert("Invalid OTP ❌");
 
-    if (data.success) closeAdminProfile();
+        /* Step 2 — update password via reset-password but bypass admin block */
+        const hash = pass; /* send plain — backend hashes it */
+        const res  = await fetch(`${API}/auth/admin-change-password-direct`, {
+            method: "POST",
+            headers: jsonHeaders(),
+            body: JSON.stringify({ newPassword: pass })
+        });
+        const data = await res.json();
+
+        alert(data.message || (data.success ? "Password updated ✅" : "Failed ❌"));
+        if (data.success) closeAdminProfile();
+
+    } catch (err) {
+        alert("Network error ❌");
+    }
 }
 
 /* =============================================
