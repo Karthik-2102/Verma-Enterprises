@@ -1,17 +1,11 @@
 const mongoose = require("mongoose");
 
 const SERVICE_CATEGORIES = [
-
     "Government Services",
-
     "Education Services",
-
     "Printing Services",
-
-    "Id Card Services",
-
+    "ID Card Services",
     "Pension & Welfare Services",
-
 ];
 
 /* Service Schema */
