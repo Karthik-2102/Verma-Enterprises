@@ -706,3 +706,57 @@ function scrollToSection(id) {
         document.getElementById("overlay")?.classList.remove("active");
     }
 }
+/* =============================================
+   ADMIN FORGOT PASSWORD
+   ============================================= */
+function showAdminReset() {
+    document.getElementById("adminForgotBox").classList.remove("hidden");
+}
+
+function closeAdminForgot() {
+    document.getElementById("adminForgotBox").classList.add("hidden");
+    document.getElementById("adminFpIdentifier").value  = "";
+    document.getElementById("adminFpOtp").value          = "";
+    document.getElementById("adminFpNewPassword").value  = "";
+}
+
+async function sendAdminForgotOtp() {
+    const identifier = document.getElementById("adminFpIdentifier").value.trim();
+
+    if (!identifier) return alert("Please enter admin email ❌");
+
+    try {
+        const res  = await fetch(`${API}/auth/admin-forgot-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identifier })
+        });
+        const data = await res.json();
+        alert(data.message);
+    } catch (err) {
+        alert("Network error ❌");
+    }
+}
+
+async function resetAdminPassword() {
+    const identifier  = document.getElementById("adminFpIdentifier").value.trim();
+    const otp         = document.getElementById("adminFpOtp").value.trim();
+    const newPassword = document.getElementById("adminFpNewPassword").value;
+
+    if (!identifier) return alert("Please enter admin email ❌");
+    if (!otp)        return alert("Please enter OTP first ❌");
+    if (!newPassword) return alert("Please enter new password ❌");
+
+    try {
+        const res  = await fetch(`${API}/auth/admin-forgot-reset`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identifier, otp, newPassword })
+        });
+        const data = await res.json();
+        alert(data.message);
+        if (data.success) closeAdminForgot();
+    } catch (err) {
+        alert("Network error ❌");
+    }
+}

@@ -131,6 +131,8 @@
         <input id="newPassword" type="password" placeholder="New Password">
         <button onclick="resetPassword()">Reset Password</button>
         <button onclick="closeForgot()">Close</button>
+        <p class="auth-link-red" onclick="showAdminReset()" style="font-size:13px;opacity:0.7;">Admin? Reset Password
+        </p>
     </div>
     <!-- USER DASHBOARD -->
     <section id="mainPage" class="dashboard hidden">
@@ -317,7 +319,27 @@
             <button class="profile-close-btn" onclick="closeProfileModal()">Close</button>
         </div>
     </div>
-
+    <!-- Admin Forgot Password Modal -->
+    <div id="adminForgotBox" class="modal hidden">
+        <div class="profile-modal-box">
+            <h2>Admin Password Reset</h2>
+            <div class="auth-input-wrap">
+                <span class="auth-input-icon">📧</span>
+                <input id="adminFpIdentifier" type="text" placeholder="Admin Email">
+            </div>
+            <button class="profile-save-btn" onclick="sendAdminForgotOtp()">Send OTP</button>
+            <div class="auth-input-wrap" style="margin-top:12px;">
+                <span class="auth-input-icon">🔑</span>
+                <input id="adminFpOtp" type="text" placeholder="Enter OTP">
+            </div>
+            <div class="auth-input-wrap">
+                <span class="auth-input-icon">🔒</span>
+                <input id="adminFpNewPassword" type="password" placeholder="New Password">
+            </div>
+            <button class="profile-save-btn" onclick="resetAdminPassword()">Reset Password</button>
+            <button class="profile-close-btn" onclick="closeAdminForgot()">Close</button>
+        </div>
+    </div>
     <script src="script.js"></script>
 
 </body>

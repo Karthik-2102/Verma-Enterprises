@@ -283,5 +283,82 @@ router.post("/admin-change-password-direct", auth, async (req, res) => {
     }
 });
 
+/* ADMIN FORGOT PASSWORD — Send OTP */
+router.post("/admin-forgot-otp", async (req, res) => {
+    try {
+        const { identifier } = req.body;
+
+        if (!identifier) {
+            return res.json({ success: false, message: "Email required ❌" });
+        }
+
+        const user = await User.findOne({ identifier: identifier.trim().toLowerCase() });
+
+        if (!user || user.role !== "admin") {
+            return res.json({ success: false, message: "Admin account not found ❌" });
+        }
+
+        const { Resend } = require("resend");
+        const resend = new Resend(process.env.RESEND_API_KEY);
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        await Otp.create({ identifier: identifier.trim().toLowerCase(), otp });
+
+        await resend.emails.send({
+            from: "Verma Enterprises <onboarding@resend.dev>",
+            to: identifier,
+            subject: "Admin Password Reset OTP - Verma Enterprises",
+            html: `
+                <div style="font-family:Arial,sans-serif;padding:30px;background:#f8f8f8;border-radius:12px;max-width:500px;margin:auto;border:1px solid #e5e5e5;">
+                    <h2 style="color:#D0060D;">Verma Enterprises — Admin Reset</h2>
+                    <p style="color:#333;font-size:16px;">Your password reset OTP:</p>
+                    <h1 style="font-size:32px;letter-spacing:4px;color:#111;margin:15px 0;">${otp}</h1>
+                    <p style="color:#666;font-size:14px;">Valid for 5 minutes. Do not share this with anyone.</p>
+                </div>
+            `
+        });
+
+        res.json({ success: true, message: "OTP sent to admin email ✅" });
+
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false, message: "Server error ❌" });
+    }
+});
+
+/* ADMIN FORGOT PASSWORD — Verify OTP + Reset */
+router.post("/admin-forgot-reset", async (req, res) => {
+    try {
+        let { identifier, otp, newPassword } = req.body;
+
+        identifier = identifier?.trim()?.toLowerCase();
+
+        if (!identifier || !otp || !newPassword) {
+            return res.json({ success: false, message: "All fields required ❌" });
+        }
+
+        const user = await User.findOne({ identifier });
+        if (!user || user.role !== "admin") {
+            return res.json({ success: false, message: "Admin account not found ❌" });
+        }
+
+        const valid = await Otp.findOne({ identifier, otp });
+        if (!valid) {
+            return res.json({ success: false, message: "Invalid OTP ❌" });
+        }
+
+        const hash = await bcrypt.hash(newPassword, 10);
+        await User.updateOne({ identifier }, { password: hash });
+        await Otp.deleteMany({ identifier });
+
+        res.json({ success: true, message: "Password reset successfully ✅" });
+
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false, message: "Server error ❌" });
+    }
+});
+
 module.exports =
 router;
