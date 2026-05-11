@@ -151,8 +151,13 @@ async function login() {
 /* =============================================
    FORGOT PASSWORD
    ============================================= */
-function showForgot()  { document.getElementById("forgotBox").classList.remove("hidden"); }
-function closeForgot() { document.getElementById("forgotBox").classList.add("hidden"); }
+function showForgot() {
+    closeAdminForgot();
+    document.getElementById("forgotBox").classList.remove("hidden");
+}
+function closeForgot() {
+    document.getElementById("forgotBox").classList.add("hidden");
+}
 
 async function resetPassword() {
     const identifier  = document.getElementById("fpIdentifier").value.trim();
@@ -709,20 +714,27 @@ function scrollToSection(id) {
 /* =============================================
    ADMIN FORGOT PASSWORD
    ============================================= */
+/* =============================================
+   ADMIN FORGOT PASSWORD
+   ============================================= */
 function showAdminReset() {
+    closeForgot();
     document.getElementById("adminForgotBox").classList.remove("hidden");
 }
 
 function closeAdminForgot() {
-    document.getElementById("adminForgotBox").classList.add("hidden");
-    document.getElementById("adminFpIdentifier").value  = "";
-    document.getElementById("adminFpOtp").value          = "";
-    document.getElementById("adminFpNewPassword").value  = "";
+    const box = document.getElementById("adminForgotBox");
+    if (box) box.classList.add("hidden");
+    const id  = document.getElementById("adminFpIdentifier");
+    const otp = document.getElementById("adminFpOtp");
+    const pw  = document.getElementById("adminFpNewPassword");
+    if (id)  id.value  = "";
+    if (otp) otp.value = "";
+    if (pw)  pw.value  = "";
 }
 
 async function sendAdminForgotOtp() {
     const identifier = document.getElementById("adminFpIdentifier").value.trim();
-
     if (!identifier) return alert("Please enter admin email ❌");
 
     try {
@@ -743,8 +755,8 @@ async function resetAdminPassword() {
     const otp         = document.getElementById("adminFpOtp").value.trim();
     const newPassword = document.getElementById("adminFpNewPassword").value;
 
-    if (!identifier) return alert("Please enter admin email ❌");
-    if (!otp)        return alert("Please enter OTP first ❌");
+    if (!identifier)  return alert("Please enter admin email ❌");
+    if (!otp)         return alert("Please enter OTP first ❌");
     if (!newPassword) return alert("Please enter new password ❌");
 
     try {

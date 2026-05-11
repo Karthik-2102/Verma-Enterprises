@@ -3450,3 +3450,51 @@ input, select {
     }
 
 }
+/* =============================================================
+   ADMIN FORGOT PASSWORD MODAL
+   ============================================================= */
+#adminForgotBox .profile-modal-box {
+    max-width: 460px;
+    width: min(92%, 460px);
+}
+
+#adminForgotBox .profile-modal-box h2 {
+    font-size: 22px;
+    margin-bottom: 6px;
+    color: #fff;
+}
+
+#adminForgotBox .profile-save-btn {
+    background: linear-gradient(90deg, #2C4550, #3E5E68);
+    color: #fff;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    transition: .25s;
+}
+
+#adminForgotBox .profile-save-btn:hover {
+    transform: translateY(-2px);
+}
+
+#adminForgotBox .profile-close-btn {
+    background: linear-gradient(90deg, #A00005, #D0060D);
+    color: #fff;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    transition: .25s;
+    margin-top: 4px;
+}
+
+#adminForgotBox .profile-close-btn:hover {
+    transform: translateY(-2px);
+}
