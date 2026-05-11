@@ -23,114 +23,45 @@ function normalizeIdentifier(identifier){
 /* REGISTER */
 
 router.post("/register", async (req, res) => {
-
     try {
+        let { name, identifier, password } = req.body;
 
-        let {
-            name,
-            identifier,
-            password,
-            otp
-        } = req.body;
+        identifier = identifier?.trim()?.toLowerCase();
 
-        identifier =
-        identifier
-        ?.trim()
-        ?.toLowerCase();
+        const isEmail  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+        const isMobile = /^[6-9]\d{9}$/.test(identifier);
 
-        const valid =
-        await Otp.findOne({
-
-            identifier,
-
-            otp
-
-        });
-
-        if (!valid) {
-
+        if (!isEmail && !isMobile) {
             return res.json({
-
-                success:false,
-
-                message:
-                "Invalid OTP ❌"
-
+                success: false,
+                message: "Enter a valid email or 10-digit mobile number ❌"
             });
-
         }
 
-        const existing =
-        await User.findOne({
+        if (!name || !password) {
+            return res.json({ success: false, message: "All fields required ❌" });
+        }
 
-            identifier
-
-        });
-
+        const existing = await User.findOne({ identifier });
         if (existing) {
-
-            return res.json({
-
-                success:false,
-
-                message:
-                "User already exists ❌"
-
-            });
-
+            return res.json({ success: false, message: "User already exists ❌" });
         }
 
-        const hash =
-        await bcrypt.hash(
-            password,
-            10
-        );
+        const hash = await bcrypt.hash(password, 10);
 
         await User.create({
-
-            name:
-            name.trim(),
-
+            name: name.trim(),
             identifier,
-
-            password:
-            hash,
-
-            role:
-            "user"
-
+            password: hash,
+            role: "user"
         });
 
-        await Otp.deleteMany({
+        res.json({ success: true, message: "Registered successfully ✅" });
 
-            identifier
-
-        });
-
-        res.json({
-
-            success:true,
-
-            message:
-            "Registered successfully ✅"
-
-        });
-
-    } catch(err){
-
+    } catch (err) {
         console.error(err);
-
-        res.json({
-
-            success:false,
-
-            message:
-            "Server error ❌"
-
-        });
-
+        res.json({ success: false, message: "Server error ❌" });
     }
-
 });
 
 /* LOGIN */
@@ -250,94 +181,33 @@ router.post("/login", async (req, res) => {
 /* RESET PASSWORD */
 
 router.post("/reset-password", async (req, res) => {
-
     try {
+        let { identifier, newPassword } = req.body;
 
-        let {
-            identifier,
-            otp,
-            newPassword
-        } = req.body;
+        identifier = normalizeIdentifier(identifier);
 
-        identifier =
-        normalizeIdentifier(
-            identifier
-        );
-
-        const valid =
-        await Otp.findOne({
-
-            identifier,
-
-            otp
-
-        });
-
-        if (!valid) {
-
-            return res.json({
-
-                success:false,
-
-                message:
-                "Invalid OTP ❌"
-
-            });
-
+        if (!identifier || !newPassword) {
+            return res.json({ success: false, message: "All fields required ❌" });
         }
 
-        const hash =
-        await bcrypt.hash(
+        const user = await User.findOne({ identifier });
+        if (!user) {
+            return res.json({ success: false, message: "User not found ❌" });
+        }
 
-            newPassword,
+        if (user.role === "admin") {
+            return res.json({ success: false, message: "Admin must use the admin panel ❌" });
+        }
 
-            10
+        const hash = await bcrypt.hash(newPassword, 10);
+        await User.updateOne({ identifier }, { password: hash });
 
-        );
+        res.json({ success: true, message: "Password updated ✅" });
 
-        await User.updateOne(
-
-            {
-                identifier
-            },
-
-            {
-                password:
-                hash
-            }
-
-        );
-
-        await Otp.deleteMany({
-
-            identifier
-
-        });
-
-        res.json({
-
-            success:true,
-
-            message:
-            "Password updated ✅"
-
-        });
-
-    } catch(err){
-
+    } catch (err) {
         console.error(err);
-
-        res.json({
-
-            success:false,
-
-            message:
-            "Server error ❌"
-
-        });
-
+        res.json({ success: false, message: "Server error ❌" });
     }
-
 });
 
 /* Current User Profile */

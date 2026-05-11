@@ -105,19 +105,12 @@
 
                 <div class="auth-input-wrap">
                     <span class="auth-input-icon">📧</span>
-                    <input id="signupIdentifier" type="text" placeholder="Email or Mobile">
+                    <input id="signupIdentifier" type="text" placeholder="Email or Mobile Number">
                 </div>
 
                 <div class="auth-input-wrap">
                     <span class="auth-input-icon">🔒</span>
                     <input id="signupPassword" type="password" placeholder="Create Password">
-                </div>
-
-                <button class="auth-btn auth-btn-outline" onclick="sendOTP('signup')">Send OTP</button>
-
-                <div class="auth-input-wrap">
-                    <span class="auth-input-icon">🔑</span>
-                    <input id="signupOtp" type="text" placeholder="Enter OTP">
                 </div>
 
                 <button class="auth-btn" onclick="register()">Register</button>
@@ -135,13 +128,10 @@
     <!-- FORGOT PASSWORD -->
     <div id="forgotBox" class="hidden">
         <input id="fpIdentifier" type="text" placeholder="Email or Mobile">
-        <button onclick="sendOTP('forgot')">Send OTP</button>
-        <input id="fpOtp" type="text" placeholder="Enter OTP">
         <input id="newPassword" type="password" placeholder="New Password">
         <button onclick="resetPassword()">Reset Password</button>
         <button onclick="closeForgot()">Close</button>
     </div>
-
     <!-- USER DASHBOARD -->
     <section id="mainPage" class="dashboard hidden">
 

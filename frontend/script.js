@@ -107,14 +107,19 @@ async function register() {
     const name       = document.getElementById("name").value.trim();
     const identifier = document.getElementById("signupIdentifier").value.trim();
     const password   = document.getElementById("signupPassword").value;
-    const otp        = document.getElementById("signupOtp").value.trim();
 
-    if (!name || !identifier || !password || !otp)
+    if (!name || !identifier || !password)
         return alert("Please fill all fields ❌");
+
+    const isEmail  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+    const isMobile = /^[6-9]\d{9}$/.test(identifier);
+
+    if (!isEmail && !isMobile)
+        return alert("Enter a valid email or 10-digit mobile number ❌");
 
     const res  = await fetch(`${API}/auth/register`, {
         method: "POST", headers: jsonHeaders(),
-        body: JSON.stringify({ name, identifier, password, otp })
+        body: JSON.stringify({ name, identifier, password })
     });
     const data = await res.json();
 
@@ -151,14 +156,13 @@ function closeForgot() { document.getElementById("forgotBox").classList.add("hid
 
 async function resetPassword() {
     const identifier  = document.getElementById("fpIdentifier").value.trim();
-    const otp         = document.getElementById("fpOtp").value.trim();
     const newPassword = document.getElementById("newPassword").value;
 
-    if (!identifier || !otp || !newPassword) return alert("Please fill all fields ❌");
+    if (!identifier || !newPassword) return alert("Please fill all fields ❌");
 
     const res  = await fetch(`${API}/auth/reset-password`, {
         method: "POST", headers: jsonHeaders(),
-        body: JSON.stringify({ identifier, otp, newPassword })
+        body: JSON.stringify({ identifier, newPassword })
     });
     const data = await res.json();
 
@@ -212,7 +216,7 @@ const SERVICE_CATEGORIES = [
     "Education Services",
     "Printing Services",
     "ID Card Services",
-    "Banking Services"
+    "Pension & Welfare Services"
 ];
 
 async function loadServices() {
