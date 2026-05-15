@@ -1,5 +1,5 @@
-const API     = "https://verma-enterprises-backend.onrender.com/api";
-const BACKEND = "https://verma-enterprises-backend.onrender.com";
+const API     = "https://artistic-respect-production-e47c.up.railway.app/api";
+const BACKEND = "https://artistic-respect-production-e47c.up.railway.app";
 
 /* Resolve file URL — handles both Cloudinary (full https) and legacy local paths */
 function resolveFileURL(path) {
