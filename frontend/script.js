@@ -657,7 +657,7 @@ async function downloadInvoice(id) {
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement("a");
-        a.href = url; a.download = `Verma-Invoice-${id}.pdf`; a.click();
+        a.href = url; a.download = `Verma Enterprises-Invoice-${id}.pdf`; a.click();
         URL.revokeObjectURL(url);
     } catch { alert("Failed to download invoice ❌"); }
 }
@@ -711,9 +711,7 @@ function scrollToSection(id) {
         document.getElementById("overlay")?.classList.remove("active");
     }
 }
-/* =============================================
-   ADMIN FORGOT PASSWORD
-   ============================================= */
+
 /* =============================================
    ADMIN FORGOT PASSWORD
    ============================================= */

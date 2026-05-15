@@ -221,7 +221,7 @@ async function downloadInvoice(req, res) {
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
             "Content-Disposition",
-            `attachment; filename="Verma-Invoice-${invoiceNo}.pdf"`
+            `attachment; filename="VermaEnterprises-Invoice-${invoiceNo}.pdf"`
         );
         doc.pipe(res);
 
@@ -275,10 +275,10 @@ async function downloadInvoice(req, res) {
            .text("Verma Enterprises", doc.page.width - 260, y + 18);
 
         doc.fontSize(9).font("Helvetica").fillColor("#444444")
-           .text("Tinphediya Chowk, Bagaha-Harnatand Road", doc.page.width - 260, y + 34)
+           .text("Dasarthapur Chowk, Mangalpur Road", doc.page.width - 260, y + 34)
            .text("West Champaran, Bihar — 845105", doc.page.width - 260, y + 48)
-           .text("+91 95768 82823", doc.page.width - 260, y + 62)
-           .text("vermaenterprises@gmail.com", doc.page.width - 260, y + 76);
+           .text("+91 95768 82823(WhatsApp), 9546853220", doc.page.width - 260, y + 62)
+           .text("karthikvikash02@gmail.com", doc.page.width - 260, y + 76);
 
         /* ---- TABLE HEADER ---- */
         const tableTop = y + 110;
@@ -352,8 +352,8 @@ async function downloadInvoice(req, res) {
 
         doc.fontSize(9).font("Helvetica").fillColor("#99BABB")
            .text("Thank you for choosing Verma Enterprises.", 50, footY + 14, { align: "center", width: doc.page.width - 100 })
-           .text("Mon–Sat · 10 AM – 7 PM  |  +91 95768 82823  |  vermaenterprises@gmail.com", 50, footY + 30, { align: "center", width: doc.page.width - 100 })
-           .text("Tinphediya Chowk, Bagaha-Harnatand Road, West Champaran, Bihar 845105", 50, footY + 46, { align: "center", width: doc.page.width - 100 });
+           .text("Mon–Sat · 10 AM – 7 PM  |  +91 95768 82823(WhatsApp), 9546853220  |  karthikvikash02@gmail.com", 50, footY + 30, { align: "center", width: doc.page.width - 100 })
+           .text("Dasarthapur Chowk, Mangalpur Road, West Champaran, Bihar 845105", 50, footY + 46, { align: "center", width: doc.page.width - 100 });
 
         doc.end();
 
