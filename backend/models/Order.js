@@ -56,7 +56,14 @@ const orderSchema = new mongoose.Schema({
         default: ""
     }
 
-}, { timestamps: true });
+}, {
+    timestamps: true
+});
+
+/* Performance Indexes */
+orderSchema.index({ user: 1 });
+orderSchema.index({ status: 1 });
+orderSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("Order", orderSchema);
 module.exports.TIMELINE_STAGES = TIMELINE_STAGES;

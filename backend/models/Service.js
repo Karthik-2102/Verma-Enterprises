@@ -54,6 +54,10 @@ new mongoose.Schema({
     timestamps: true
 });
 
+/* Performance Indexes */
+serviceSchema.index({ name: 1 });
+serviceSchema.index({ category: 1 });
+
 /* Reuse Existing Model */
 
 const Service =

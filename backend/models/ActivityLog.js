@@ -36,6 +36,9 @@ const activityLogSchema = new mongoose.Schema({
     timestamps: true
 });
 
+/* Performance Index */
+activityLogSchema.index({ createdAt: -1 });
+
 module.exports =
 
 mongoose.models.ActivityLog ||
