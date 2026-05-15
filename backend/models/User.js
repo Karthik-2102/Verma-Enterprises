@@ -32,9 +32,6 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-/* Performance Index */
-userSchema.index({ identifier: 1 });
-
 /* Prevent Model Overwrite */
 
 const User =

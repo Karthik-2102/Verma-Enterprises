@@ -66,7 +66,7 @@ function fileFilter(req, file, cb) {
 const upload = multer({
     storage,
     limits: {
-        fileSize: 10 * 1024 * 1024  /* 10 MB */
+        fileSize: 5 * 1024 * 1024 /* 5 MB limit */
     },
     fileFilter
 });
@@ -80,6 +80,12 @@ function handleUploadError(err, req, res, next) {
     console.error("Upload Error Stack:", err?.stack || "No stack available");
 
     /* Password-protected PDF */
+    if (err?.message === "Request aborted") {
+    return res.status(400).json({
+        success: false,
+        message: "Upload was interrupted. Please try again."
+    });
+}
     if (
         err?.message?.toLowerCase().includes("password") ||
         err?.message?.toLowerCase().includes("password-protected")
