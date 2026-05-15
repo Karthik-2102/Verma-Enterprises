@@ -1,10 +1,14 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-require("dotenv").config();
 const compression = require("compression");
-app.use(compression());
+
+require("dotenv").config();
+
 const app = express();
+
+/* Performance Middleware */
+app.use(compression());
 
 /* Route Modules */
 const otpRoutes = require("./routes/otpRoutes");
