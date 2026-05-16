@@ -31,49 +31,105 @@ const TIMELINE_STAGES = [
    ============================================= */
 document.addEventListener("DOMContentLoaded", initAdmin);
 
-function initAdmin() {
+/* ── PAGE LOADER UTILITIES ───────────────────
+   setLoaderProgress(pct, msg)
+     Animates the loader bar to `pct` (0-100)
+     and updates the status message text.
+   hideAdminLoader()
+     Fades out the full-screen loader once all
+     initial data fetches are complete.
+   ------------------------------------------ */
+function setLoaderProgress(pct, msg) {
+    const bar = document.getElementById("adminLoaderBar");
+    const txt = document.getElementById("adminLoaderMsg");
+    if (bar) bar.style.width = pct + "%";
+    if (txt && msg) txt.textContent = msg;
+}
 
-    const token =
-    sessionStorage.getItem(
-        "token"
-    );
+function hideAdminLoader() {
+    const loader = document.getElementById("adminPageLoader");
+    if (loader) {
+        loader.classList.add("fade-out");
+        /* Remove from DOM after transition so it can't block interaction */
+        setTimeout(() => { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 650);
+    }
+}
+
+/* ── NAV ACTIVE STATE ─────────────────────────
+   Called by onclick on each <a> in .admin-menu.
+   Removes .active from all items and adds it to
+   the clicked element. This is purely visual;
+   the href scroll still fires normally.
+   ------------------------------------------ */
+function setActiveNav(el) {
+    document.querySelectorAll(".admin-menu a").forEach(a => a.classList.remove("active"));
+    if (el) el.classList.add("active");
+}
+
+/* ── PENDING BADGE ────────────────────────────
+   Updates the small red badge on the Orders nav
+   link to show the count of pending orders.
+   Called by updateStats() after each loadOrders().
+   ------------------------------------------ */
+function updatePendingNavBadge(count) {
+    const badge = document.getElementById("pendingNavBadge");
+    if (!badge) return;
+    if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove("hidden");
+    } else {
+        badge.classList.add("hidden");
+    }
+}
+
+/* ── MAIN INIT ────────────────────────────────
+   1. Checks token & role (identical to original)
+   2. Drives loader progress bar through each
+      async load call
+   3. Hides loader when everything is ready
+   All backend calls are unchanged.
+   ------------------------------------------ */
+async function initAdmin() {
+
+    /* Step 0 — authenticate */
+    setLoaderProgress(10, "Authenticating session...");
+
+    const token = sessionStorage.getItem("token");
 
     if (!token) {
-
-        location.href =
-        "index.html";
-
+        location.href = "index.html";
         return;
-
     }
 
-    const user =
-    decodeToken(
-        token
-    );
+    const user = decodeToken(token);
 
-    console.log(
-        "Admin session:",
-        user
-    );
+    console.log("Admin session:", user);
 
-    if (
-        !user ||
-        String(user.role).toLowerCase() !== "admin"
-    ) {
-
-        location.href =
-        "index.html";
-
+    if (!user || String(user.role).toLowerCase() !== "admin") {
+        location.href = "index.html";
         return;
-
     }
 
-    loadServices();
-    loadOrders();
-    loadActivityLogs();
+    /* Step 1 — load services */
+    setLoaderProgress(30, "Loading services...");
+    await loadServices();
+
+    /* Step 2 — load orders */
+    setLoaderProgress(60, "Loading orders...");
+    await loadOrders();
+
+    /* Step 3 — load activity logs */
+    setLoaderProgress(80, "Loading activity logs...");
+    await loadActivityLogs();
+
+    /* Step 4 — wire up UI helpers */
+    setLoaderProgress(95, "Setting up interface...");
     setupPriceCalculator();
     setupServiceSearch();
+
+    /* Step 5 — all done, reveal admin panel */
+    setLoaderProgress(100, "Ready!");
+    setTimeout(hideAdminLoader, 320);
 
 }
 
@@ -537,6 +593,9 @@ function updateStats(orders) {
     setText("weeklyRevenue",   `₹${weeklyRevenue}`);
     setText("monthlyRevenue",  `₹${monthlyRevenue}`);
     setText("totalRevenue",    `₹${totalRevenue}`);
+
+    /* Update the pending badge in the sidebar nav */
+    updatePendingNavBadge(pending);
 
     drawCharts(todayRevenue, weeklyRevenue, monthlyRevenue, totalRevenue);
 }

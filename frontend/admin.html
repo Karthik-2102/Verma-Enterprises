@@ -4,25 +4,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verma Enterprises Admin</title>
+    <title>Verma Enterprises — Admin</title>
+
     <link rel="shortcut icon" href="./logo.png">
     <link rel="icon" type="image/png" href="./logo.png">
+
+    <!-- Google Fonts — matching the user-side premium typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="adminstyle.css">
 
+    <!-- Chart.js for Revenue Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <link rel="stylesheet" href="adminstyle.css">
 </head>
 
 <body class="admin-body">
 
-    <!-- Sidebar Navigation -->
-    <aside class="admin-sidebar">
+    <!-- =============================================
+         PAGE LOADER
+         Full-screen intro shown while admin data loads.
+         Hidden via JS once initAdmin() completes.
+    ============================================= -->
+    <div id="adminPageLoader" class="admin-page-loader">
+        <div class="apl-inner">
+            <div class="apl-ring-wrap">
+                <div class="apl-core">⚡</div>
+                <div class="apl-ring r1"></div>
+                <div class="apl-ring r2"></div>
+                <div class="apl-ring r3"></div>
+            </div>
+            <div class="apl-brand">
+                <span class="apl-verma">VERMA</span>
+                <span class="apl-ent">ENTERPRISES</span>
+            </div>
+            <div class="apl-sub">Admin Control Panel</div>
+            <div class="apl-bar-wrap">
+                <div class="apl-bar" id="adminLoaderBar"></div>
+            </div>
+            <p class="apl-msg" id="adminLoaderMsg">Authenticating session...</p>
+        </div>
+    </div>
 
+
+    <!-- =============================================
+         SIDEBAR NAVIGATION
+    ============================================= -->
+    <aside class="admin-sidebar" id="adminSidebar">
+
+        <!-- Brand block — animated ring logo + wordmark -->
         <div class="admin-brand-premium">
 
             <div class="brand-logo-ring">
@@ -42,113 +75,207 @@
                 <div class="brand-tagline">Admin Control Panel</div>
             </div>
 
-            <div class="brand-status-pill">
-                <span class="brand-status-dot"></span>
+            <!-- Live status indicator -->
+            <div class="brand-live-pill">
+                <span class="brand-live-dot"></span>
                 <span>Live</span>
             </div>
 
         </div>
 
-        <nav class="admin-menu">
-            <a href="#dashboard" class="active">
-                <span class="menu-icon">📊</span> Dashboard
+        <!-- Primary nav links — IDs/hrefs preserved for JS scroll logic -->
+        <nav class="admin-menu" id="adminNav">
+
+            <a href="#dashboard" class="active" onclick="setActiveNav(this)">
+                <span class="menu-icon">📊</span>
+                <span class="menu-label">Dashboard</span>
             </a>
-            <a href="#ordersSection">
-                <span class="menu-icon">📋</span> Orders
+
+            <a href="#ordersSection" onclick="setActiveNav(this)">
+                <span class="menu-icon">📋</span>
+                <span class="menu-label">Orders</span>
+                <!-- Badge populated by JS if pending orders exist -->
+                <span class="nav-badge hidden" id="pendingNavBadge"></span>
             </a>
-            <a href="#servicesSection">
-                <span class="menu-icon">⚙️</span> Services
+
+            <a href="#servicesSection" onclick="setActiveNav(this)">
+                <span class="menu-icon">⚙️</span>
+                <span class="menu-label">Services</span>
             </a>
-            <a href="#revenueSection">
-                <span class="menu-icon">💰</span> Revenue
+
+            <a href="#revenueSection" onclick="setActiveNav(this)">
+                <span class="menu-icon">💰</span>
+                <span class="menu-label">Revenue</span>
             </a>
-            <a href="#activitySection">
-                <span class="menu-icon">📝</span> Activity Logs
+
+            <a href="#activitySection" onclick="setActiveNav(this)">
+                <span class="menu-icon">📝</span>
+                <span class="menu-label">Activity Logs</span>
             </a>
-            <a href="#" onclick="openAdminProfile()">
-                <span class="menu-icon">👤</span> Profile
+
+            <a href="#" onclick="openAdminProfile(); return false;">
+                <span class="menu-icon">👤</span>
+                <span class="menu-label">Profile</span>
             </a>
-            <a href="#" onclick="logout()">
-                <span class="menu-icon">🚪</span> Logout
+
+            <a href="#" onclick="logout(); return false;" class="nav-logout">
+                <span class="menu-icon">🚪</span>
+                <span class="menu-label">Logout</span>
             </a>
+
         </nav>
 
     </aside>
 
-    <!-- Main Content Area -->
-    <main class="admin-main">
 
-        <!-- Top Bar -->
+    <!-- =============================================
+         MAIN CONTENT AREA
+    ============================================= -->
+    <main class="admin-main" id="adminMain">
+
+        <!-- ── TOPBAR ──────────────────────────── -->
         <header class="admin-topbar">
-            <div>
+
+            <div class="topbar-left">
                 <h1>Welcome, Admin</h1>
                 <p>Manage Verma Enterprises professionally</p>
             </div>
+
+            <!-- Global order search -->
             <div class="admin-search">
-                <input id="searchBox" type="text" placeholder="🔍 Search orders..." onkeyup="loadOrders()">
+                <span class="admin-search-icon">🔍</span>
+                <input id="searchBox" type="text" placeholder="Search orders by name, service, status..."
+                    onkeyup="loadOrders()">
             </div>
+
         </header>
 
-        <!-- Dashboard Stats -->
-        <section id="dashboard">
+
+        <!-- ── DASHBOARD STATS ─────────────────── -->
+        <section id="dashboard" class="dashboard-stats-section">
+
             <div class="admin-stats">
-                <div class="admin-card gold">
+
+                <div class="admin-card gold stat-card" data-stat="total">
+                    <div class="stat-icon-wrap">📋</div>
                     <h3 id="totalOrders">0</h3>
                     <p>Total Orders</p>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar-fill"></div>
+                    </div>
                 </div>
-                <div class="admin-card gold">
+
+                <div class="admin-card gold stat-card" data-stat="pending">
+                    <div class="stat-icon-wrap">⏳</div>
                     <h3 id="pendingOrders">0</h3>
                     <p>Pending</p>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar-fill pending"></div>
+                    </div>
                 </div>
-                <div class="admin-card gold">
+
+                <div class="admin-card gold stat-card" data-stat="completed">
+                    <div class="stat-icon-wrap">✅</div>
                     <h3 id="completedOrders">0</h3>
                     <p>Completed</p>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar-fill completed"></div>
+                    </div>
                 </div>
-                <div class="admin-card gold">
+
+                <div class="admin-card gold stat-card" data-stat="rejected">
+                    <div class="stat-icon-wrap">❌</div>
                     <h3 id="rejectedOrders">0</h3>
                     <p>Rejected</p>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar-fill rejected"></div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ── ORDERS MANAGEMENT ──────────────── -->
+        <section id="ordersSection" class="admin-section">
+
+            <div class="section-header">
+                <div>
+                    <div class="section-label">Management</div>
+                    <h2>All Orders</h2>
                 </div>
             </div>
+
+            <!-- Orders rendered by renderOrders() in admin.js -->
+            <div id="orders" class="orders-grid"></div>
+
         </section>
 
-        <!-- Orders Management -->
-        <section id="ordersSection" class="admin-section">
-            <h2>All Orders</h2>
-            <div id="orders"></div>
-        </section>
 
-        <!-- Services Management -->
+        <!-- ── SERVICES MANAGEMENT ────────────── -->
         <section id="servicesSection" class="admin-section">
 
-            <h2>Add Service</h2>
-
-            <div class="admin-form">
-
-                <input id="name" type="text" placeholder="Service Name">
-
-                <select id="serviceCategory" class="admin-select">
-                    <option value="Government Services">🏛️ Government Services</option>
-                    <option value="Education Services">🎓 Education Services</option>
-                    <option value="Printing Services">🖨️ Printing Services</option>
-                    <option value="ID Card Services">🪪 ID Card Services</option>
-                    <option value="Pension & Welfare Services">🏥 Pension & Welfare Services</option>
-                </select>
-
-                <input id="applicationCharge" type="number" placeholder="Application/Form Charge (₹)">
-
-                <input id="serviceCharge" type="number" placeholder="Our Service Charge (₹)">
-
-                <div class="total-price-display">
-                    <strong>Total Price: ₹<span id="totalPriceDisplay">0</span></strong>
+            <div class="section-header">
+                <div>
+                    <div class="section-label">Configuration</div>
+                    <h2>Add Service</h2>
                 </div>
+            </div>
 
-                <input id="documents" type="text" placeholder="Required docs (comma separated)">
+            <!-- Add service form — all input IDs preserved for admin.js -->
+            <div class="admin-form-card">
 
-                <button onclick="addService()">Add Service</button>
+                <div class="admin-form">
+
+                    <div class="form-field-wrap">
+                        <label class="form-label">Service Name</label>
+                        <input id="name" type="text" placeholder="e.g. Passport Application">
+                    </div>
+
+                    <div class="form-field-wrap">
+                        <label class="form-label">Category</label>
+                        <select id="serviceCategory" class="admin-select">
+                            <option value="Government Services">🏛️ Government Services</option>
+                            <option value="Education Services">🎓 Education Services</option>
+                            <option value="Printing Services">🖨️ Printing Services</option>
+                            <option value="ID Card Services">🪪 ID Card Services</option>
+                            <option value="Pension & Welfare Services">🏥 Pension & Welfare Services</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field-wrap">
+                        <label class="form-label">Application / Form Charge (₹)</label>
+                        <input id="applicationCharge" type="number" placeholder="0">
+                    </div>
+
+                    <div class="form-field-wrap">
+                        <label class="form-label">Our Service Charge (₹)</label>
+                        <input id="serviceCharge" type="number" placeholder="0">
+                    </div>
+
+                    <!-- Live total price preview — updated by setupPriceCalculator() -->
+                    <div class="total-price-display">
+                        <span class="tpd-label">Total Price</span>
+                        <span class="tpd-value">₹<span id="totalPriceDisplay">0</span></span>
+                    </div>
+
+                    <div class="form-field-wrap">
+                        <label class="form-label">Required Documents <span style="opacity:.5;font-weight:400">(comma
+                                separated)</span></label>
+                        <input id="documents" type="text" placeholder="Aadhaar Card, PAN Card, Photo">
+                    </div>
+
+                    <button class="form-submit-btn" onclick="addService()">
+                        <span>➕</span> Add Service
+                    </button>
+
+                </div>
 
             </div>
 
-            <!-- Service Search and Filter Bar -->
+
+            <!-- Service search & filter bar — inputs hooked by setupServiceSearch() -->
             <div class="service-filter-bar">
 
                 <div class="service-search-wrap">
@@ -165,6 +292,7 @@
                     <option value="ID Card Services">🪪 ID Card</option>
                     <option value="Pension & Welfare Services">🏥 Pension & Welfare</option>
                 </select>
+
                 <select id="serviceSortFilter" class="admin-select sf-select">
                     <option value="default">Sort: Default</option>
                     <option value="name">Sort: A–Z</option>
@@ -174,112 +302,230 @@
 
             </div>
 
-            <h2 class="section-gap">All Services</h2>
+            <div class="section-header section-gap">
+                <div>
+                    <div class="section-label">All</div>
+                    <h2>Services</h2>
+                </div>
+            </div>
+
+            <!-- Services grid — rendered by renderServiceList() in admin.js -->
             <div id="list" class="admin-services-grid"></div>
 
         </section>
 
-        <!-- Revenue Analytics -->
+
+        <!-- ── REVENUE ANALYTICS ──────────────── -->
         <section id="revenueSection" class="admin-section">
-            <h2>Revenue Analytics</h2>
-            <div class="admin-stats">
-                <div class="admin-card gold">
-                    <h3 id="todayRevenue">₹0</h3>
-                    <p>Today Revenue</p>
-                </div>
-                <div class="admin-card gold">
-                    <h3 id="weeklyRevenue">₹0</h3>
-                    <p>Weekly Revenue</p>
-                </div>
-                <div class="admin-card gold">
-                    <h3 id="monthlyRevenue">₹0</h3>
-                    <p>Monthly Revenue</p>
-                </div>
-                <div class="admin-card gold">
-                    <h3 id="totalRevenue">₹0</h3>
-                    <p>Total Revenue</p>
+
+            <div class="section-header">
+                <div>
+                    <div class="section-label">Financials</div>
+                    <h2>Revenue Analytics</h2>
                 </div>
             </div>
+
+            <!-- Revenue stat cards -->
+            <div class="admin-stats revenue-stats">
+
+                <div class="admin-card gold revenue-card">
+                    <div class="rev-icon">🌅</div>
+                    <h3 id="todayRevenue">₹0</h3>
+                    <p>Today</p>
+                </div>
+
+                <div class="admin-card gold revenue-card">
+                    <div class="rev-icon">📅</div>
+                    <h3 id="weeklyRevenue">₹0</h3>
+                    <p>This Week</p>
+                </div>
+
+                <div class="admin-card gold revenue-card">
+                    <div class="rev-icon">🗓️</div>
+                    <h3 id="monthlyRevenue">₹0</h3>
+                    <p>This Month</p>
+                </div>
+
+                <div class="admin-card gold revenue-card">
+                    <div class="rev-icon">💎</div>
+                    <h3 id="totalRevenue">₹0</h3>
+                    <p>All Time</p>
+                </div>
+
+            </div>
+
+            <!-- Chart canvases — drawn by drawCharts() in admin.js -->
             <div class="chart-grid">
+
                 <div class="chart-card">
-                    <h3>Revenue Comparison</h3>
+                    <div class="chart-card-header">
+                        <h3>Revenue Comparison</h3>
+                        <span class="chart-badge">Bar</span>
+                    </div>
                     <canvas id="barChart"></canvas>
                 </div>
+
                 <div class="chart-card">
-                    <h3>Growth Trend</h3>
+                    <div class="chart-card-header">
+                        <h3>Growth Trend</h3>
+                        <span class="chart-badge">Line</span>
+                    </div>
                     <canvas id="lineChart"></canvas>
                 </div>
+
             </div>
+
         </section>
 
-        <!-- Activity Logs -->
+
+        <!-- ── ACTIVITY LOGS ──────────────────── -->
         <section id="activitySection" class="admin-section">
 
-            <h2>Activity Logs</h2>
-
-            <div class="activity-search-bar">
-                <input id="activitySearchInput" type="text" placeholder="Search logs by action..."
-                    oninput="loadActivityLogs()">
-                <button onclick="loadActivityLogs()">Refresh</button>
+            <div class="section-header">
+                <div>
+                    <div class="section-label">Audit Trail</div>
+                    <h2>Activity Logs</h2>
+                </div>
             </div>
 
+            <!-- Activity search bar — oninput calls loadActivityLogs() in admin.js -->
+            <div class="activity-search-bar">
+                <div class="activity-search-input-wrap">
+                    <span>🔍</span>
+                    <input id="activitySearchInput" type="text" placeholder="Search logs by action..."
+                        oninput="loadActivityLogs()">
+                </div>
+                <button class="activity-refresh-btn" onclick="loadActivityLogs()">
+                    🔄 Refresh
+                </button>
+            </div>
+
+            <!-- Activity log list — populated by loadActivityLogs() in admin.js -->
             <div id="activityLogList" class="activity-log-list">
                 <div class="activity-log-empty">Loading activity logs...</div>
             </div>
 
         </section>
 
-    </main>
+    </main><!-- /admin-main -->
 
-    <!-- Admin Profile Modal -->
-    <div id="adminProfileModal" class="modal hidden">
-        <div class="profile-modal-box">
-            <h2>Admin Profile</h2>
-            <input type="text" id="adminName" readonly>
-            <input type="text" id="adminIdentifier" readonly>
-            <input type="password" id="adminPass" placeholder="New Password">
-            <input type="password" id="adminConfirm" placeholder="Confirm Password">
-            <input type="text" id="adminOtp" placeholder="Enter OTP">
-            <button class="profile-save-btn" onclick="sendAdminOtp()">Send OTP</button>
-            <button class="profile-save-btn" onclick="changeAdminPassword()">Update Password</button>
-            <button class="profile-close-btn" onclick="closeAdminProfile()">Close</button>
-        </div>
-    </div>
 
-    <!-- Edit Service Modal -->
-    <div id="editServiceModal" class="modal hidden">
-        <div class="profile-modal-box">
+    <!-- =============================================
+         ADMIN PROFILE MODAL
+         All input IDs preserved for admin.js
+    ============================================= -->
+    <div id="adminProfileModal" class="admin-modal hidden">
+        <div class="admin-modal-box">
 
-            <h2>Edit Service</h2>
-
-            <input type="text" id="editName" placeholder="Service Name">
-
-            <select id="editServiceCategory" class="admin-select"
-                style="height:52px;padding:0 16px;border-radius:14px;background:#1A2C37;border:1px solid rgba(153,186,187,.16);color:#fff;font-size:15px;">
-                <option value="Government Services">🏛️ Government Services</option>
-                <option value="Education Services">🎓 Education Services</option>
-                <option value="Printing Services">🖨️ Printing Services</option>
-                <option value="ID Card Services">🪪 ID Card Services</option>
-                <option value="Pension & Welfare Services">🏥 Pension & Welfare Services</option>
-            </select>
-
-            <input type="number" id="editApplicationCharge" placeholder="Application/Form Charge (₹)"
-                oninput="calculateEditTotal()">
-
-            <input type="number" id="editServiceCharge" placeholder="Our Service Charge (₹)"
-                oninput="calculateEditTotal()">
-
-            <div class="total-price-display">
-                <strong>Total: ₹<span id="editTotalPriceDisplay">0</span></strong>
+            <div class="modal-header">
+                <h2>Admin Profile</h2>
+                <button class="modal-close-x" onclick="closeAdminProfile()">✕</button>
             </div>
 
-            <input type="text" id="editDocuments" placeholder="Required docs (comma separated)">
+            <!-- Read-only fields populated by openAdminProfile() -->
+            <div class="modal-field-wrap">
+                <span class="mf-icon">👤</span>
+                <input type="text" id="adminName" readonly placeholder="Admin Name">
+            </div>
 
-            <button class="profile-save-btn" onclick="updateService()">Save Changes</button>
-            <button class="profile-close-btn" onclick="closeEditService()">Cancel</button>
+            <div class="modal-field-wrap">
+                <span class="mf-icon">📧</span>
+                <input type="text" id="adminIdentifier" readonly placeholder="Email / Mobile">
+            </div>
+
+            <div class="modal-divider">
+                <span>Change Password via OTP</span>
+            </div>
+
+            <div class="modal-field-wrap">
+                <span class="mf-icon">🔒</span>
+                <input type="password" id="adminPass" placeholder="New Password">
+            </div>
+
+            <div class="modal-field-wrap">
+                <span class="mf-icon">🔒</span>
+                <input type="password" id="adminConfirm" placeholder="Confirm Password">
+            </div>
+
+            <div class="modal-field-wrap">
+                <span class="mf-icon">📨</span>
+                <input type="text" id="adminOtp" placeholder="Enter OTP">
+            </div>
+
+            <div class="modal-btn-row">
+                <button class="modal-btn-primary" onclick="sendAdminOtp()">Send OTP</button>
+                <button class="modal-btn-primary" onclick="changeAdminPassword()">Update Password</button>
+            </div>
+
+            <button class="modal-btn-cancel" onclick="closeAdminProfile()">Close</button>
 
         </div>
     </div>
+
+
+    <!-- =============================================
+         EDIT SERVICE MODAL
+         All input IDs and onchange calls preserved for admin.js
+    ============================================= -->
+    <div id="editServiceModal" class="admin-modal hidden">
+        <div class="admin-modal-box">
+
+            <div class="modal-header">
+                <h2>Edit Service</h2>
+                <button class="modal-close-x" onclick="closeEditService()">✕</button>
+            </div>
+
+            <div class="modal-field-wrap">
+                <span class="mf-icon">✏️</span>
+                <input type="text" id="editName" placeholder="Service Name">
+            </div>
+
+            <div class="modal-field-wrap select-wrap">
+                <span class="mf-icon">🏷️</span>
+                <select id="editServiceCategory" class="admin-select modal-select">
+                    <option value="Government Services">🏛️ Government Services</option>
+                    <option value="Education Services">🎓 Education Services</option>
+                    <option value="Printing Services">🖨️ Printing Services</option>
+                    <option value="ID Card Services">🪪 ID Card Services</option>
+                    <option value="Pension & Welfare Services">🏥 Pension & Welfare Services</option>
+                </select>
+            </div>
+
+            <div class="modal-field-wrap">
+                <span class="mf-icon">💳</span>
+                <!-- oninput preserved for admin.js calculateEditTotal() -->
+                <input type="number" id="editApplicationCharge" placeholder="Application/Form Charge (₹)"
+                    oninput="calculateEditTotal()">
+            </div>
+
+            <div class="modal-field-wrap">
+                <span class="mf-icon">⚙️</span>
+                <input type="number" id="editServiceCharge" placeholder="Our Service Charge (₹)"
+                    oninput="calculateEditTotal()">
+            </div>
+
+            <!-- Total preview — span ID preserved for calculateEditTotal() -->
+            <div class="total-price-display">
+                <span class="tpd-label">Total</span>
+                <span class="tpd-value">₹<span id="editTotalPriceDisplay">0</span></span>
+            </div>
+
+            <div class="modal-field-wrap">
+                <span class="mf-icon">📎</span>
+                <input type="text" id="editDocuments" placeholder="Required docs (comma separated)">
+            </div>
+
+            <div class="modal-btn-row">
+                <button class="modal-btn-primary" onclick="updateService()">Save Changes</button>
+            </div>
+
+            <button class="modal-btn-cancel" onclick="closeEditService()">Cancel</button>
+
+        </div>
+    </div>
+
+
+    <!-- admin.js — all backend logic unchanged -->
     <script src="admin.js"></script>
 
 </body>
