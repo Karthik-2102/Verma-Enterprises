@@ -1,5 +1,8 @@
-const API     = "https://artistic-respect-production-e47c.up.railway.app/api";
-const BACKEND = "https://artistic-respect-production-e47c.up.railway.app";
+const API =
+"https://artistic-respect-production-e47c.up.railway.app/api";
+
+const BACKEND =
+"https://artistic-respect-production-e47c.up.railway.app";
 
 /* Resolve file URL — handles both Cloudinary (full https) and legacy local paths */
 function resolveFileURL(path) {
@@ -35,10 +38,12 @@ function initAdmin() {
         "token"
     );
 
-    if(!token){
+    if (!token) {
 
         location.href =
         "index.html";
+
+        return;
 
     }
 
@@ -48,18 +53,19 @@ function initAdmin() {
     );
 
     console.log(
-        "Admin token:",
+        "Admin session:",
         user
     );
 
-    if(
+    if (
         !user ||
-
-        user.role !== "admin"
-    ){
+        String(user.role).toLowerCase() !== "admin"
+    ) {
 
         location.href =
         "index.html";
+
+        return;
 
     }
 
@@ -68,6 +74,7 @@ function initAdmin() {
     loadActivityLogs();
     setupPriceCalculator();
     setupServiceSearch();
+
 }
 
 /* =============================================

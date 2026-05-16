@@ -5,8 +5,11 @@
 "use strict";
 
 /* ─── CONSTANTS ──────────────────────────────────────────── */
-const API     = "https://artistic-respect-production-e47c.up.railway.app/api";
-const BACKEND = "https://artistic-respect-production-e47c.up.railway.app";
+const API =
+"https://artistic-respect-production-e47c.up.railway.app/api";
+
+const BACKEND =
+"https://artistic-respect-production-e47c.up.railway.app";
 
 const TIMELINE_STAGES = [
   "Order Placed",
