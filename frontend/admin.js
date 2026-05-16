@@ -576,11 +576,16 @@ function renderOrders(orders) {
 
             <small>${new Date(order.createdAt).toLocaleString()}</small>
 
-            <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
-                <div class="status-badge" style="background:${color}">
-                    ${order.status}
-                </div>
-                <span class="admin-timeline-badge">${currentStage}</span>
+            <div class="order-status-row">
+
+                <span class="status-badge status-${order.status}">
+                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                </span>
+
+                <span class="timeline-stage-pill">
+                    ${currentStage}
+                </span>
+
             </div>
 
             ${order.reason ? `<p>Reason: ${order.reason}</p>` : ""}

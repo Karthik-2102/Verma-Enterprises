@@ -967,6 +967,56 @@ input, select {
     vertical-align: middle;
 }
 
+/* Order Status Layout */
+.order-status-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin:14px 0 18px;
+}
+
+.status-badge{
+    padding:8px 18px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:700;
+    text-transform:capitalize;
+    color:#fff;
+    letter-spacing:.3px;
+}
+
+/* Pending */
+.status-pending{
+    background:rgba(255,193,7,.18);
+    color:#ffc107;
+    border:1px solid rgba(255,193,7,.30);
+}
+
+/* Completed */
+.status-completed{
+    background:rgba(40,167,69,.18);
+    color:#46d36c;
+    border:1px solid rgba(40,167,69,.35);
+}
+
+/* Rejected */
+.status-rejected{
+    background:rgba(220,53,69,.18);
+    color:#ff6b78;
+    border:1px solid rgba(220,53,69,.35);
+}
+
+.timeline-stage-pill{
+    padding:8px 16px;
+    border-radius:999px;
+    background:rgba(153,186,187,.10);
+    border:1px solid rgba(153,186,187,.18);
+    color:#99BABB;
+    font-size:12px;
+    font-weight:600;
+}
+
 /* =============================================================
    MODAL SYSTEM (Admin Profile & Edit Service)
    ============================================================= */
