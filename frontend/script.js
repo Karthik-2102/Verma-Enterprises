@@ -1,5 +1,18 @@
 /* ============================================================
    Verma Enterprises — Main Script
+   Fixes applied:
+     1. Logged-in users no longer see "Sign In" on return visit
+     2. Auth input fields styled cleanly (injected CSS)
+     3. Navbar anchor links use preventDefault — no page refresh
+     4. Live order tracking: auto-polls every 15s when dashboard open
+     5. Sidebar removed — inline nav buttons on dashboard
+     6. "Get Started" hero btn → hidden after login, replaced by
+        "My Applications" button that opens the dashboard
+     7. Avatar dropdown → Profile + Logout only (no My Applications)
+     8. WhatsApp Support fixed button (bottom-right)
+     9. Auto-logout on browser/tab close (beforeunload + pagehide)
+    10. Inactivity auto-logout after 30 min idle
+   All backend endpoints, auth, upload, invoice logic preserved.
    ============================================================ */
 
 "use strict";
@@ -34,6 +47,8 @@ let selectedFiles         = [];
 let pendingServiceId      = null;
 let isMobileNavOpen       = false;
 let liveTrackingTimer     = null;   // setInterval handle for auto-refresh
+let inactivityTimer       = null;   // auto-logout on idle
+const INACTIVITY_LIMIT    = 30 * 60 * 1000; // 30 minutes ms
 
 /* ============================================================
    INIT
@@ -63,11 +78,30 @@ function initApp() {
   window.history.pushState(null, null, window.location.href);
   window.onpopstate = () => { if (!getToken()) location.replace("index.html"); };
 
+  // ── Auto-logout on browser/tab close ──────────────────────
+  // pagehide fires reliably on mobile + desktop; beforeunload is
+  // a fallback for some browsers. We only clear the token when the
+  // page is NOT being put into the bfcache (persisted === false).
+  window.addEventListener("pagehide", e => {
+    if (!e.persisted) silentLogout();
+  });
+  window.addEventListener("beforeunload", () => {
+    silentLogout();
+  });
+
+  // ── Inactivity auto-logout (30 min) ───────────────────────
+  ["mousemove","mousedown","keydown","touchstart","scroll","click"].forEach(ev =>
+    document.addEventListener(ev, resetInactivityTimer, { passive: true })
+  );
+
+  // ── WhatsApp Support button ────────────────────────────────
+  injectWhatsAppButton();
+
   // Boot
   runPageLoader(() => {
     const token = getToken();
     if (token) {
-      enterSite();        // already logged in — update navbar + stay on public
+      enterSite();
     } else {
       showPublicSite();
       loadServices();
@@ -181,8 +215,118 @@ function injectBaseStyles() {
 
     /* ── Page loader fade ───────────────────────── */
     #pageLoader.fade-out { opacity: 0; transition: opacity .5s; }
+
+    /* ── WhatsApp fixed button ──────────────────── */
+    #whatsappBtn {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 13px 20px 13px 16px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 28px rgba(37,211,102,.45);
+      text-decoration: none;
+      transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s;
+      animation: waBounceIn .6s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    #whatsappBtn:hover {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 10px 36px rgba(37,211,102,.55);
+    }
+    #whatsappBtn:active { transform: scale(.97); }
+    #whatsappBtn .wa-icon {
+      width: 22px; height: 22px; flex-shrink: 0;
+    }
+    @keyframes waBounceIn {
+      0%   { opacity: 0; transform: translateY(40px) scale(.8); }
+      100% { opacity: 1; transform: translateY(0)   scale(1);   }
+    }
+
+    /* ── Hero CTA swap (logged-in) ──────────────── */
+    .hero-cta-secondary.logged-in-cta {
+      background: linear-gradient(135deg, rgba(255,165,0,.18), rgba(255,165,0,.08));
+      border: 1.5px solid rgba(255,165,0,.6);
+      color: #f5a623;
+      font-weight: 700;
+    }
+    .hero-cta-secondary.logged-in-cta:hover {
+      background: rgba(255,165,0,.25);
+    }
   `;
   document.head.appendChild(s);
+}
+
+/* ============================================================
+   WHATSAPP SUPPORT BUTTON
+   ============================================================ */
+function injectWhatsAppButton() {
+  if (document.getElementById("whatsappBtn")) return;
+  const btn = document.createElement("a");
+  btn.id   = "whatsappBtn";
+  btn.href = "https://wa.me/919576882823?text=Hello%2C%20I%20need%20support%20with%20Verma%20Enterprises%20services.";
+  btn.target = "_blank";
+  btn.rel    = "noopener noreferrer";
+  btn.setAttribute("aria-label", "WhatsApp Support");
+  btn.innerHTML = `
+    <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15
+               -.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075
+               -.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059
+               -.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52
+               .149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52
+               -.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51
+               -.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372
+               -.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074
+               .149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625
+               .712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413
+               .248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.418
+               A9.953 9.953 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z
+               M12 20a7.95 7.95 0 0 1-4.054-1.107l-.29-.173-3.005.856.854-2.938
+               -.19-.302A7.96 7.96 0 0 1 4 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
+    </svg>
+    WhatsApp Support
+  `;
+  document.body.appendChild(btn);
+}
+
+/* ============================================================
+   AUTO-LOGOUT — browser close + inactivity
+   ============================================================ */
+
+/** Clears session without redirecting (used in unload events) */
+function silentLogout() {
+  stopLiveTracking();
+  stopInactivityTimer();
+  sessionStorage.removeItem("token");
+}
+
+/** Full logout with redirect */
+function logout() {
+  silentLogout();
+  location.href = "index.html";
+}
+
+function resetInactivityTimer() {
+  if (!getToken()) return; // only relevant when logged in
+  stopInactivityTimer();
+  inactivityTimer = setTimeout(() => {
+    toast("You were logged out due to inactivity.", "warn");
+    setTimeout(logout, 1800); // give toast 1.8 s to show
+  }, INACTIVITY_LIMIT);
+}
+
+function stopInactivityTimer() {
+  if (inactivityTimer) { clearTimeout(inactivityTimer); inactivityTimer = null; }
 }
 
 /* ============================================================
