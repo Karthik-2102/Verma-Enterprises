@@ -1,3 +1,23 @@
+/* ============================================================
+   Verma Enterprises — Online Tools  (tools.js)
+   Fully client-side. Zero server uploads. Zero API keys.
+
+   Tools:
+     1. Image Resizer   — pixel / percentage modes, aspect-ratio lock
+     2. BG Remover      — @imgly/background-removal (WASM/ONNX, no API key)
+     3. Image Compressor — quality slider, live size diff
+     4. File Converter:
+          • Image(s) → PDF       (jsPDF)
+          • PDF      → JPG pages (pdf.js)
+          • HEIC     → JPG       (heic2any)
+          • JPG ↔ PNG / any → WEBP / any → JPG  (Canvas API)
+
+   Dependencies (loaded via CDN in index.html):
+     • jspdf.umd.min.js  v2.5.1
+     • pdf.min.js        v3.11  (Mozilla pdf.js)
+     • heic2any          v0.0.4
+   ============================================================ */
+
 "use strict";
 
 /* ────────────────────────────────────────────────────────────
@@ -202,114 +222,73 @@ function resizerReset() {
 
 /* ============================================================
    ② BACKGROUND REMOVER
-   Uses @huggingface/transformers.js (ONNX WASM) — runs 100%
-   in the browser. Model: briaai/RMBG-1.4
+   Uses @imgly/background-removal — runs 100% in the browser via
+   WebAssembly + ONNX. No API key. No server upload. Ever.
+   CDN: https://cdn.jsdelivr.net/npm/@imgly/background-removal
    ============================================================ */
-let _bgOrigFile   = null;
-let _bgResultBlob = null;
-let _bgPipeline   = null;   // cached pipeline so second run is instant
+let _bgOrigFile    = null;
+let _bgResultBlob  = null;
+let _bgLibLoaded   = false;   // true once the CDN script tag is injected
 
-async function _getBgPipeline() {
-  if (_bgPipeline) return _bgPipeline;
-
-  // Lazy-load transformers.js from jsDelivr CDN
-  if (!window._transformersLoaded) {
-    await new Promise((res, rej) => {
-      const s = document.createElement("script");
-      s.type  = "module";
-      // We'll use a self-invoking module to import and expose on window
-      s.textContent = `
-        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3/dist/transformers.min.js';
-        env.allowLocalModels = false;
-        window._hfPipeline = pipeline;
-        window._hfEnv      = env;
-        window._transformersLoaded = true;
-        document.dispatchEvent(new Event('transformers-ready'));
-      `;
-      document.head.appendChild(s);
-      document.addEventListener("transformers-ready", res, { once: true });
-      setTimeout(rej, 20000); // 20 s timeout
-    });
-  }
-
-  _bgPipeline = await window._hfPipeline("image-segmentation", "briaai/RMBG-1.4", {
-    device: "wasm",
-    dtype: "fp32",
+/** Lazily load @imgly/background-removal from CDN (UMD build) */
+async function _loadBgLib() {
+  if (_bgLibLoaded && window.BackgroundRemoval) return;
+  return new Promise((resolve, reject) => {
+    if (window.BackgroundRemoval) { _bgLibLoaded = true; resolve(); return; }
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/background-removal.js";
+    s.onload  = () => { _bgLibLoaded = true; resolve(); };
+    s.onerror = () => reject(new Error("Failed to load BG removal library"));
+    document.head.appendChild(s);
   });
-  return _bgPipeline;
 }
 
 async function bgLoad(input) {
   const file = input.files?.[0];
   if (!file) return;
-
   if (!file.type.startsWith("image/")) return toolToast("Please select an image ❌", "warn");
 
   _bgOrigFile   = file;
   _bgResultBlob = null;
 
-  // Show working state
+  // UI: show working state
   document.getElementById("bgDrop").style.display     = "none";
   document.getElementById("bgWorking").style.display  = "flex";
   document.getElementById("bgPreviews").style.display = "none";
-  const bgActions = document.getElementById("bgActions");
-  bgActions.style.display = "none";
+  document.getElementById("bgActions").style.display  = "none";
 
   const msgEl = document.getElementById("bgWorkingMsg");
-  msgEl.textContent = "Loading AI model (first use ~50 MB)…";
+  msgEl.textContent = "Loading AI model (first use ~50 MB, cached after)…";
 
   try {
-    const pipe = await _getBgPipeline();
-    msgEl.textContent = "Removing background…";
+    // Load lib on first use
+    await _loadBgLib();
+    msgEl.textContent = "Removing background… this may take 10–30 seconds.";
 
-    // Convert file to data URL for the pipeline
-    const dataUrl = await new Promise(res => {
-      const r = new FileReader();
-      r.onload = () => res(r.result);
-      r.readAsDataURL(file);
-    });
+    // @imgly/background-removal accepts a File/Blob and returns a Blob (PNG)
+    const config = {
+      publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/",
+      // Use the faster small model for web
+      model: "small",
+      // Progress callback to update the message
+      progress: (key, current, total) => {
+        if (total > 0) {
+          const pct = Math.round((current / total) * 100);
+          msgEl.textContent = `Processing… ${pct}%`;
+        }
+      }
+    };
 
-    const result = await pipe(dataUrl);
+    const resultBlob = await window.BackgroundRemoval.removeBackground(file, config);
+    _bgResultBlob = resultBlob;
 
-    // result[0].mask is an ImageData-like tensor; result[0].label
-    // The pipeline returns an array of {score, label, mask}
-    // 'mask' is a RawImage — convert to canvas → blob
-    const mask   = result[0]?.mask;
-    if (!mask)    throw new Error("No mask returned");
-
-    // Draw original image on a canvas, apply mask as alpha
-    const origImg = await loadImgFile(file);
-    const canvas  = document.createElement("canvas");
-    canvas.width  = origImg.width;
-    canvas.height = origImg.height;
-    const ctx     = canvas.getContext("2d");
-    ctx.drawImage(origImg, 0, 0);
-
-    // Get pixel data and apply mask
-    const imgData  = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const maskData = mask.data; // Float32Array values 0-1
-
-    for (let i = 0; i < imgData.data.length / 4; i++) {
-      // maskData might be smaller (grayscale) — scale coordinates
-      const maskVal = maskData[i] !== undefined
-        ? maskData[i]
-        : 1;
-      imgData.data[i * 4 + 3] = Math.round(maskVal * 255);
-    }
-    ctx.putImageData(imgData, 0, 0);
-
-    // Save result blob
-    _bgResultBlob = await canvasToBlob(canvas, "image/png", 1);
-
-    // Show previews
-    const origURL   = URL.createObjectURL(file);
-    const resultURL = URL.createObjectURL(_bgResultBlob);
-    document.getElementById("bgOrigImg").src   = origURL;
-    document.getElementById("bgResultImg").src = resultURL;
+    // Show original + result previews
+    document.getElementById("bgOrigImg").src   = URL.createObjectURL(file);
+    document.getElementById("bgResultImg").src = URL.createObjectURL(resultBlob);
 
     document.getElementById("bgWorking").style.display  = "none";
     document.getElementById("bgPreviews").style.display = "flex";
-    bgActions.style.display = "flex";
+    document.getElementById("bgActions").style.display  = "flex";
 
   } catch (err) {
     console.error("BG removal error:", err);
