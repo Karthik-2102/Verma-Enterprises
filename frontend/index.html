@@ -126,9 +126,15 @@
     <!-- LOGIN MODAL -->
     <div id="authPage" class="modal hidden">
 
-        <div class="auth-modal-box">
+        <div class="auth-card" id="authCard">
 
-            <div class="front">
+            <!-- CLOSE -->
+            <button class="auth-close-btn" onclick="closeLoginModal()">
+                ✕
+            </button>
+
+            <!-- FRONT -->
+            <div class="auth-face auth-front">
 
                 <h2>Login</h2>
 
@@ -140,13 +146,19 @@
                     Login
                 </button>
 
+                <!-- Admin Reset -->
+                <p class="admin-reset-btn" onclick="openAdminResetModal()">
+                    Admin Password Reset
+                </p>
+
                 <p onclick="flip()">
                     Create Account
                 </p>
 
             </div>
 
-            <div class="back">
+            <!-- BACK -->
+            <div class="auth-face auth-back">
 
                 <h2>Register</h2>
 
@@ -169,7 +181,6 @@
         </div>
 
     </div>
-
     <!-- USER DASHBOARD -->
     <section id="mainPage" class="dashboard hidden">
 

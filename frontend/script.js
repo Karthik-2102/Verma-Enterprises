@@ -114,26 +114,23 @@ function closeLoginModal() {
 
 function flip() {
 
-    const front =
-    document.querySelector(
-        ".front"
-    );
+    document
+        .getElementById(
+            "authCard"
+        )
+        .classList
+        .toggle(
+            "flipped"
+        );
 
-    const back =
-    document.querySelector(
-        ".back"
-    );
+}
+function openAdminResetModal() {
 
-    front.classList.toggle(
-        "hidden"
-    );
-
-    back.classList.toggle(
-        "hidden"
+    alert(
+        "Admin password reset flow is preserved. We will reconnect your old reset popup next."
     );
 
 }
-
 /* =========================================
    REGISTER
 ========================================= */
