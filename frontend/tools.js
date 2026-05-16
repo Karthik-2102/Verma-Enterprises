@@ -222,27 +222,22 @@ function resizerReset() {
 
 /* ============================================================
    ② BACKGROUND REMOVER
-   Uses @imgly/background-removal — runs 100% in the browser via
-   WebAssembly + ONNX. No API key. No server upload. Ever.
-   CDN: https://cdn.jsdelivr.net/npm/@imgly/background-removal
+   Uses remove.bg free API (50 calls/month free).
+   API key is entered once by the user and saved in sessionStorage.
+   The call goes directly from browser → remove.bg API (no server).
    ============================================================ */
-let _bgOrigFile    = null;
-let _bgResultBlob  = null;
-let _bgLibLoaded   = false;   // true once the CDN script tag is injected
+let _bgOrigFile   = null;
+let _bgResultBlob = null;
 
-/** Lazily load @imgly/background-removal from CDN (UMD build) */
-async function _loadBgLib() {
-  if (_bgLibLoaded && window.BackgroundRemoval) return;
-  return new Promise((resolve, reject) => {
-    if (window.BackgroundRemoval) { _bgLibLoaded = true; resolve(); return; }
-    const s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/background-removal.js";
-    s.onload  = () => { _bgLibLoaded = true; resolve(); };
-    s.onerror = () => reject(new Error("Failed to load BG removal library"));
-    document.head.appendChild(s);
-  });
+function bgGetApiKey() {
+  return sessionStorage.getItem("removebg_key") || "";
 }
 
+function bgSaveApiKey(key) {
+  sessionStorage.setItem("removebg_key", key.trim());
+}
+
+/** Called when user selects an image — checks for API key first */
 async function bgLoad(input) {
   const file = input.files?.[0];
   if (!file) return;
@@ -251,40 +246,76 @@ async function bgLoad(input) {
   _bgOrigFile   = file;
   _bgResultBlob = null;
 
-  // UI: show working state
-  document.getElementById("bgDrop").style.display     = "none";
-  document.getElementById("bgWorking").style.display  = "flex";
-  document.getElementById("bgPreviews").style.display = "none";
-  document.getElementById("bgActions").style.display  = "none";
+  // If no API key saved, show the key entry UI
+  if (!bgGetApiKey()) {
+    document.getElementById("bgDrop").style.display    = "none";
+    document.getElementById("bgKeyPrompt").style.display = "block";
+    return;
+  }
+
+  bgRemoveBackground(file);
+}
+
+/** User clicks "Save Key & Remove Background" */
+function bgSubmitKey() {
+  const key = document.getElementById("bgApiKeyInput").value.trim();
+  if (!key) return toolToast("Please enter your API key ❌", "warn");
+  bgSaveApiKey(key);
+  document.getElementById("bgKeyPrompt").style.display = "none";
+  if (_bgOrigFile) bgRemoveBackground(_bgOrigFile);
+}
+
+/** User wants to change their API key */
+function bgChangeKey() {
+  sessionStorage.removeItem("removebg_key");
+  document.getElementById("bgApiKeyInput").value = "";
+  document.getElementById("bgKeyPrompt").style.display  = "block";
+  document.getElementById("bgPreviews").style.display   = "none";
+  document.getElementById("bgActions").style.display    = "none";
+}
+
+async function bgRemoveBackground(file) {
+  document.getElementById("bgDrop").style.display      = "none";
+  document.getElementById("bgKeyPrompt").style.display = "none";
+  document.getElementById("bgWorking").style.display   = "flex";
+  document.getElementById("bgPreviews").style.display  = "none";
+  document.getElementById("bgActions").style.display   = "none";
 
   const msgEl = document.getElementById("bgWorkingMsg");
-  msgEl.textContent = "Loading AI model (first use ~50 MB, cached after)…";
+  msgEl.textContent = "Removing background via remove.bg…";
 
   try {
-    // Load lib on first use
-    await _loadBgLib();
-    msgEl.textContent = "Removing background… this may take 10–30 seconds.";
+    const formData = new FormData();
+    formData.append("image_file", file);
+    formData.append("size", "auto");
 
-    // @imgly/background-removal accepts a File/Blob and returns a Blob (PNG)
-    const config = {
-      publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/",
-      // Use the faster small model for web
-      model: "small",
-      // Progress callback to update the message
-      progress: (key, current, total) => {
-        if (total > 0) {
-          const pct = Math.round((current / total) * 100);
-          msgEl.textContent = `Processing… ${pct}%`;
-        }
-      }
-    };
+    const res = await fetch("https://api.remove.bg/v1.0/removebg", {
+      method: "POST",
+      headers: { "X-Api-Key": bgGetApiKey() },
+      body: formData
+    });
 
-    const resultBlob = await window.BackgroundRemoval.removeBackground(file, config);
-    _bgResultBlob = resultBlob;
+    if (res.status === 403 || res.status === 401) {
+      // Bad API key — clear it and ask again
+      sessionStorage.removeItem("removebg_key");
+      document.getElementById("bgWorking").style.display   = "none";
+      document.getElementById("bgKeyPrompt").style.display = "block";
+      document.getElementById("bgApiKeyInput").value       = "";
+      toolToast("Invalid API key. Please enter a valid remove.bg key ❌", "error");
+      return;
+    }
 
-    // Show original + result previews
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      const msg = errJson?.errors?.[0]?.title || `API error ${res.status}`;
+      throw new Error(msg);
+    }
+
+    const blob    = await res.blob();
+    _bgResultBlob = blob;
+
     document.getElementById("bgOrigImg").src   = URL.createObjectURL(file);
-    document.getElementById("bgResultImg").src = URL.createObjectURL(resultBlob);
+    document.getElementById("bgResultImg").src = URL.createObjectURL(blob);
 
     document.getElementById("bgWorking").style.display  = "none";
     document.getElementById("bgPreviews").style.display = "flex";
@@ -294,7 +325,7 @@ async function bgLoad(input) {
     console.error("BG removal error:", err);
     document.getElementById("bgWorking").style.display = "none";
     document.getElementById("bgDrop").style.display    = "";
-    toolToast("Background removal failed. Please try a different image. ❌", "error");
+    toolToast("Background removal failed: " + err.message + " ❌", "error");
   }
 }
 
@@ -306,12 +337,13 @@ function bgDownload() {
 
 function bgReset() {
   _bgOrigFile = _bgResultBlob = null;
-  document.getElementById("bgDrop").style.display     = "";
-  document.getElementById("bgPreviews").style.display = "none";
-  document.getElementById("bgActions").style.display  = "none";
-  document.getElementById("bgInput").value            = "";
-  document.getElementById("bgOrigImg").src            = "";
-  document.getElementById("bgResultImg").src          = "";
+  document.getElementById("bgDrop").style.display      = "";
+  document.getElementById("bgKeyPrompt").style.display = "none";
+  document.getElementById("bgPreviews").style.display  = "none";
+  document.getElementById("bgActions").style.display   = "none";
+  document.getElementById("bgInput").value             = "";
+  document.getElementById("bgOrigImg").src             = "";
+  document.getElementById("bgResultImg").src           = "";
 }
 
 /* ============================================================
