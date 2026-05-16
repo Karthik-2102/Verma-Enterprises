@@ -30,18 +30,37 @@ document.addEventListener("DOMContentLoaded", initAdmin);
 
 function initAdmin() {
 
-    const token = sessionStorage.getItem("token");
+    const token =
+    sessionStorage.getItem(
+        "token"
+    );
 
-    if (!token) {
-        location.href = "index.html";
-        return;
+    if(!token){
+
+        location.href =
+        "index.html";
+
     }
 
-    const user = decodeToken(token);
+    const user =
+    decodeToken(
+        token
+    );
 
-    if (!user || user.role !== "admin") {
-        location.href = "index.html";
-        return;
+    console.log(
+        "Admin token:",
+        user
+    );
+
+    if(
+        !user ||
+
+        user.role !== "admin"
+    ){
+
+        location.href =
+        "index.html";
+
     }
 
     loadServices();
@@ -87,12 +106,34 @@ function getToken() {
 
 }
 
-function decodeToken(token) {
-    try {
-        return JSON.parse(atob(token.split(".")[1]));
-    } catch {
-        return null;
+function decodeToken(token){
+
+    try{
+
+        if(!token) return null;
+
+        const payload =
+        token.split(".")[1];
+
+        if(!payload) return null;
+
+        return JSON.parse(
+            atob(payload)
+        );
+
     }
+
+    catch(error){
+
+        console.error(
+            "Token decode error:",
+            error
+        );
+
+        return null;
+
+    }
+
 }
 
 function authHeaders() {
