@@ -126,8 +126,70 @@ function flip() {
 }
 function openAdminResetModal() {
 
-    alert(
-        "Admin password reset flow is preserved. We will reconnect your old reset popup next."
+    const adminIdentifier =
+    prompt(
+        "Enter admin email or mobile"
+    );
+
+    if (!adminIdentifier) return;
+
+    const newPassword =
+    prompt(
+        "Enter new password"
+    );
+
+    if (!newPassword) return;
+
+    fetch(
+
+        `${API}/auth/admin-reset-password`,
+
+        {
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":
+                "application/json"
+            },
+
+            body:
+            JSON.stringify({
+
+                identifier:
+                adminIdentifier,
+
+                newPassword
+
+            })
+
+        }
+
+    )
+
+    .then(
+        response =>
+        response.json()
+    )
+
+    .then(
+        data => {
+
+            alert(
+                data.message
+            );
+
+        }
+    )
+
+    .catch(
+        () => {
+
+            alert(
+                "Reset failed"
+            );
+
+        }
     );
 
 }
@@ -523,14 +585,6 @@ function handleSearchInput() {
 
 async function openService(id) {
 
-    if (!getToken()) {
-
-        openLoginModal();
-
-        return;
-
-    }
-
     currentServiceId =
     id;
 
@@ -549,27 +603,49 @@ async function openService(id) {
             "modalTitle"
         )
         .innerText =
-
         service.name;
 
     document
         .getElementById(
             "modalDocs"
         )
-        .innerHTML =
+        .innerHTML = `
 
-        (
-            service.documents || []
-        )
+            <li>
+                Application Charge:
+                ₹${service.applicationCharge || 0}
+            </li>
 
-        .map(
+            <li>
+                Service Charge:
+                ₹${service.serviceCharge || 0}
+            </li>
 
-            doc =>
-            `<li>${doc}</li>`
+            <li>
+                Total:
+                ₹${service.finalPrice || service.basePrice}
+            </li>
 
-        )
+            <br>
 
-        .join("");
+            ${
+                (service.documents || [])
+                .map(
+                    doc =>
+                    `<li>${doc}</li>`
+                )
+                .join("")
+            }
+
+            <br>
+
+            <button
+                onclick="startApply()"
+            >
+                Apply
+            </button>
+
+        `;
 
     document
         .getElementById(
@@ -581,7 +657,19 @@ async function openService(id) {
         );
 
 }
+function startApply() {
 
+    if (!getToken()) {
+
+        closeModal();
+
+        openLoginModal();
+
+        return;
+
+    }
+
+}
 function closeModal() {
 
     document
