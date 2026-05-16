@@ -22,8 +22,6 @@
 
     <!-- =============================================
          GLOBAL PAGE LOADER
-         Shown on initial load; hidden by JS after
-         resources are ready.
     ============================================= -->
     <div id="pageLoader" class="page-loader">
         <div class="loader-inner">
@@ -47,7 +45,6 @@
 
     <!-- =============================================
          PUBLIC LANDING PAGE
-         Visible to all visitors (logged in or not)
     ============================================= -->
     <div id="publicSite">
 
@@ -89,7 +86,6 @@
                 <div class="nav-avatar hidden" id="navAvatar" onclick="toggleProfileMenu()">
                     U
                     <div id="profileMenu" class="profile-menu hidden">
-                        <div onclick="switchToDashboard()">📋 My Dashboard</div>
                         <div onclick="openProfileModal()">👤 My Profile</div>
                         <div onclick="logout()">🚪 Logout</div>
                     </div>
@@ -145,8 +141,14 @@
                         Explore Services
                         <span class="cta-arrow">→</span>
                     </button>
-                    <button class="hero-cta-secondary" onclick="openLoginModal()">
+                    <!-- Shown only when logged OUT -->
+                    <button class="hero-cta-secondary" id="heroGetStartedBtn" onclick="openLoginModal()">
                         Get Started
+                    </button>
+                    <!-- Shown only when logged IN -->
+                    <button class="hero-cta-secondary logged-in-cta hidden" id="heroMyAppsBtn"
+                        onclick="switchToDashboard()">
+                        📋 My Applications
                     </button>
                 </div>
 
@@ -258,8 +260,6 @@
 
     <!-- =============================================
          LOGIN / REGISTER MODAL
-         Triggered by "Sign In" nav button or
-         when unauthenticated user clicks Apply.
     ============================================= -->
     <div id="authPage" class="modal hidden" onclick="handleModalBackdropClick(event,'authPage')">
 
@@ -341,8 +341,6 @@
 
     <!-- =============================================
          SERVICE DETAIL MODAL
-         Opens on card click. Shows full info +
-         Apply button. Apply requires login.
     ============================================= -->
     <div id="serviceModal" class="modal hidden" onclick="handleModalBackdropClick(event,'serviceModal')">
 
@@ -414,13 +412,10 @@
 
         </div>
 
-    </div><!-- /serviceModal -->
-
+    </div>
 
     <!-- =============================================
          USER DASHBOARD
-         Hidden until login. Shows orders, tracking,
-         profile. Services are browsable on public site.
     ============================================= -->
     <section id="mainPage" class="dashboard hidden">
 

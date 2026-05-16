@@ -606,6 +606,9 @@ function enterSite() {
   // Always update navbar regardless of how we got here
   updateNavbarAuthState(user);
 
+  // Start inactivity timer
+  resetInactivityTimer();
+
   // Load profile + services (public site stays visible)
   showPublicSite();
   loadServices();
@@ -625,13 +628,13 @@ function updateNavbarAuthState(user) {
     // First child node is the letter text node (before the dropdown div)
     if (navAv.childNodes[0]) navAv.childNodes[0].textContent = letter;
   }
+
+  // Hero CTA swap: hide "Get Started", show "My Applications"
+  el("heroGetStartedBtn")?.classList.add("hidden");
+  el("heroMyAppsBtn")?.classList.remove("hidden");
 }
 
-function logout() {
-  stopLiveTracking();
-  sessionStorage.removeItem("token");
-  location.href = "index.html";
-}
+// logout() is defined above in the AUTO-LOGOUT section — do not redefine here.
 
 /* ============================================================
    PROFILE MENU TOGGLES
