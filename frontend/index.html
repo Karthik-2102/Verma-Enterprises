@@ -85,6 +85,7 @@
                 <a href="#heroSection" onclick="smoothNav('heroSection')">Home</a>
                 <a href="#aboutSection" onclick="smoothNav('aboutSection')">About</a>
                 <a href="#servicesSection" onclick="smoothNav('servicesSection')">Services</a>
+                <a href="#toolsSection" onclick="smoothNav('toolsSection')">Tools</a>
                 <a href="#contactSection" onclick="smoothNav('contactSection')">Contact</a>
             </nav>
 
@@ -146,6 +147,7 @@
             <a href="#heroSection" onclick="smoothNav('heroSection');toggleMobileNav()">Home</a>
             <a href="#aboutSection" onclick="smoothNav('aboutSection');toggleMobileNav()">About</a>
             <a href="#servicesSection" onclick="smoothNav('servicesSection');toggleMobileNav()">Services</a>
+            <a href="#toolsSection" onclick="smoothNav('toolsSection');toggleMobileNav()">Tools</a>
             <a href="#contactSection" onclick="smoothNav('contactSection');toggleMobileNav()">Contact</a>
         </div>
 
@@ -230,6 +232,223 @@
             </div><!-- /.hero-content -->
 
         </section><!-- /#heroSection -->
+
+
+
+        <!-- ══════════════════════════════════════════
+             FREE TOOLS SECTION  (#toolsSection)
+             Placed above About Us — no login required
+        ═══════════════════════════════════════════ -->
+        <section id="toolsSection" class="landing-section tools-section">
+
+            <div class="section-label">100% Free · No Login · Instant</div>
+            <h2 class="section-title">Online Tools</h2>
+            <p class="tools-section-sub">Resize images, remove backgrounds, convert files — all in your browser. Nothing
+                is uploaded to any server.</p>
+
+            <!-- Tool picker tabs -->
+            <div class="tools-tab-bar" id="toolsTabBar">
+                <button class="tool-tab active" data-tool="resizer" onclick="switchTool('resizer',this)">🖼️ Image
+                    Resizer</button>
+                <button class="tool-tab" data-tool="bgremover" onclick="switchTool('bgremover',this)">✂️ BG
+                    Remover</button>
+                <button class="tool-tab" data-tool="compress" onclick="switchTool('compress',this)">📦
+                    Compressor</button>
+                <button class="tool-tab" data-tool="convert" onclick="switchTool('convert',this)">🔄 Converter</button>
+            </div>
+
+            <!-- ── Tool panels ─────────────────────────────── -->
+            <div class="tools-panel-wrap">
+
+                <!-- ① IMAGE RESIZER -->
+                <div class="tool-panel active" id="tool-resizer">
+                    <div class="tool-inner">
+                        <div class="tool-drop-zone" id="resizerDrop" ondragover="toolDragOver(event,'resizerDrop')"
+                            ondragleave="toolDragLeave('resizerDrop')" ondrop="toolDrop(event,'resizerInput')"
+                            onclick="document.getElementById('resizerInput').click()">
+                            <div class="tdz-icon">🖼️</div>
+                            <p>Drop image here or <span class="tdz-link">browse</span></p>
+                            <small>JPG · PNG · WEBP · HEIC</small>
+                        </div>
+                        <input type="file" id="resizerInput" accept="image/*,.heic,.heif" style="display:none"
+                            onchange="resizerLoad(this)">
+
+                        <div class="tool-controls" id="resizerControls" style="display:none">
+                            <div class="tool-preview-row">
+                                <div class="tool-preview-box">
+                                    <p class="tp-label">Original</p>
+                                    <canvas id="resizerOrigCanvas"></canvas>
+                                    <small id="resizerOrigSize"></small>
+                                </div>
+                                <div class="tool-preview-box">
+                                    <p class="tp-label">Preview</p>
+                                    <canvas id="resizerOutCanvas"></canvas>
+                                    <small id="resizerOutSize"></small>
+                                </div>
+                            </div>
+
+                            <div class="tool-fields">
+                                <div class="tool-field-group">
+                                    <label>Mode</label>
+                                    <select id="resizerMode" onchange="resizerPreview()">
+                                        <option value="px">Pixels</option>
+                                        <option value="pct">Percentage</option>
+                                    </select>
+                                </div>
+                                <div class="tool-field-group">
+                                    <label>Width</label>
+                                    <input type="number" id="resizerW" min="1" oninput="resizerSyncAR('w')">
+                                </div>
+                                <div class="tool-field-group">
+                                    <label>Height</label>
+                                    <input type="number" id="resizerH" min="1" oninput="resizerSyncAR('h')">
+                                </div>
+                                <div class="tool-field-group tool-field-check">
+                                    <label><input type="checkbox" id="resizerAR" checked> Keep ratio</label>
+                                </div>
+                                <div class="tool-field-group">
+                                    <label>Format</label>
+                                    <select id="resizerFmt">
+                                        <option value="image/jpeg">JPG</option>
+                                        <option value="image/png">PNG</option>
+                                        <option value="image/webp">WEBP</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="tool-action-btn" onclick="resizerDownload()">⬇️ Download Resized
+                                Image</button>
+                            <button class="tool-reset-btn" onclick="resizerReset()">↺ Reset</button>
+                        </div>
+                    </div>
+                </div><!-- /#tool-resizer -->
+
+                <!-- ② BG REMOVER -->
+                <div class="tool-panel" id="tool-bgremover">
+                    <div class="tool-inner">
+                        <div class="tool-notice">
+                            <span>🤖</span>
+                            Powered by an AI model running entirely in your browser. First use downloads a ~50 MB model
+                            — subsequent uses are instant.
+                        </div>
+                        <div class="tool-drop-zone" id="bgDrop" ondragover="toolDragOver(event,'bgDrop')"
+                            ondragleave="toolDragLeave('bgDrop')" ondrop="toolDrop(event,'bgInput')"
+                            onclick="document.getElementById('bgInput').click()">
+                            <div class="tdz-icon">✂️</div>
+                            <p>Drop image here or <span class="tdz-link">browse</span></p>
+                            <small>JPG · PNG · WEBP</small>
+                        </div>
+                        <input type="file" id="bgInput" accept="image/*" style="display:none" onchange="bgLoad(this)">
+
+                        <div id="bgWorking" class="tool-working" style="display:none">
+                            <div class="tool-spinner"></div>
+                            <p id="bgWorkingMsg">Removing background…</p>
+                        </div>
+
+                        <div class="tool-preview-row" id="bgPreviews" style="display:none">
+                            <div class="tool-preview-box">
+                                <p class="tp-label">Original</p>
+                                <img id="bgOrigImg" alt="original">
+                            </div>
+                            <div class="tool-preview-box checker-bg">
+                                <p class="tp-label">Result</p>
+                                <img id="bgResultImg" alt="result">
+                            </div>
+                        </div>
+                        <div id="bgActions" style="display:none;margin-top:16px;display:none;gap:10px;flex-wrap:wrap;">
+                            <button class="tool-action-btn" onclick="bgDownload()">⬇️ Download PNG</button>
+                            <button class="tool-reset-btn" onclick="bgReset()">↺ Try Another</button>
+                        </div>
+                    </div>
+                </div><!-- /#tool-bgremover -->
+
+                <!-- ③ COMPRESSOR -->
+                <div class="tool-panel" id="tool-compress">
+                    <div class="tool-inner">
+                        <div class="tool-drop-zone" id="compDrop" ondragover="toolDragOver(event,'compDrop')"
+                            ondragleave="toolDragLeave('compDrop')" ondrop="toolDrop(event,'compInput')"
+                            onclick="document.getElementById('compInput').click()">
+                            <div class="tdz-icon">📦</div>
+                            <p>Drop image here or <span class="tdz-link">browse</span></p>
+                            <small>JPG · PNG · WEBP</small>
+                        </div>
+                        <input type="file" id="compInput" accept="image/*" style="display:none"
+                            onchange="compLoad(this)">
+
+                        <div class="tool-controls" id="compControls" style="display:none">
+                            <div class="tool-preview-row">
+                                <div class="tool-preview-box">
+                                    <p class="tp-label">Original — <span id="compOrigSize"></span></p>
+                                    <canvas id="compOrigCanvas"></canvas>
+                                </div>
+                                <div class="tool-preview-box">
+                                    <p class="tp-label">Compressed — <span id="compOutSize"></span></p>
+                                    <canvas id="compOutCanvas"></canvas>
+                                </div>
+                            </div>
+                            <div class="tool-fields">
+                                <div class="tool-field-group" style="flex:1">
+                                    <label>Quality: <strong id="compQualVal">80</strong>%</label>
+                                    <input type="range" id="compQual" min="10" max="100" value="80"
+                                        oninput="compPreview()">
+                                </div>
+                                <div class="tool-field-group">
+                                    <label>Format</label>
+                                    <select id="compFmt" onchange="compPreview()">
+                                        <option value="image/jpeg">JPG</option>
+                                        <option value="image/webp">WEBP</option>
+                                        <option value="image/png">PNG</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="comp-saving-badge" id="compSaving"></div>
+                            <button class="tool-action-btn" onclick="compDownload()">⬇️ Download Compressed</button>
+                            <button class="tool-reset-btn" onclick="compReset()">↺ Reset</button>
+                        </div>
+                    </div>
+                </div><!-- /#tool-compress -->
+
+                <!-- ④ CONVERTER -->
+                <div class="tool-panel" id="tool-convert">
+                    <div class="tool-inner">
+                        <div class="tool-fields" style="margin-bottom:18px">
+                            <div class="tool-field-group">
+                                <label>Convert from</label>
+                                <select id="convFrom" onchange="convUpdateAccept()">
+                                    <option value="img2pdf">Image → PDF</option>
+                                    <option value="pdf2jpg">PDF → JPG</option>
+                                    <option value="heic2jpg">HEIC → JPG</option>
+                                    <option value="jpg2png">JPG → PNG</option>
+                                    <option value="png2jpg">PNG → JPG</option>
+                                    <option value="any2webp">Image → WEBP</option>
+                                    <option value="any2jpg">Image → JPG</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="tool-drop-zone" id="convDrop" ondragover="toolDragOver(event,'convDrop')"
+                            ondragleave="toolDragLeave('convDrop')" ondrop="toolDrop(event,'convInput')"
+                            onclick="document.getElementById('convInput').click()">
+                            <div class="tdz-icon">🔄</div>
+                            <p id="convDropLabel">Drop file here or <span class="tdz-link">browse</span></p>
+                            <small id="convDropHint">Select a conversion type above first</small>
+                        </div>
+                        <input type="file" id="convInput" accept="image/*,.heic,.heif,.pdf" style="display:none"
+                            multiple onchange="convLoad(this.files)">
+
+                        <div id="convWorking" class="tool-working" style="display:none">
+                            <div class="tool-spinner"></div>
+                            <p id="convWorkingMsg">Converting…</p>
+                        </div>
+
+                        <!-- Output list: each converted file gets a download row -->
+                        <div id="convOutputList" class="conv-output-list"></div>
+                    </div>
+                </div><!-- /#tool-convert -->
+
+            </div><!-- /.tools-panel-wrap -->
+
+        </section><!-- /#toolsSection -->
+
 
 
         <!-- ══════════════════════════════════════════
@@ -736,7 +955,12 @@
         Main Application Script
         ─────────────────────────
     -->
+    <!-- CDN libraries for tools -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="script.js"></script>
+    <script src="tools.js"></script>
 
 </body>
 

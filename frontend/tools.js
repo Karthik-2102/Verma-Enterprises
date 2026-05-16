@@ -1,23 +1,3 @@
-/* ============================================================
-   Verma Enterprises — Online Tools  (tools.js)
-   Fully client-side. Zero server uploads. Zero API keys.
-
-   Tools:
-     1. Image Resizer   — pixel / percentage modes, aspect-ratio lock
-     2. BG Remover      — @huggingface/transformers RMBG-1.4 model (WASM)
-     3. Image Compressor — quality slider, live size diff
-     4. File Converter:
-          • Image(s) → PDF       (jsPDF)
-          • PDF      → JPG pages (pdf.js)
-          • HEIC     → JPG       (heic2any)
-          • JPG ↔ PNG / any → WEBP / any → JPG  (Canvas API)
-
-   Dependencies (loaded via CDN in index.html):
-     • jspdf.umd.min.js  v2.5.1
-     • pdf.min.js        v3.11  (Mozilla pdf.js)
-     • heic2any          v0.0.4
-   ============================================================ */
-
 "use strict";
 
 /* ────────────────────────────────────────────────────────────
