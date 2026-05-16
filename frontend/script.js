@@ -1,18 +1,5 @@
 /* ============================================================
    Verma Enterprises — Main Script
-   Fixes applied:
-     1. Logged-in users no longer see "Sign In" on return visit
-     2. Auth input fields styled cleanly (injected CSS)
-     3. Navbar anchor links use preventDefault — no page refresh
-     4. Live order tracking: auto-polls every 15s when dashboard open
-     5. Sidebar removed — inline nav buttons on dashboard
-     6. "Get Started" hero btn → hidden after login, replaced by
-        "My Applications" button that opens the dashboard
-     7. Avatar dropdown → Profile + Logout only (no My Applications)
-     8. WhatsApp Support fixed button (bottom-right)
-     9. Auto-logout on browser/tab close (beforeunload + pagehide)
-    10. Inactivity auto-logout after 30 min idle
-   All backend endpoints, auth, upload, invoice logic preserved.
    ============================================================ */
 
 "use strict";
@@ -272,7 +259,7 @@ function injectWhatsAppButton() {
   if (document.getElementById("whatsappBtn")) return;
   const btn = document.createElement("a");
   btn.id   = "whatsappBtn";
-  btn.href = "https://wa.me/919576882823?text=Hello%2C%20I%20need%20support%20with%20Verma%20Enterprises%20services.";
+  btn.href = "https://wa.me/919576828238?text=Hello%2C%20I%20need%20support%20with%20Verma%20Enterprises%20services.";
   btn.target = "_blank";
   btn.rel    = "noopener noreferrer";
   btn.setAttribute("aria-label", "WhatsApp Support");
