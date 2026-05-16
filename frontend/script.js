@@ -1,38 +1,37 @@
 const API =
 "https://artistic-respect-production-e47c.up.railway.app/api";
 
-const BACKEND =
-"https://artistic-respect-production-e47c.up.railway.app";
+let allUserServices = [];
+let currentServiceId = null;
+let selectedUserFiles = [];
 
-/* =========================================
-   APP INIT
-========================================= */
+/* Application bootstrap */
 
 document.addEventListener(
     "DOMContentLoaded",
-    initApp
+    initializeApplication
 );
 
-function initApp() {
-
-    const token =
-    sessionStorage.getItem("token");
+function initializeApplication(){
 
     loadServices();
 
-    if (token) {
+    const token =
+    sessionStorage.getItem(
+        "token"
+    );
 
-        enterSite();
+    if(token){
+
+        enterDashboard();
 
     }
 
 }
 
-/* =========================================
-   UTILITIES
-========================================= */
+/* Common helpers */
 
-function getToken() {
+function getToken(){
 
     return sessionStorage.getItem(
         "token"
@@ -40,27 +39,7 @@ function getToken() {
 
 }
 
-function decodeToken(token) {
-
-    try {
-
-        return JSON.parse(
-            atob(
-                token.split(".")[1]
-            )
-        );
-
-    }
-
-    catch {
-
-        return null;
-
-    }
-
-}
-
-function authHeaders() {
+function getAuthHeaders(){
 
     return {
 
@@ -71,22 +50,9 @@ function authHeaders() {
 
 }
 
-function jsonHeaders() {
+/* Authentication */
 
-    return {
-
-        "Content-Type":
-        "application/json"
-
-    };
-
-}
-
-/* =========================================
-   AUTH UI
-========================================= */
-
-function openLoginModal() {
+function openLoginModal(){
 
     document
         .getElementById(
@@ -99,7 +65,7 @@ function openLoginModal() {
 
 }
 
-function closeLoginModal() {
+function closeLoginModal(){
 
     document
         .getElementById(
@@ -112,7 +78,7 @@ function closeLoginModal() {
 
 }
 
-function flip() {
+function flip(){
 
     document
         .getElementById(
@@ -124,80 +90,8 @@ function flip() {
         );
 
 }
-function openAdminResetModal() {
 
-    const adminIdentifier =
-    prompt(
-        "Enter admin email or mobile"
-    );
-
-    if (!adminIdentifier) return;
-
-    const newPassword =
-    prompt(
-        "Enter new password"
-    );
-
-    if (!newPassword) return;
-
-    fetch(
-
-        `${API}/auth/admin-reset-password`,
-
-        {
-
-            method:"POST",
-
-            headers:{
-                "Content-Type":
-                "application/json"
-            },
-
-            body:
-            JSON.stringify({
-
-                identifier:
-                adminIdentifier,
-
-                newPassword
-
-            })
-
-        }
-
-    )
-
-    .then(
-        response =>
-        response.json()
-    )
-
-    .then(
-        data => {
-
-            alert(
-                data.message
-            );
-
-        }
-    )
-
-    .catch(
-        () => {
-
-            alert(
-                "Reset failed"
-            );
-
-        }
-    );
-
-}
-/* =========================================
-   REGISTER
-========================================= */
-
-async function register() {
+async function register(){
 
     const name =
     document
@@ -222,30 +116,19 @@ async function register() {
         )
         .value;
 
-    if (
-        !name ||
-        !identifier ||
-        !password
-    ) {
-
-        alert(
-            "Fill all fields ❌"
-        );
-
-        return;
-
-    }
-
     const response =
     await fetch(
 
         `${API}/auth/register`,
 
         {
+
             method:"POST",
 
-            headers:
-            jsonHeaders(),
+            headers:{
+                "Content-Type":
+                "application/json"
+            },
 
             body:
             JSON.stringify({
@@ -263,32 +146,13 @@ async function register() {
     const data =
     await response.json();
 
-    if (
-        data.success
-    ) {
-
-        alert(
-            "Registered successfully ✅"
-        );
-
-        flip();
-
-        return;
-
-    }
-
     alert(
-        data.message ||
-        "Registration failed ❌"
+        data.message
     );
 
 }
 
-/* =========================================
-   LOGIN
-========================================= */
-
-async function login() {
+async function login(){
 
     const identifier =
     document
@@ -305,29 +169,19 @@ async function login() {
         )
         .value;
 
-    if (
-        !identifier ||
-        !password
-    ) {
-
-        alert(
-            "Fill all fields ❌"
-        );
-
-        return;
-
-    }
-
     const response =
     await fetch(
 
         `${API}/auth/login`,
 
         {
+
             method:"POST",
 
-            headers:
-            jsonHeaders(),
+            headers:{
+                "Content-Type":
+                "application/json"
+            },
 
             body:
             JSON.stringify({
@@ -344,13 +198,10 @@ async function login() {
     const data =
     await response.json();
 
-    if (
-        !data.success
-    ) {
+    if(!data.token){
 
         alert(
-            data.message ||
-            "Login failed ❌"
+            data.message
         );
 
         return;
@@ -358,41 +209,125 @@ async function login() {
     }
 
     sessionStorage.setItem(
+
         "token",
+
         data.token
+
     );
 
-    enterSite();
+    enterDashboard();
 
 }
 
-/* =========================================
-   ENTER SITE
-========================================= */
+function logout(){
 
-function enterSite() {
+    sessionStorage.clear();
 
-    const token =
-    getToken();
+    location.reload();
 
-    if (!token) return;
+}
 
-    const user =
-    decodeToken(
-        token
+/* Password recovery */
+
+async function openForgotPassword(){
+
+    const identifier =
+    prompt(
+        "Enter email or mobile"
     );
 
-    if (
-        user?.role ===
-        "admin"
-    ) {
+    if(!identifier) return;
 
-        location.href =
-        "admin.html";
+    const response =
+    await fetch(
 
-        return;
+        `${API}/auth/forgot-password`,
 
-    }
+        {
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":
+                "application/json"
+            },
+
+            body:
+            JSON.stringify({
+
+                identifier
+
+            })
+
+        }
+
+    );
+
+    const data =
+    await response.json();
+
+    alert(
+        data.message
+    );
+
+}
+
+async function openAdminResetModal(){
+
+    const identifier =
+    prompt(
+        "Admin email or mobile"
+    );
+
+    if(!identifier) return;
+
+    const password =
+    prompt(
+        "New password"
+    );
+
+    if(!password) return;
+
+    const response =
+    await fetch(
+
+        `${API}/auth/admin-reset-password`,
+
+        {
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":
+                "application/json"
+            },
+
+            body:
+            JSON.stringify({
+
+                identifier,
+                newPassword:
+                password
+
+            })
+
+        }
+
+    );
+
+    const data =
+    await response.json();
+
+    alert(
+        data.message
+    );
+
+}
+
+/* Dashboard */
+
+function enterDashboard(){
 
     document
         .getElementById(
@@ -427,26 +362,7 @@ function enterSite() {
 
 }
 
-/* =========================================
-   LOGOUT
-========================================= */
-
-function logout() {
-
-    sessionStorage.removeItem(
-        "token"
-    );
-
-    location.href =
-    "index.html";
-
-}
-
-/* =========================================
-   SIDEBAR
-========================================= */
-
-function toggleSidebar() {
+function toggleSidebar(){
 
     document
         .getElementById(
@@ -468,122 +384,90 @@ function toggleSidebar() {
 
 }
 
-/* =========================================
-   SERVICES
-========================================= */
+function toggleProfileMenu(){
 
-let allUserServices = [];
-let currentServiceId = null;
-
-async function loadServices() {
-
-    try {
-
-        const response =
-        await fetch(
-            `${API}/services`
-        );
-
-        allUserServices =
-        await response.json();
-
-        renderServices();
-
-    }
-
-    catch {
-
-        console.error(
-            "Failed to load services"
-        );
-
-    }
-
-}
-
-function renderServices() {
-
-    const grid =
-    document.getElementById(
-        "services"
-    );
-
-    if (!grid) return;
-
-    const search =
-    (
-        document
+    document
         .getElementById(
-            "userSearchInput"
+            "profileMenu"
         )
-        ?.value ||
-
-        ""
-
-    )
-    .toLowerCase();
-
-    const filtered =
-    allUserServices.filter(
-        service =>
-
-        service.name
-        .toLowerCase()
-        .includes(
-            search
-        )
-    );
-
-    grid.innerHTML = "";
-
-    filtered.forEach(
-        service => {
-
-        const card =
-        document.createElement(
-            "div"
+        .classList
+        .toggle(
+            "hidden"
         );
-
-        card.className =
-        "service-card";
-
-        card.innerHTML = `
-
-            <h3>
-                ${service.name}
-            </h3>
-
-            <p class="service-price">
-                ₹${service.finalPrice || service.basePrice}
-            </p>
-
-        `;
-
-        card.onclick =
-        () =>
-        openService(
-            service._id
-        );
-
-        grid.appendChild(
-            card
-        );
-
-    });
 
 }
 
-function handleSearchInput() {
+/* Services */
+
+async function loadServices(){
+
+    const response =
+    await fetch(
+        `${API}/services`
+    );
+
+    allUserServices =
+    await response.json();
 
     renderServices();
 
 }
 
-/* =========================================
-   SERVICE MODAL
-========================================= */
+function renderServices(){
 
-async function openService(id) {
+    const container =
+    document
+        .getElementById(
+            "services"
+        );
+
+    if(!container) return;
+
+    container.innerHTML = "";
+
+    allUserServices.forEach(
+
+        service => {
+
+            const card =
+            document
+            .createElement(
+                "div"
+            );
+
+            card.className =
+            "service-card";
+
+            card.innerHTML = `
+
+                <h3>
+                    ${service.name}
+                </h3>
+
+                <p class="service-price">
+                    ₹${service.finalPrice}
+                </p>
+
+            `;
+
+            card.onclick =
+            () =>
+            openService(
+                service._id
+            );
+
+            container
+            .appendChild(
+                card
+            );
+
+        }
+
+    );
+
+}
+
+async function openService(id){
 
     currentServiceId =
     id;
@@ -623,27 +507,24 @@ async function openService(id) {
 
             <li>
                 Total:
-                ₹${service.finalPrice || service.basePrice}
+                ₹${service.finalPrice || 0}
             </li>
 
             <br>
 
             ${
-                (service.documents || [])
+                service.documents
                 .map(
+
                     doc =>
+
                     `<li>${doc}</li>`
+
                 )
+
                 .join("")
+
             }
-
-            <br>
-
-            <button
-                onclick="startApply()"
-            >
-                Apply
-            </button>
 
         `;
 
@@ -657,20 +538,8 @@ async function openService(id) {
         );
 
 }
-function startApply() {
 
-    if (!getToken()) {
-
-        closeModal();
-
-        openLoginModal();
-
-        return;
-
-    }
-
-}
-function closeModal() {
+function closeModal(){
 
     document
         .getElementById(
@@ -683,14 +552,23 @@ function closeModal() {
 
 }
 
-/* =========================================
-   FILE PREVIEW
-========================================= */
+function startApply(){
 
-let selectedUserFiles =
-[];
+    if(!getToken()){
 
-function previewSelectedFiles() {
+        closeModal();
+
+        openLoginModal();
+
+        return;
+
+    }
+
+}
+
+/* Upload */
+
+function previewSelectedFiles(){
 
     const input =
     document
@@ -703,42 +581,26 @@ function previewSelectedFiles() {
         input.files
     );
 
-    renderSelectedFiles();
+    renderFilePreview();
 
 }
 
-function renderSelectedFiles() {
+function renderFilePreview(){
 
-    const list =
+    const container =
     document
         .getElementById(
             "selectedFilesList"
         );
 
-    list.innerHTML = "";
+    container.innerHTML = "";
 
-    selectedUserFiles
-    .forEach(
+    selectedUserFiles.forEach(
 
         (
             file,
             index
         ) => {
-
-            const icon =
-
-            file.type
-            .includes(
-                "pdf"
-            )
-
-            ?
-
-            "📄"
-
-            :
-
-            "🖼";
 
             const row =
             document
@@ -752,19 +614,19 @@ function renderSelectedFiles() {
             row.innerHTML = `
 
                 <span>
-                    ${icon}
                     ${file.name}
                 </span>
 
                 <button
-                    onclick="removeSelectedFile(${index})"
+                    onclick="removeFile(${index})"
                 >
                     Delete
                 </button>
 
             `;
 
-            list.appendChild(
+            container
+            .appendChild(
                 row
             );
 
@@ -774,30 +636,27 @@ function renderSelectedFiles() {
 
 }
 
-function removeSelectedFile(index) {
+function removeFile(index){
 
     selectedUserFiles.splice(
         index,
         1
     );
 
-    renderSelectedFiles();
+    renderFilePreview();
 
 }
 
-/* =========================================
-   ORDER SUBMIT
-========================================= */
+/* Orders */
 
-async function submitService() {
+async function submitService(){
 
-    if (
-        !selectedUserFiles
-        .length
-    ) {
+    if(
+        !selectedUserFiles.length
+    ){
 
         alert(
-            "Upload documents ❌"
+            "Upload documents"
         );
 
         return;
@@ -815,18 +674,19 @@ async function submitService() {
 
     );
 
-    selectedUserFiles
-    .forEach(
+    selectedUserFiles.forEach(
 
-        file =>
+        file => {
 
-        formData.append(
+            formData.append(
 
-            "documents",
+                "documents",
 
-            file
+                file
 
-        )
+            );
+
+        }
 
     );
 
@@ -839,10 +699,8 @@ async function submitService() {
 
             method:"POST",
 
-            headers:{
-                Authorization:
-                getToken()
-            },
+            headers:
+            getAuthHeaders(),
 
             body:
             formData
@@ -854,34 +712,17 @@ async function submitService() {
     const data =
     await response.json();
 
-    if (
-        data.success
-    ) {
-
-        alert(
-            "Order placed successfully ✅"
-        );
-
-        closeModal();
-
-        loadUserOrders();
-
-        return;
-
-    }
-
     alert(
-        data.message ||
-        "Upload failed ❌"
+        data.message
     );
+
+    closeModal();
+
+    loadUserOrders();
 
 }
 
-/* =========================================
-   USER ORDERS
-========================================= */
-
-async function loadUserOrders() {
+async function loadUserOrders(){
 
     const response =
     await fetch(
@@ -891,7 +732,7 @@ async function loadUserOrders() {
         {
 
             headers:
-            authHeaders()
+            getAuthHeaders()
 
         }
 
@@ -900,18 +741,15 @@ async function loadUserOrders() {
     const data =
     await response.json();
 
-    const box =
+    const container =
     document
         .getElementById(
             "userOrders"
         );
 
-    box.innerHTML = "";
+    container.innerHTML = "";
 
-    (
-        data.orders || []
-    )
-    .forEach(
+    data.orders.forEach(
 
         order => {
 
@@ -927,7 +765,7 @@ async function loadUserOrders() {
             card.innerHTML = `
 
                 <h3>
-                    ${order.service?.name || "Service"}
+                    ${order.service?.name}
                 </h3>
 
                 <p>
@@ -936,7 +774,8 @@ async function loadUserOrders() {
 
             `;
 
-            box.appendChild(
+            container
+            .appendChild(
                 card
             );
 
@@ -946,63 +785,17 @@ async function loadUserOrders() {
 
 }
 
-/* =========================================
-   PROFILE
-========================================= */
+/* Profile */
 
-async function loadProfile() {
+function loadProfile(){
 
-    const user =
-    decodeToken(
-        getToken()
-    );
-
-    if (!user) return;
-
+    const avatar =
     document
         .getElementById(
             "avatarText"
-        )
-        .innerText =
-
-        user.name
-        ?.charAt(0)
-        ?.toUpperCase()
-
-        ||
-
-        "U";
-
-}
-
-function toggleProfileMenu() {
-
-    document
-        .getElementById(
-            "profileMenu"
-        )
-        .classList
-        .toggle(
-            "hidden"
         );
 
-}
-
-/* =========================================
-   UTIL
-========================================= */
-
-function scrollToSection(id) {
-
-    document
-        .getElementById(
-            id
-        )
-        ?.scrollIntoView({
-
-            behavior:
-            "smooth"
-
-        });
+    avatar.innerText =
+    "user".toUpperCase();
 
 }
