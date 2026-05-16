@@ -68,15 +68,21 @@ function initApp() {
   window.history.pushState(null, null, window.location.href);
   window.onpopstate = () => { if (!getToken()) location.replace("index.html"); };
 
-  // ── Auto-logout on browser/tab close ──────────────────────
-  // pagehide fires reliably on mobile + desktop; beforeunload is
-  // a fallback for some browsers. We only clear the token when the
-  // page is NOT being put into the bfcache (persisted === false).
   window.addEventListener("pagehide", e => {
-    if (!e.persisted) silentLogout();
-  });
-  window.addEventListener("beforeunload", () => {
-    silentLogout();
+
+      const isNavigatingInsideProject =
+
+          document.activeElement?.tagName === "A";
+
+      if (
+          !e.persisted &&
+          !isNavigatingInsideProject
+      ) {
+
+          // keep session alive during internal navigation
+
+      }
+
   });
 
   // ── Inactivity auto-logout (30 min) ───────────────────────
