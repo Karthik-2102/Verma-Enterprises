@@ -243,8 +243,8 @@
 
             <div class="section-label">100% Free · No Login · Instant</div>
             <h2 class="section-title">Online Tools</h2>
-            <p class="tools-section-sub">Resize images, remove backgrounds, convert files — all in your browser. Nothing
-                is uploaded to any server.</p>
+            <p class="tools-section-sub">Resize images, remove backgrounds, convert files — all free, no login required.
+            </p>
 
             <!-- Tool picker tabs -->
             <div class="tools-tab-bar" id="toolsTabBar">
@@ -325,17 +325,13 @@
                 <!-- ② BG REMOVER -->
                 <div class="tool-panel" id="tool-bgremover">
                     <div class="tool-inner">
-                        <p
-                            style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:14px;">
-                            📤 Upload your image here</p>
-
                         <!-- Drop zone -->
                         <div class="tool-drop-zone" id="bgDrop" ondragover="toolDragOver(event,'bgDrop')"
                             ondragleave="toolDragLeave('bgDrop')" ondrop="toolDrop(event,'bgInput')"
                             onclick="document.getElementById('bgInput').click()">
                             <div class="tdz-icon">✂️</div>
-                            <p>Drop image here or <span class="tdz-link">browse</span></p>
-                            <small>JPG · PNG · WEBP — up to 12 MP</small>
+                            <p>Upload your image here or <span class="tdz-link">browse</span></p>
+                            <small>JPG · PNG · WEBP — background removed instantly</small>
                         </div>
                         <input type="file" id="bgInput" accept="image/*" style="display:none" onchange="bgLoad(this)">
 
