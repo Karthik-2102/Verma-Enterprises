@@ -213,26 +213,66 @@ function injectBaseStyles() {
     #pageLoader.fade-out { opacity: 0; transition: opacity .5s; }
 
     /* ── WhatsApp fixed button ──────────────────── */
-    #whatsappBtn {
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
-      z-index: 9000;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      padding: 13px 20px 13px 16px;
-      border-radius: 50px;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 6px 28px rgba(37,211,102,.45);
-      text-decoration: none;
-      transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s;
-      animation: waBounceIn .6s cubic-bezier(.34,1.56,.64,1) both;
+    #whatsappBtn{
+
+        position:fixed;
+
+        bottom:28px;
+        right:28px;
+
+        z-index:9000;
+
+        width:58px;
+        height:58px;
+
+        overflow:hidden;
+
+        display:flex;
+        align-items:center;
+        justify-content:flex-start;
+
+        gap:12px;
+
+        padding:0 18px;
+
+        border-radius:999px;
+
+        background:
+        linear-gradient(
+            135deg,
+            #25d366,
+            #128c7e
+        );
+
+        color:#fff;
+
+        box-shadow:
+        0 8px 30px rgba(37,211,102,.45);
+
+        text-decoration:none;
+
+        transition:
+        width .35s ease,
+        transform .25s ease;
+
+    }
+
+    #whatsappBtn:hover{
+
+        width:210px;
+
+        transform:
+        translateY(-3px);
+
+    }
+
+    #whatsappBtn .wa-icon{
+
+        min-width:22px;
+        min-height:22px;
+
+        flex-shrink:0;
+
     }
     #whatsappBtn:hover {
       transform: translateY(-3px) scale(1.04);

@@ -46,21 +46,65 @@ const storage = new CloudinaryStorage({
 
 /* File Filter — accept PDF, JPG, PNG, JPEG, WEBP */
 function fileFilter(req, file, cb) {
+
     const allowedTypes = [
+
         "application/pdf",
+
         "image/jpeg",
         "image/jpg",
         "image/png",
-        "image/webp"
+        "image/webp",
+
+        "image/heic",
+        "image/heif",
+
+        "application/octet-stream"
+
     ];
 
-    if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);  /* accept */
-    } else {
-        cb(new Error(
-            `File type not supported. Allowed: PDF, JPG, PNG, WEBP. Got: ${file.mimetype}`
-        ), false);
+    const extension =
+
+        file.originalname
+            .toLowerCase();
+
+    const isHeicByExtension =
+
+        extension.endsWith(".heic") ||
+        extension.endsWith(".heif");
+
+    if (
+
+        allowedTypes.includes(
+            file.mimetype
+        )
+
+        ||
+
+        isHeicByExtension
+
+    ) {
+
+        cb(null, true);
+
     }
+
+    else {
+
+        cb(
+
+            new Error(
+
+                `File type not supported: ${file.originalname}`
+
+            ),
+
+            false
+
+        );
+
+    }
+
 }
 
 const upload = multer({
