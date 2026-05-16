@@ -5,244 +5,479 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verma Enterprises</title>
-
     <link rel="shortcut icon" href="./logo.png">
+    <link rel="icon" type="image/png" href="./logo.png">
+
+    <!-- Google Fonts — Brand typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- PUBLIC WEBSITE -->
-    <section id="publicSite">
+    <!-- =============================================
+         GLOBAL PAGE LOADER
+         Shown on initial load; hidden by JS after
+         resources are ready.
+    ============================================= -->
+    <div id="pageLoader" class="page-loader">
+        <div class="loader-inner">
+            <div class="loader-logo-ring">
+                <div class="loader-logo-core">⚡</div>
+                <div class="loader-ring r1"></div>
+                <div class="loader-ring r2"></div>
+                <div class="loader-ring r3"></div>
+            </div>
+            <div class="loader-brand">
+                <span class="loader-verma">VERMA</span>
+                <span class="loader-ent">ENTERPRISES</span>
+            </div>
+            <div class="loader-bar-wrap">
+                <div class="loader-bar" id="loaderBar"></div>
+            </div>
+            <p class="loader-msg" id="loaderMsg">Loading services...</p>
+        </div>
+    </div>
 
-        <!-- NAVBAR -->
-        <header class="landing-navbar">
 
+    <!-- =============================================
+         PUBLIC LANDING PAGE
+         Visible to all visitors (logged in or not)
+    ============================================= -->
+    <div id="publicSite">
+
+        <!-- ── NAVBAR ────────────────────────────── -->
+        <header class="landing-navbar" id="mainNavbar">
+
+            <!-- Brand logo + wordmark -->
             <div class="brand-logo-wrap">
-                <img src="logo.png" alt="Logo">
+                <img src="logo.png" alt="Verma Enterprises Logo" onerror="this.style.display='none'">
                 <h2>Verma Enterprises</h2>
             </div>
 
-            <nav>
-                <a href="#heroSection">Home</a>
-                <a href="#aboutSection">About</a>
-                <a href="#servicesSection">Services</a>
-                <a href="#contactSection">Contact</a>
+            <!-- Desktop nav links -->
+            <nav class="nav-links" id="navLinks">
+                <a href="#heroSection" onclick="smoothNav('heroSection')">Home</a>
+                <a href="#aboutSection" onclick="smoothNav('aboutSection')">About</a>
+                <a href="#servicesSection" onclick="smoothNav('servicesSection')">Services</a>
+                <a href="#contactSection" onclick="smoothNav('contactSection')">Contact</a>
             </nav>
 
+            <!-- Right controls: search + auth button -->
             <div class="nav-right">
 
-                <div class="search-wrap">
-                    <input type="text" id="userSearchInput" placeholder="Search services..."
-                        oninput="handleSearchInput(this.value)">
+                <!-- Smart search with suggestions -->
+                <div class="search-wrap" id="navSearchWrap">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="userSearchInput" placeholder="Search services..." autocomplete="off"
+                        oninput="handleSearchInput(this.value)" onkeydown="handleSearchKeydown(event)"
+                        onfocus="showSuggestions()" onblur="hideSuggestionsDelay()">
+                    <div id="searchSuggestions" class="search-suggestions"></div>
                 </div>
 
-                <button onclick="openLoginModal()">
-                    Login
+                <!-- Auth button: Login when logged out, Avatar when logged in -->
+                <button class="nav-login-btn" id="navAuthBtn" onclick="openLoginModal()">
+                    Sign In
+                </button>
+
+                <!-- Avatar shown after login (replaces Sign In) -->
+                <div class="nav-avatar hidden" id="navAvatar" onclick="toggleProfileMenu()">
+                    U
+                    <div id="profileMenu" class="profile-menu hidden">
+                        <div onclick="switchToDashboard()">📋 My Dashboard</div>
+                        <div onclick="openProfileModal()">👤 My Profile</div>
+                        <div onclick="logout()">🚪 Logout</div>
+                    </div>
+                </div>
+
+                <!-- Mobile hamburger -->
+                <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileNav()">
+                    ☰
                 </button>
 
             </div>
 
         </header>
 
-        <!-- HERO -->
+        <!-- Mobile nav drawer -->
+        <div class="mobile-nav-drawer hidden" id="mobileNavDrawer">
+            <a href="#heroSection" onclick="smoothNav('heroSection');toggleMobileNav()">Home</a>
+            <a href="#aboutSection" onclick="smoothNav('aboutSection');toggleMobileNav()">About</a>
+            <a href="#servicesSection" onclick="smoothNav('servicesSection');toggleMobileNav()">Services</a>
+            <a href="#contactSection" onclick="smoothNav('contactSection');toggleMobileNav()">Contact</a>
+        </div>
+
+
+        <!-- ── HERO SECTION ─────────────────────── -->
         <section id="heroSection" class="hero-section">
 
-            <h1>
-                Fast, Trusted & Professional Digital Services
-            </h1>
+            <!-- Floating ambient orbs for depth -->
+            <div class="hero-orb orb-1"></div>
+            <div class="hero-orb orb-2"></div>
+            <div class="hero-orb orb-3"></div>
 
-            <p>
-                Government services, education support,
-                online applications, documentation,
-                printing and much more.
-            </p>
+            <div class="hero-content">
 
-            <button onclick="scrollToSection('servicesSection')">
-                Explore Services
-            </button>
+                <div class="hero-badge">
+                    <span class="hero-badge-dot"></span>
+                    Professional Digital Services
+                </div>
 
-        </section>
+                <h1 class="hero-title">
+                    Fast, Trusted &amp;<br>
+                    <span class="hero-title-accent">Professional</span><br>
+                    Digital Services
+                </h1>
 
-        <!-- ABOUT -->
-        <section id="aboutSection" class="landing-section">
-
-            <h2>About Us</h2>
-
-            <div class="glass-box">
-
-                <p>
-                    Verma Enterprises provides professional digital services,
-                    documentation support, online applications,
-                    printing, ID cards, government services,
-                    education services and more.
+                <p class="hero-subtitle">
+                    Government services, education support,
+                    online applications, documentation,
+                    printing and much more — all under one roof.
                 </p>
+
+                <div class="hero-actions">
+                    <button class="hero-cta-primary" onclick="smoothNav('servicesSection')">
+                        Explore Services
+                        <span class="cta-arrow">→</span>
+                    </button>
+                    <button class="hero-cta-secondary" onclick="openLoginModal()">
+                        Get Started
+                    </button>
+                </div>
+
+                <!-- Trust stats bar -->
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <span class="stat-num">500+</span>
+                        <span class="stat-label">Services Done</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="hero-stat">
+                        <span class="stat-num">100%</span>
+                        <span class="stat-label">Verified</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="hero-stat">
+                        <span class="stat-num">24/7</span>
+                        <span class="stat-label">Support</span>
+                    </div>
+                </div>
 
             </div>
 
         </section>
 
-        <!-- SERVICES -->
+
+        <!-- ── ABOUT SECTION ────────────────────── -->
+        <section id="aboutSection" class="landing-section">
+
+            <div class="section-label">Who We Are</div>
+            <h2 class="section-title">About Us</h2>
+
+            <div class="glass-box">
+                <p>
+                    Verma Enterprises provides professional digital services,
+                    documentation support, online applications,
+                    printing, ID cards, government services,
+                    education services and more — all delivered
+                    with speed, accuracy, and full transparency.
+                </p>
+                <div class="about-features">
+                    <div class="about-feature">
+                        <span class="af-icon">🏛️</span>
+                        <span>Government Services</span>
+                    </div>
+                    <div class="about-feature">
+                        <span class="af-icon">🎓</span>
+                        <span>Education Support</span>
+                    </div>
+                    <div class="about-feature">
+                        <span class="af-icon">🖨️</span>
+                        <span>Printing & ID Cards</span>
+                    </div>
+                    <div class="about-feature">
+                        <span class="af-icon">🏥</span>
+                        <span>Pension & Welfare</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ── SERVICES SECTION ──────────────────── -->
         <section id="servicesSection" class="landing-section">
 
-            <h2>Our Services</h2>
+            <div class="section-label">What We Offer</div>
+            <h2 class="section-title">Our Services</h2>
 
-            <div id="categoryTabs"></div>
+            <!-- Category filter tabs -->
+            <div id="categoryTabs" class="category-tabs-bar"></div>
 
+            <!-- Services grid (public — no login required to browse) -->
             <div id="services" class="services-grid"></div>
 
         </section>
 
-        <!-- CONTACT -->
+
+        <!-- ── CONTACT / FOOTER ──────────────────── -->
         <footer id="contactSection" class="footer-contact">
 
             <div class="footer-grid">
 
                 <div class="footer-box">
-                    <h4>Call</h4>
-                    <p>+91 95768 828238</p>
+                    <h4>📞 Call Us</h4>
+                    <p>+91 95768 82823</p>
                 </div>
 
                 <div class="footer-box">
-                    <h4>Email</h4>
-                    <p>
-                        karthikvikash02@gmail.com
-                    </p>
+                    <h4>✉️ Email</h4>
+                    <p>karthikvikash02@gmail.com</p>
                 </div>
 
                 <div class="footer-box">
-                    <h4>Location</h4>
-                    <p>
-                        West Champaran, Bihar
-                    </p>
+                    <h4>📍 Location</h4>
+                    <p>West Champaran, Bihar</p>
                 </div>
 
             </div>
+
+            <p class="footer-copy">
+                © 2025 Verma Enterprises · All Rights Reserved
+            </p>
 
         </footer>
 
-    </section>
+    </div><!-- /publicSite -->
 
-    <!-- LOGIN MODAL -->
-    <div id="authPage" class="modal hidden">
+
+    <!-- =============================================
+         LOGIN / REGISTER MODAL
+         Triggered by "Sign In" nav button or
+         when unauthenticated user clicks Apply.
+    ============================================= -->
+    <div id="authPage" class="modal hidden" onclick="handleModalBackdropClick(event,'authPage')">
 
         <div class="auth-card" id="authCard">
 
-            <!-- CLOSE -->
-            <button class="auth-close-btn" onclick="closeLoginModal()">
-                ✕
-            </button>
+            <!-- Close button -->
+            <button class="auth-close-btn" onclick="closeLoginModal()" aria-label="Close">✕</button>
 
-            <!-- FRONT -->
+            <!-- ── LOGIN FACE (front) ── -->
             <div class="auth-face auth-front">
 
-                <h2>Login</h2>
+                <div class="auth-header">
+                    <h2>Welcome Back</h2>
+                    <p>Sign in to your account</p>
+                </div>
 
-                <input id="loginIdentifier" type="text" placeholder="Email or Mobile">
+                <!-- Identifier -->
+                <div class="auth-field-wrap">
+                    <span class="auth-field-icon">👤</span>
+                    <input id="loginIdentifier" type="text" placeholder="Email or Mobile">
+                </div>
 
-                <input id="loginPassword" type="password" placeholder="Password">
+                <!-- Password -->
+                <div class="auth-field-wrap">
+                    <span class="auth-field-icon">🔒</span>
+                    <input id="loginPassword" type="password" placeholder="Password">
+                    <span class="auth-eye" onclick="togglePass('loginPassword',this)">👁</span>
+                </div>
 
-                <button onclick="login()">
-                    Login
-                </button>
+                <!-- Submit -->
+                <button class="auth-btn" onclick="login()">Sign In</button>
 
-                <!-- Admin Reset -->
-                <p class="admin-reset-btn" onclick="openAdminResetModal()">
-                    Admin Password Reset
-                </p>
+                <!-- Admin reset link -->
+                <p class="auth-link-secondary" onclick="openAdminResetModal()">Admin Password Reset</p>
 
-                <p onclick="flip()">
-                    Create Account
+                <!-- Switch to register -->
+                <p class="auth-switch-text">
+                    New here? <span onclick="flip()">Create Account</span>
                 </p>
 
             </div>
 
-            <!-- BACK -->
+            <!-- ── REGISTER FACE (back) ── -->
             <div class="auth-face auth-back">
 
-                <h2>Register</h2>
+                <div class="auth-header">
+                    <h2>Create Account</h2>
+                    <p>Join Verma Enterprises</p>
+                </div>
 
-                <input id="name" type="text" placeholder="Full Name">
+                <div class="auth-field-wrap">
+                    <span class="auth-field-icon">✏️</span>
+                    <input id="name" type="text" placeholder="Full Name">
+                </div>
 
-                <input id="signupIdentifier" type="text" placeholder="Email or Mobile">
+                <div class="auth-field-wrap">
+                    <span class="auth-field-icon">📱</span>
+                    <input id="signupIdentifier" type="text" placeholder="Email or Mobile">
+                </div>
 
-                <input id="signupPassword" type="password" placeholder="Password">
+                <div class="auth-field-wrap">
+                    <span class="auth-field-icon">🔒</span>
+                    <input id="signupPassword" type="password" placeholder="Password">
+                    <span class="auth-eye" onclick="togglePass('signupPassword',this)">👁</span>
+                </div>
 
-                <button onclick="register()">
-                    Register
-                </button>
+                <button class="auth-btn" onclick="register()">Register</button>
 
-                <p onclick="flip()">
-                    Already Registered
+                <p class="auth-switch-text">
+                    Already registered? <span onclick="flip()">Sign In</span>
                 </p>
 
             </div>
 
         </div>
 
-    </div>
-    <!-- USER DASHBOARD -->
-    <section id="mainPage" class="dashboard hidden">
+    </div><!-- /authPage -->
 
-        <header class="topbar">
 
-            <div class="menu-btn" onclick="toggleSidebar()">
-                ☰
+    <!-- =============================================
+         SERVICE DETAIL MODAL
+         Opens on card click. Shows full info +
+         Apply button. Apply requires login.
+    ============================================= -->
+    <div id="serviceModal" class="modal hidden" onclick="handleModalBackdropClick(event,'serviceModal')">
+
+        <div class="modal-box service-detail-modal">
+
+            <!-- Header -->
+            <div class="svc-modal-header">
+                <h2 id="modalTitle">Service Name</h2>
+                <button class="modal-close-btn" onclick="closeModal()" aria-label="Close">✕</button>
             </div>
 
-            <h2>
-                Verma Enterprises
-            </h2>
+            <!-- Price breakdown -->
+            <div class="modal-price-breakdown">
+                <div class="price-row">
+                    <span>Application / Form Charge</span>
+                    <span class="price-value">₹<span id="modalAppCharge">0</span></span>
+                </div>
+                <div class="price-row">
+                    <span>Our Service Charge</span>
+                    <span class="price-value">₹<span id="modalServiceCharge">0</span></span>
+                </div>
+                <div class="price-row total-row">
+                    <span>Total Price</span>
+                    <span class="price-value">₹<span id="modalPrice">0</span></span>
+                </div>
+            </div>
+
+            <!-- Required documents list -->
+            <h4 class="modal-docs-heading">📎 Required Documents</h4>
+            <ul id="modalDocs" class="modal-docs-list"></ul>
+
+            <!-- File upload — only shown after apply click + logged in -->
+            <div id="fileUploadSection" class="file-upload-section hidden">
+
+                <h4 class="modal-docs-heading">📤 Upload Your Documents</h4>
+
+                <!-- Custom styled file drop zone -->
+                <div class="file-drop-zone" id="fileDropZone" ondragover="handleFileDragOver(event)"
+                    ondragleave="handleFileDragLeave(event)" ondrop="handleFileDrop(event)"
+                    onclick="document.getElementById('fileUpload').click()">
+                    <div class="fdz-icon">📁</div>
+                    <p class="fdz-text">Click or drag files here</p>
+                    <p class="fdz-hint">JPG, JPEG, PNG, HEIC, WEBP, PDF — any size</p>
+                </div>
+
+                <!-- Hidden native file input -->
+                <input type="file" id="fileUpload" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,image/*"
+                    style="display:none" onchange="handleFileSelect(this.files)">
+
+                <!-- Selected files list — each file gets its own row + delete btn -->
+                <div id="selectedFilesList" class="selected-files-list"></div>
+
+            </div>
+
+            <!-- Action buttons -->
+            <div class="modal-actions" id="modalActions">
+                <!-- If not logged in: show Apply button that prompts login -->
+                <button class="modal-apply-btn" id="applyBtn" onclick="handleApply()">
+                    Apply Now
+                </button>
+                <!-- Submit (visible only after file upload section is shown) -->
+                <button class="modal-submit-btn hidden" id="submitBtn" onclick="submitService()">
+                    📤 Submit Application
+                </button>
+                <button class="modal-close-secondary" onclick="closeModal()">
+                    Close
+                </button>
+            </div>
+
+        </div>
+
+    </div><!-- /serviceModal -->
+
+
+    <!-- =============================================
+         USER DASHBOARD
+         Hidden until login. Shows orders, tracking,
+         profile. Services are browsable on public site.
+    ============================================= -->
+    <section id="mainPage" class="dashboard hidden">
+
+        <!-- Dashboard topbar -->
+        <header class="topbar">
+
+            <div class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</div>
+
+            <h2>Verma Enterprises</h2>
 
             <div class="profile-area">
-
-                <div class="avatar-btn" id="avatarText" onclick="toggleProfileMenu()">
-                    K
+                <div class="avatar-btn" id="avatarText" onclick="toggleProfileMenu()">U</div>
+                <div id="dashProfileMenu" class="profile-menu hidden">
+                    <div onclick="openProfileModal()">👤 My Profile</div>
+                    <div onclick="backToPublic()">🌐 Browse Services</div>
+                    <div onclick="logout()">🚪 Logout</div>
                 </div>
-
-                <div id="profileMenu" class="profile-menu hidden">
-                    <div onclick="openProfileModal()">
-                        My Profile
-                    </div>
-
-                    <div onclick="logout()">
-                        Logout
-                    </div>
-                </div>
-
             </div>
 
         </header>
 
+        <!-- Slide-out sidebar -->
         <aside id="sidebar" class="sidebar">
-
+            <div class="sidebar-header">
+                <h3>Menu</h3>
+                <span class="close-btn" onclick="toggleSidebar()">✕</span>
+            </div>
+            <div class="sidebar-user">
+                <div class="sidebar-avatar" id="sidebarAvatar">U</div>
+                <h3 id="welcomeText">Welcome</h3>
+            </div>
             <ul class="user-menu">
-
-                <li onclick="scrollToSection('ordersSection')">
-                    My Applications
-                </li>
-
-                <li onclick="scrollToSection('ordersSection')">
-                    Tracking
-                </li>
-
-                <li onclick="openProfileModal()">
-                    Profile
-                </li>
-
+                <li onclick="scrollToSection('ordersSection')">📋 My Applications</li>
+                <li onclick="scrollToSection('ordersSection')">📡 Live Tracking</li>
+                <li onclick="openProfileModal()">👤 Profile</li>
+                <li onclick="backToPublic()">🌐 Browse Services</li>
+                <li onclick="logout()">🚪 Logout</li>
             </ul>
-
         </aside>
 
+        <!-- Backdrop overlay -->
         <div id="overlay" onclick="toggleSidebar()"></div>
 
+        <!-- Dashboard main content -->
         <main class="content">
 
             <section id="ordersSection">
 
-                <h2>
-                    My Applications
-                </h2>
+                <div class="dash-welcome-bar">
+                    <div>
+                        <h2>My Applications</h2>
+                        <p class="dash-subtitle">Track all your submitted service requests</p>
+                    </div>
+                    <button class="browse-services-btn" onclick="backToPublic()">
+                        + Browse Services
+                    </button>
+                </div>
 
                 <div id="userOrders" class="services-grid"></div>
 
@@ -250,34 +485,91 @@
 
         </main>
 
-    </section>
+    </section><!-- /mainPage -->
 
-    <!-- SERVICE MODAL -->
-    <div id="serviceModal" class="modal hidden">
 
-        <div class="modal-box">
-
-            <h2 id="modalTitle"></h2>
-
-            <ul id="modalDocs"></ul>
-
-            <input type="file" id="fileUpload" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,image/*"
-                onchange="previewSelectedFiles()">
-
-            <div id="selectedFilesList"></div>
-
-            <button onclick="submitService()">
-                Submit
-            </button>
-
-            <button onclick="closeModal()">
-                Close
-            </button>
-
+    <!-- =============================================
+         PROFILE MODAL
+    ============================================= -->
+    <div id="profileModal" class="modal hidden" onclick="handleModalBackdropClick(event,'profileModal')">
+        <div class="modal-box profile-modal-box">
+            <div class="svc-modal-header">
+                <h2>My Profile</h2>
+                <button class="modal-close-btn" onclick="closeProfileModal()">✕</button>
+            </div>
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">✏️</span>
+                <input id="profileName" type="text" placeholder="Full Name" readonly>
+            </div>
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">📱</span>
+                <input id="profileIdentifier" type="text" placeholder="Email or Mobile" readonly>
+            </div>
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">🔒</span>
+                <input id="profilePassword" type="password" placeholder="New Password">
+            </div>
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">🔒</span>
+                <input id="confirmPassword" type="password" placeholder="Confirm New Password">
+            </div>
+            <button class="auth-btn" onclick="updateProfile()">Update Password</button>
         </div>
-
     </div>
 
+
+    <!-- =============================================
+         FORGOT PASSWORD MODAL (User)
+    ============================================= -->
+    <div id="forgotBox" class="modal hidden" onclick="handleModalBackdropClick(event,'forgotBox')">
+        <div class="modal-box profile-modal-box">
+            <div class="svc-modal-header">
+                <h2>Reset Password</h2>
+                <button class="modal-close-btn" onclick="closeForgot()">✕</button>
+            </div>
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">📱</span>
+                <input id="fpIdentifier" type="text" placeholder="Email or Mobile">
+            </div>
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">🔒</span>
+                <input id="newPassword" type="password" placeholder="New Password">
+            </div>
+            <button class="auth-btn" onclick="resetPassword()">Reset Password</button>
+            <button class="auth-btn auth-btn-outline" onclick="closeForgot()">Cancel</button>
+        </div>
+    </div>
+
+
+    <!-- =============================================
+         ADMIN FORGOT PASSWORD MODAL
+    ============================================= -->
+    <div id="adminForgotBox" class="modal hidden" onclick="handleModalBackdropClick(event,'adminForgotBox')">
+        <div class="modal-box profile-modal-box">
+            <div class="svc-modal-header">
+                <h2>Admin Reset</h2>
+                <button class="modal-close-btn" onclick="closeAdminForgot()">✕</button>
+            </div>
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">👤</span>
+                <input id="adminFpIdentifier" type="text" placeholder="Admin Email">
+            </div>
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">📨</span>
+                <input id="adminFpOtp" type="text" placeholder="OTP">
+            </div>
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">🔒</span>
+                <input id="adminFpNewPassword" type="password" placeholder="New Password">
+            </div>
+            <button class="auth-btn" onclick="sendAdminForgotOtp()">Send OTP</button>
+            <button class="auth-btn" onclick="resetAdminPassword()">Reset Password</button>
+            <button class="auth-btn auth-btn-outline" onclick="closeAdminForgot()">Cancel</button>
+        </div>
+    </div>
+
+
+    <!-- Main script -->
     <script src="script.js"></script>
 
 </body>
