@@ -238,6 +238,29 @@ function injectBaseStyles() {
       100% { opacity: 1; transform: translateY(0)   scale(1);   }
     }
 
+    /* ── Official charge row ────────────────────── */
+    .official-charge-row {
+      background: rgba(99,102,241,.08);
+      border: 1px solid rgba(99,102,241,.22);
+      border-radius: 8px;
+      padding: 10px 14px !important;
+      margin: 2px 0;
+    }
+    .official-charge-tag {
+      display: inline-block;
+      margin-left: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      background: rgba(99,102,241,.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99,102,241,.35);
+      border-radius: 4px;
+      padding: 2px 6px;
+      vertical-align: middle;
+    }
+
     /* ── Hero CTA swap (logged-in) ──────────────── */
     .hero-cta-secondary.logged-in-cta {
       background: linear-gradient(135deg, rgba(255,165,0,.18), rgba(255,165,0,.08));
@@ -671,7 +694,7 @@ function renderDashWelcomeBar(userName) {
     </div>
     <div class="dash-nav-btns">
       <button class="dash-nav-btn active" onclick="loadUserOrders()">📋 My Applications</button>
-      <button class="dash-nav-btn" onclick="backToPublic()">🌐 Browse Services</button>
+      <button class="dash-nav-btn" onclick="backToPublic()">🏠 Home Page</button>
     </div>
   `;
 }
@@ -907,13 +930,25 @@ async function openService(id, showUploadImmediately = false) {
     const res     = await fetch(`${API}/services/${id}`);
     const service = await res.json();
 
-    const app  = service.applicationCharge || service.basePrice || 0;
-    const serv = service.serviceCharge     || 0;
+    const app      = service.applicationCharge || service.basePrice || 0;
+    const official = service.officialCharge    || 0;
+    const serv     = service.serviceCharge     || 0;
 
     el("modalTitle").innerText              = service.name;
     el("modalAppCharge").innerText          = app;
     el("modalServiceCharge").innerText      = serv;
     el("modalPrice").innerText              = service.finalPrice || (app + serv);
+
+    // Official charge row — show only when > 0
+    const offRow = el("officialChargeRow");
+    if (official > 0) {
+      el("modalOfficialCharge").innerText = official;
+      if (offRow) offRow.style.display = "";
+    } else {
+      el("modalOfficialCharge").innerText = 0;
+      if (offRow) offRow.style.display = "none";
+    }
+
     el("modalDocs").innerHTML               =
       (service.documents || []).map(d => `<li>${d}</li>`).join("") ||
       "<li>No specific documents listed.</li>";

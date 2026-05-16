@@ -5,59 +5,82 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verma Enterprises</title>
+
+    <!-- Favicon — displayed in browser tab and bookmarks -->
     <link rel="shortcut icon" href="./logo.png">
     <link rel="icon" type="image/png" href="./logo.png">
 
-    <!-- Google Fonts — Brand typography -->
+    <!--
+        Google Fonts — Brand Typography
+        ─────────────────────────────────
+        Playfair Display : hero headline / section titles
+        DM Sans          : body text / UI labels / paragraphs
+        Space Grotesk    : badges / stats / accent text
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
+    <!-- Main stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
     <!-- =============================================
-         GLOBAL PAGE LOADER
+         PAGE LOADER  (#pageLoader)
+         ─────────────────────────────────────────────
     ============================================= -->
     <div id="pageLoader" class="page-loader">
         <div class="loader-inner">
+
+            <!-- Animated concentric ring logo with ⚡ icon at the core -->
             <div class="loader-logo-ring">
                 <div class="loader-logo-core">⚡</div>
                 <div class="loader-ring r1"></div>
                 <div class="loader-ring r2"></div>
                 <div class="loader-ring r3"></div>
             </div>
+
+            <!-- Brand wordmark beneath the logo ring -->
             <div class="loader-brand">
                 <span class="loader-verma">VERMA</span>
                 <span class="loader-ent">ENTERPRISES</span>
             </div>
+
+            <!-- Progress bar — width driven by JS tick interval -->
             <div class="loader-bar-wrap">
                 <div class="loader-bar" id="loaderBar"></div>
             </div>
+
+            <!-- Status message — cycled through messages array by runPageLoader() -->
             <p class="loader-msg" id="loaderMsg">Loading services...</p>
+
         </div>
     </div>
 
 
     <!-- =============================================
-         PUBLIC LANDING PAGE
+         PUBLIC LANDING PAGE  (#publicSite)
     ============================================= -->
     <div id="publicSite">
 
-        <!-- ── NAVBAR ────────────────────────────── -->
+        <!-- ══════════════════════════════════════════
+             NAVBAR
+             ───────────────────────────────────────── -->
         <header class="landing-navbar" id="mainNavbar">
 
-            <!-- Brand logo + wordmark -->
+            <!-- Brand identity: logo image with text fallback on error -->
             <div class="brand-logo-wrap">
                 <img src="logo.png" alt="Verma Enterprises Logo" onerror="this.style.display='none'">
                 <h2>Verma Enterprises</h2>
             </div>
 
-            <!-- Desktop nav links -->
+            <!--
+                Desktop Navigation Links
+            -->
             <nav class="nav-links" id="navLinks">
                 <a href="#heroSection" onclick="smoothNav('heroSection')">Home</a>
                 <a href="#aboutSection" onclick="smoothNav('aboutSection')">About</a>
@@ -65,42 +88,60 @@
                 <a href="#contactSection" onclick="smoothNav('contactSection')">Contact</a>
             </nav>
 
-            <!-- Right controls: search + auth button -->
+            <!-- Right-side controls group -->
             <div class="nav-right">
 
-                <!-- Smart search with suggestions -->
+                <!--
+                    Smart Search Bar
+                    ─────────────────
+                -->
                 <div class="search-wrap" id="navSearchWrap">
                     <span class="search-icon">🔍</span>
                     <input type="text" id="userSearchInput" placeholder="Search services..." autocomplete="off"
                         oninput="handleSearchInput(this.value)" onkeydown="handleSearchKeydown(event)"
                         onfocus="showSuggestions()" onblur="hideSuggestionsDelay()">
+                    <!-- Autocomplete dropdown — populated by buildSuggestions() -->
                     <div id="searchSuggestions" class="search-suggestions"></div>
                 </div>
 
-                <!-- Auth button: Login when logged out, Avatar when logged in -->
+                <!--
+                    Sign In Button — LOGGED OUT STATE
+                    ────────────────────────────────────
+                    Visible by default. Hidden by updateNavbarAuthState()
+                    once a valid JWT is present in sessionStorage.
+                -->
                 <button class="nav-login-btn" id="navAuthBtn" onclick="openLoginModal()">
                     Sign In
                 </button>
 
-                <!-- Avatar shown after login (replaces Sign In) -->
+                <!--
+                    User Avatar + Profile Dropdown — LOGGED IN STATE
+                    ───────────────────────────────────────────────────
+                -->
                 <div class="nav-avatar hidden" id="navAvatar" onclick="toggleProfileMenu()">
-                    U
+                    U<!-- Initial placeholder letter; replaced by updateNavbarAuthState() -->
                     <div id="profileMenu" class="profile-menu hidden">
                         <div onclick="openProfileModal()">👤 My Profile</div>
+                        <div onclick="switchToDashboard()">📋 My Applications</div>
                         <div onclick="logout()">🚪 Logout</div>
                     </div>
                 </div>
 
-                <!-- Mobile hamburger -->
+                <!-- Mobile hamburger — toggles the slide-down nav drawer -->
                 <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileNav()">
                     ☰
                 </button>
 
-            </div>
+            </div><!-- /.nav-right -->
 
-        </header>
+        </header><!-- /#mainNavbar -->
 
-        <!-- Mobile nav drawer -->
+        <!--
+            Mobile Navigation Drawer
+            ─────────────────────────
+            Hidden by default. Toggled by toggleMobileNav().
+            Pressing any link closes the drawer immediately.
+        -->
         <div class="mobile-nav-drawer hidden" id="mobileNavDrawer">
             <a href="#heroSection" onclick="smoothNav('heroSection');toggleMobileNav()">Home</a>
             <a href="#aboutSection" onclick="smoothNav('aboutSection');toggleMobileNav()">About</a>
@@ -109,50 +150,66 @@
         </div>
 
 
-        <!-- ── HERO SECTION ─────────────────────── -->
+        <!-- ══════════════════════════════════════════
+             HERO SECTION  (#heroSection)
+             ─────────────────────────────────────────
+             
+        ═══════════════════════════════════════════ -->
         <section id="heroSection" class="hero-section">
 
-            <!-- Floating ambient orbs for depth -->
+            <!-- Pure-CSS decorative background orbs (no JS involvement) -->
             <div class="hero-orb orb-1"></div>
             <div class="hero-orb orb-2"></div>
             <div class="hero-orb orb-3"></div>
 
             <div class="hero-content">
 
+                <!-- Eyebrow badge above the main headline -->
                 <div class="hero-badge">
                     <span class="hero-badge-dot"></span>
                     Professional Digital Services
                 </div>
 
+                <!-- Primary headline -->
                 <h1 class="hero-title">
                     Fast, Trusted &amp;<br>
                     <span class="hero-title-accent">Professional</span><br>
                     Digital Services
                 </h1>
 
+                <!-- Supporting description -->
                 <p class="hero-subtitle">
                     Government services, education support,
                     online applications, documentation,
                     printing and much more — all under one roof.
                 </p>
 
+                <!--
+                    Hero CTA Buttons
+                    ─────────────────
+                -->
                 <div class="hero-actions">
+
+                    <!-- Always visible: scrolls to the services grid -->
                     <button class="hero-cta-primary" onclick="smoothNav('servicesSection')">
                         Explore Services
                         <span class="cta-arrow">→</span>
                     </button>
-                    <!-- Shown only when logged OUT -->
+
+                    <!-- Logged-out CTA: prompts authentication -->
                     <button class="hero-cta-secondary" id="heroGetStartedBtn" onclick="openLoginModal()">
                         Get Started
                     </button>
-                    <!-- Shown only when logged IN -->
+
+                    <!-- Logged-in CTA: starts hidden; revealed after login/page reload with token -->
                     <button class="hero-cta-secondary logged-in-cta hidden" id="heroMyAppsBtn"
                         onclick="switchToDashboard()">
                         📋 My Applications
                     </button>
-                </div>
 
-                <!-- Trust stats bar -->
+                </div><!-- /.hero-actions -->
+
+                <!-- Social proof stats bar -->
                 <div class="hero-stats">
                     <div class="hero-stat">
                         <span class="stat-num">500+</span>
@@ -168,14 +225,16 @@
                         <span class="stat-num">24/7</span>
                         <span class="stat-label">Support</span>
                     </div>
-                </div>
+                </div><!-- /.hero-stats -->
 
-            </div>
+            </div><!-- /.hero-content -->
 
-        </section>
+        </section><!-- /#heroSection -->
 
 
-        <!-- ── ABOUT SECTION ────────────────────── -->
+        <!-- ══════════════════════════════════════════
+             ABOUT SECTION  (#aboutSection)
+        ═══════════════════════════════════════════ -->
         <section id="aboutSection" class="landing-section">
 
             <div class="section-label">Who We Are</div>
@@ -189,6 +248,8 @@
                     education services and more — all delivered
                     with speed, accuracy, and full transparency.
                 </p>
+
+                <!-- Service category feature highlights -->
                 <div class="about-features">
                     <div class="about-feature">
                         <span class="af-icon">🏛️</span>
@@ -200,34 +261,40 @@
                     </div>
                     <div class="about-feature">
                         <span class="af-icon">🖨️</span>
-                        <span>Printing & ID Cards</span>
+                        <span>Printing &amp; ID Cards</span>
                     </div>
                     <div class="about-feature">
                         <span class="af-icon">🏥</span>
-                        <span>Pension & Welfare</span>
+                        <span>Pension &amp; Welfare</span>
                     </div>
                 </div>
-            </div>
 
-        </section>
+            </div><!-- /.glass-box -->
+
+        </section><!-- /#aboutSection -->
 
 
-        <!-- ── SERVICES SECTION ──────────────────── -->
+        <!-- ══════════════════════════════════════════
+             SERVICES SECTION  (#servicesSection)
+             ─────────────────────────────────────────
+        ═══════════════════════════════════════════ -->
         <section id="servicesSection" class="landing-section">
 
             <div class="section-label">What We Offer</div>
             <h2 class="section-title">Our Services</h2>
 
-            <!-- Category filter tabs -->
+            <!-- Category filter tabs — built and injected by buildCategoryTabs() -->
             <div id="categoryTabs" class="category-tabs-bar"></div>
 
-            <!-- Services grid (public — no login required to browse) -->
+            <!-- Service cards grid — populated by renderUserServices() -->
             <div id="services" class="services-grid"></div>
 
-        </section>
+        </section><!-- /#servicesSection -->
 
 
-        <!-- ── CONTACT / FOOTER ──────────────────── -->
+        <!-- ══════════════════════════════════════════
+             CONTACT / FOOTER  (#contactSection)
+        ═══════════════════════════════════════════ -->
         <footer id="contactSection" class="footer-contact">
 
             <div class="footer-grid">
@@ -247,28 +314,29 @@
                     <p>Dasarthapur Chowk, Mangalpur Road,<br>West Champaran, Bihar, 845105</p>
                 </div>
 
-            </div>
+            </div><!-- /.footer-grid -->
 
             <p class="footer-copy">
                 © 2026 Verma Enterprises · All Rights Reserved
             </p>
 
-        </footer>
+        </footer><!-- /#contactSection -->
 
-    </div><!-- /publicSite -->
+    </div><!-- /#publicSite -->
 
 
     <!-- =============================================
-         LOGIN / REGISTER MODAL
+         LOGIN / REGISTER MODAL  (#authPage)
+         ─────────────────────────────────────────────
     ============================================= -->
     <div id="authPage" class="modal hidden" onclick="handleModalBackdropClick(event,'authPage')">
 
         <div class="auth-card" id="authCard">
 
-            <!-- Close button -->
+            <!-- Close button — top-right corner of the card -->
             <button class="auth-close-btn" onclick="closeLoginModal()" aria-label="Close">✕</button>
 
-            <!-- ── LOGIN FACE (front) ── -->
+            <!-- ── LOGIN FACE — front of flip card ──── -->
             <div class="auth-face auth-front">
 
                 <div class="auth-header">
@@ -276,33 +344,33 @@
                     <p>Sign in to your account</p>
                 </div>
 
-                <!-- Identifier -->
+                <!-- Identifier: accepts email address or 10-digit mobile number -->
                 <div class="auth-field-wrap">
                     <span class="auth-field-icon">👤</span>
                     <input id="loginIdentifier" type="text" placeholder="Email or Mobile">
                 </div>
 
-                <!-- Password -->
+                <!-- Password with show/hide toggle via togglePass() -->
                 <div class="auth-field-wrap">
                     <span class="auth-field-icon">🔒</span>
                     <input id="loginPassword" type="password" placeholder="Password">
                     <span class="auth-eye" onclick="togglePass('loginPassword',this)">👁</span>
                 </div>
 
-                <!-- Submit -->
+                <!-- Primary action — calls login() which hits /api/auth/login -->
                 <button class="auth-btn" onclick="login()">Sign In</button>
 
-                <!-- Admin reset link -->
+                <!-- Admin-only: opens the two-step OTP reset flow -->
                 <p class="auth-link-secondary" onclick="openAdminResetModal()">Admin Password Reset</p>
 
-                <!-- Switch to register -->
+                <!-- Toggle to the register face -->
                 <p class="auth-switch-text">
                     New here? <span onclick="flip()">Create Account</span>
                 </p>
 
-            </div>
+            </div><!-- /.auth-front -->
 
-            <!-- ── REGISTER FACE (back) ── -->
+            <!-- ── REGISTER FACE — back of flip card ── -->
             <div class="auth-face auth-back">
 
                 <div class="auth-header">
@@ -310,74 +378,110 @@
                     <p>Join Verma Enterprises</p>
                 </div>
 
+                <!-- User's display name -->
                 <div class="auth-field-wrap">
                     <span class="auth-field-icon">✏️</span>
                     <input id="name" type="text" placeholder="Full Name">
                 </div>
 
+                <!-- Email or mobile — validated as email regex OR 10-digit mobile in register() -->
                 <div class="auth-field-wrap">
                     <span class="auth-field-icon">📱</span>
                     <input id="signupIdentifier" type="text" placeholder="Email or Mobile">
                 </div>
 
+                <!-- Password with show/hide toggle -->
                 <div class="auth-field-wrap">
                     <span class="auth-field-icon">🔒</span>
                     <input id="signupPassword" type="password" placeholder="Password">
                     <span class="auth-eye" onclick="togglePass('signupPassword',this)">👁</span>
                 </div>
 
+                <!-- Primary action — calls register() which hits /api/auth/register -->
                 <button class="auth-btn" onclick="register()">Register</button>
 
+                <!-- Toggle back to the login face -->
                 <p class="auth-switch-text">
                     Already registered? <span onclick="flip()">Sign In</span>
                 </p>
 
-            </div>
+            </div><!-- /.auth-back -->
 
-        </div>
+        </div><!-- /#authCard -->
 
-    </div><!-- /authPage -->
+    </div><!-- /#authPage -->
 
 
     <!-- =============================================
-         SERVICE DETAIL MODAL
+         SERVICE DETAIL MODAL  (#serviceModal)
+         ─────────────────────────────────────────────
+        
     ============================================= -->
     <div id="serviceModal" class="modal hidden" onclick="handleModalBackdropClick(event,'serviceModal')">
 
         <div class="modal-box service-detail-modal">
 
-            <!-- Header -->
+            <!-- Header: service name (populated by openService()) + close button -->
             <div class="svc-modal-header">
                 <h2 id="modalTitle">Service Name</h2>
                 <button class="modal-close-btn" onclick="closeModal()" aria-label="Close">✕</button>
             </div>
 
-            <!-- Price breakdown -->
+            <!--
+                Price Breakdown Table
+                ──────────────────────
+            -->
             <div class="modal-price-breakdown">
+
+                <!-- Row 1: Our application / form processing charge -->
                 <div class="price-row">
                     <span>Application / Form Charge</span>
                     <span class="price-value">₹<span id="modalAppCharge">0</span></span>
                 </div>
+
+                <!--
+                Row 2: Official charge from govt / university / college
+                -->
+                <div class="price-row official-charge-row" id="officialChargeRow">
+                    <span>
+                        Official Charge
+                        <!-- Source label: clarifies who levies this charge -->
+                        <span class="official-charge-tag">Govt / University / College</span>
+                    </span>
+                    <span class="price-value">₹<span id="modalOfficialCharge">0</span></span>
+                </div>
+
+                <!-- Row 3: Our service / labour charge -->
                 <div class="price-row">
                     <span>Our Service Charge</span>
                     <span class="price-value">₹<span id="modalServiceCharge">0</span></span>
                 </div>
+
+                <!-- Row 4: Grand total — highlighted with distinct styling -->
                 <div class="price-row total-row">
                     <span>Total Price</span>
                     <span class="price-value">₹<span id="modalPrice">0</span></span>
                 </div>
-            </div>
 
-            <!-- Required documents list -->
+            </div><!-- /.modal-price-breakdown -->
+
+            <!-- Required documents list — <li> items built by openService() -->
             <h4 class="modal-docs-heading">📎 Required Documents</h4>
             <ul id="modalDocs" class="modal-docs-list"></ul>
 
-            <!-- File upload — only shown after apply click + logged in -->
+            <!--
+                File Upload Section
+                ────────────────────
+            -->
             <div id="fileUploadSection" class="file-upload-section hidden">
 
                 <h4 class="modal-docs-heading">📤 Upload Your Documents</h4>
 
-                <!-- Custom styled file drop zone -->
+                <!--
+                    Drop zone
+                    ─ Click triggers the hidden #fileUpload input
+                    ─ Drag events handled by handleFileDragOver / Leave / Drop
+                -->
                 <div class="file-drop-zone" id="fileDropZone" ondragover="handleFileDragOver(event)"
                     ondragleave="handleFileDragLeave(event)" ondrop="handleFileDrop(event)"
                     onclick="document.getElementById('fileUpload').click()">
@@ -386,46 +490,65 @@
                     <p class="fdz-hint">JPG, JPEG, PNG, HEIC, WEBP, PDF — any size</p>
                 </div>
 
-                <!-- Hidden native file input -->
+                <!-- Native file input — hidden; opened programmatically by the drop zone -->
                 <input type="file" id="fileUpload" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,image/*"
                     style="display:none" onchange="handleFileSelect(this.files)">
 
-                <!-- Selected files list — each file gets its own row + delete btn -->
+                <!-- File rows rendered here by renderFileList() — each row has a delete button -->
                 <div id="selectedFilesList" class="selected-files-list"></div>
 
-            </div>
+            </div><!-- /#fileUploadSection -->
 
-            <!-- Action buttons -->
+            <!--
+                Modal Action Buttons
+                ──────────────────────
+            -->
             <div class="modal-actions" id="modalActions">
-                <!-- If not logged in: show Apply button that prompts login -->
+
+                <!-- Apply Now: checks auth via handleApply(); redirects to login if needed -->
                 <button class="modal-apply-btn" id="applyBtn" onclick="handleApply()">
                     Apply Now
                 </button>
-                <!-- Submit (visible only after file upload section is shown) -->
+
+                <!-- Submit Application: sends FormData with files to /api/orders/create -->
                 <button class="modal-submit-btn hidden" id="submitBtn" onclick="submitService()">
                     📤 Submit Application
                 </button>
+
+                <!-- Secondary close: dismisses without submitting -->
                 <button class="modal-close-secondary" onclick="closeModal()">
                     Close
                 </button>
-            </div>
 
-        </div>
+            </div><!-- /#modalActions -->
 
-    </div>
+        </div><!-- /.modal-box -->
+
+    </div><!-- /#serviceModal -->
+
 
     <!-- =============================================
-         USER DASHBOARD
+         USER DASHBOARD  (#mainPage)
+         ─────────────────────────────────────────────
     ============================================= -->
     <section id="mainPage" class="dashboard hidden">
 
-        <!-- Dashboard topbar -->
+        <!--
+            Dashboard Topbar
+            ─────────────────
+        -->
         <header class="topbar">
 
+            <!-- Sidebar toggle stub — sidebar is CSS-hidden but JS reference kept -->
             <div class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</div>
 
+            <!-- Brand name in topbar -->
             <h2>Verma Enterprises</h2>
 
+            <!--
+                Dashboard Avatar + Dropdown
+                ────────────────────────────
+            -->
             <div class="profile-area">
                 <div class="avatar-btn" id="avatarText" onclick="toggleProfileMenu()">U</div>
                 <div id="dashProfileMenu" class="profile-menu hidden">
@@ -435,9 +558,12 @@
                 </div>
             </div>
 
-        </header>
+        </header><!-- /.topbar -->
 
-        <!-- Slide-out sidebar -->
+        <!--
+            Legacy Sidebar  (#sidebar)
+            ───────────────────────────
+        -->
         <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <h3>Menu</h3>
@@ -456,14 +582,19 @@
             </ul>
         </aside>
 
-        <!-- Backdrop overlay -->
+        <!-- Sidebar backdrop overlay (legacy — not visible with sidebar hidden) -->
         <div id="overlay" onclick="toggleSidebar()"></div>
 
-        <!-- Dashboard main content -->
+        <!-- Main scrollable content area -->
         <main class="content">
 
+            <!--
+                Orders Section  (#ordersSection)
+                ──────────────────────────────────
+            -->
             <section id="ordersSection">
 
+                <!-- Static placeholder — overwritten by renderDashWelcomeBar() -->
                 <div class="dash-welcome-bar">
                     <div>
                         <h2>My Applications</h2>
@@ -474,97 +605,135 @@
                     </button>
                 </div>
 
+                <!-- Order card grid — injected by loadUserOrders() -->
                 <div id="userOrders" class="services-grid"></div>
 
-            </section>
+            </section><!-- /#ordersSection -->
 
-        </main>
+        </main><!-- /.content -->
 
-    </section><!-- /mainPage -->
+    </section><!-- /#mainPage -->
 
 
     <!-- =============================================
-         PROFILE MODAL
+         PROFILE MODAL  (#profileModal)
+         ─────────────────────────────────────────────
     ============================================= -->
     <div id="profileModal" class="modal hidden" onclick="handleModalBackdropClick(event,'profileModal')">
         <div class="modal-box profile-modal-box">
+
             <div class="svc-modal-header">
                 <h2>My Profile</h2>
                 <button class="modal-close-btn" onclick="closeProfileModal()">✕</button>
             </div>
+
+            <!-- Read-only: full name (set by loadProfile) -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">✏️</span>
                 <input id="profileName" type="text" placeholder="Full Name" readonly>
             </div>
+
+            <!-- Read-only: registered email or mobile (set by loadProfile) -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">📱</span>
                 <input id="profileIdentifier" type="text" placeholder="Email or Mobile" readonly>
             </div>
+
+            <!-- Editable: new password — min 4 chars, validated in updateProfile() -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">🔒</span>
                 <input id="profilePassword" type="password" placeholder="New Password">
             </div>
+
+            <!-- Editable: must match #profilePassword exactly -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">🔒</span>
                 <input id="confirmPassword" type="password" placeholder="Confirm New Password">
             </div>
+
+            <!-- Submit → updateProfile() → /api/auth/change-password -->
             <button class="auth-btn" onclick="updateProfile()">Update Password</button>
+
         </div>
-    </div>
+    </div><!-- /#profileModal -->
 
 
     <!-- =============================================
-         FORGOT PASSWORD MODAL (User)
+         USER FORGOT PASSWORD MODAL  (#forgotBox)
+         ─────────────────────────────────────────────
     ============================================= -->
     <div id="forgotBox" class="modal hidden" onclick="handleModalBackdropClick(event,'forgotBox')">
         <div class="modal-box profile-modal-box">
+
             <div class="svc-modal-header">
                 <h2>Reset Password</h2>
                 <button class="modal-close-btn" onclick="closeForgot()">✕</button>
             </div>
+
+            <!-- Registered email or mobile to identify the account -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">📱</span>
                 <input id="fpIdentifier" type="text" placeholder="Email or Mobile">
             </div>
+
+            <!-- New password to set for the matched account -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">🔒</span>
                 <input id="newPassword" type="password" placeholder="New Password">
             </div>
+
+            <!-- Submit → resetPassword() → POST /api/auth/reset-password -->
             <button class="auth-btn" onclick="resetPassword()">Reset Password</button>
             <button class="auth-btn auth-btn-outline" onclick="closeForgot()">Cancel</button>
+
         </div>
-    </div>
+    </div><!-- /#forgotBox -->
 
 
     <!-- =============================================
-         ADMIN FORGOT PASSWORD MODAL
+         ADMIN FORGOT PASSWORD MODAL  (#adminForgotBox)
+         ─────────────────────────────────────────────
     ============================================= -->
     <div id="adminForgotBox" class="modal hidden" onclick="handleModalBackdropClick(event,'adminForgotBox')">
         <div class="modal-box profile-modal-box">
+
             <div class="svc-modal-header">
                 <h2>Admin Reset</h2>
                 <button class="modal-close-btn" onclick="closeAdminForgot()">✕</button>
             </div>
+
+            <!-- Step 1: Admin email address used to send the OTP -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">👤</span>
                 <input id="adminFpIdentifier" type="text" placeholder="Admin Email">
             </div>
+
+            <!-- Step 2a: One-time password received via email -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">📨</span>
                 <input id="adminFpOtp" type="text" placeholder="OTP">
             </div>
+
+            <!-- Step 2b: Desired new admin password -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">🔒</span>
                 <input id="adminFpNewPassword" type="password" placeholder="New Password">
             </div>
+
+            <!-- Step 1 action: request OTP via sendAdminForgotOtp() -->
             <button class="auth-btn" onclick="sendAdminForgotOtp()">Send OTP</button>
+            <!-- Step 2 action: verify OTP + set new password via resetAdminPassword() -->
             <button class="auth-btn" onclick="resetAdminPassword()">Reset Password</button>
             <button class="auth-btn auth-btn-outline" onclick="closeAdminForgot()">Cancel</button>
+
         </div>
-    </div>
+    </div><!-- /#adminForgotBox -->
 
 
-    <!-- Main script -->
+    <!--
+        Main Application Script
+        ─────────────────────────
+    -->
     <script src="script.js"></script>
 
 </body>
