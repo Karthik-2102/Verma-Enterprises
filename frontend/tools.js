@@ -229,15 +229,21 @@ function resizerReset() {
 let _bgOrigFile   = null;
 let _bgResultBlob = null;
 
+// ── YOUR remove.bg API key — hardcoded so users are never prompted ──
+// Get a free key at https://www.remove.bg/api (50 free/month)
+// Replace the string below with your actual key:
+const BG_API_KEY = "JGoMgX56fNzK8duvaJvZEQ8Z";
+
 function bgGetApiKey() {
-  return sessionStorage.getItem("removebg_key") || "";
+  // Always use the hardcoded key; sessionStorage override kept for dev use
+  return sessionStorage.getItem("removebg_key") || BG_API_KEY;
 }
 
 function bgSaveApiKey(key) {
   sessionStorage.setItem("removebg_key", key.trim());
 }
 
-/** Called when user selects an image — checks for API key first */
+/** Called when user selects an image — goes straight to removal, no prompt */
 async function bgLoad(input) {
   const file = input.files?.[0];
   if (!file) return;
@@ -245,13 +251,6 @@ async function bgLoad(input) {
 
   _bgOrigFile   = file;
   _bgResultBlob = null;
-
-  // If no API key saved, show the key entry UI
-  if (!bgGetApiKey()) {
-    document.getElementById("bgDrop").style.display    = "none";
-    document.getElementById("bgKeyPrompt").style.display = "block";
-    return;
-  }
 
   bgRemoveBackground(file);
 }

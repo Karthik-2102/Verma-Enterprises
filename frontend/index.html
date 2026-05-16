@@ -325,13 +325,9 @@
                 <!-- ② BG REMOVER -->
                 <div class="tool-panel" id="tool-bgremover">
                     <div class="tool-inner">
-                        <div class="tool-notice">
-                            <span>🔑</span>
-                            <span>Uses <strong>remove.bg</strong>
-                                <a href="https://www.remove.bg/api" target="_blank" rel="noopener"
-                                    style="color:#99BABB;">remove.bg/api</a>
-                            </span>
-                        </div>
+                        <p
+                            style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:14px;">
+                            📤 Upload your image here</p>
 
                         <!-- Drop zone -->
                         <div class="tool-drop-zone" id="bgDrop" ondragover="toolDragOver(event,'bgDrop')"
@@ -342,25 +338,6 @@
                             <small>JPG · PNG · WEBP — up to 12 MP</small>
                         </div>
                         <input type="file" id="bgInput" accept="image/*" style="display:none" onchange="bgLoad(this)">
-
-                        <!-- API key prompt — shown when no key is saved -->
-                        <div id="bgKeyPrompt" style="display:none">
-                            <p
-                                style="font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(255,255,255,.7);margin-bottom:12px;">
-                                Enter your free <strong>remove.bg</strong> API key to continue:
-                            </p>
-                            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                                <input id="bgApiKeyInput" type="text" placeholder="e.g. abc123XYZ..."
-                                    style="flex:1;min-width:200px;background:rgba(255,255,255,.07);
-                                    border:1.5px solid rgba(255,255,255,.15);border-radius:10px;
-                                    color:#fff;font-size:14px;padding:10px 14px;outline:none;font-family:'DM Sans',sans-serif;">
-                                <button class="tool-action-btn" onclick="bgSubmitKey()">✅ Save &amp; Remove BG</button>
-                            </div>
-                            <p
-                                style="font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(255,255,255,.38);margin-top:10px;">
-                                Free tier: 50 removals/month. Key stored only in this browser tab.
-                            </p>
-                        </div>
 
                         <!-- Working spinner -->
                         <div id="bgWorking" class="tool-working" style="display:none">
@@ -384,8 +361,6 @@
                         <div id="bgActions" style="display:none;gap:10px;flex-wrap:wrap;margin-top:16px;">
                             <button class="tool-action-btn" onclick="bgDownload()">⬇️ Download PNG</button>
                             <button class="tool-reset-btn" onclick="bgReset()">↺ Try Another</button>
-                            <button class="tool-reset-btn" onclick="bgChangeKey()"
-                                style="font-size:12px;padding:8px 14px;">🔑 Change API Key</button>
                         </div>
                     </div>
                 </div><!-- /#tool-bgremover -->
