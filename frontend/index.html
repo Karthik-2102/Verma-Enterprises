@@ -198,12 +198,12 @@
                         <span class="cta-arrow">→</span>
                     </button>
 
-                    <!-- Logged-out: prompts login. Hidden after login by updateNavbarAuthState() -->
+                    <!-- Logged-out CTA: prompts authentication -->
                     <button class="hero-cta-secondary" id="heroGetStartedBtn" onclick="openLoginModal()">
                         Get Started
                     </button>
 
-                    <!-- Logged-in: hidden by default, shown after login by updateNavbarAuthState() -->
+                    <!-- Logged-in CTA: starts hidden; revealed after login/page reload with token -->
                     <button class="hero-cta-secondary logged-in-cta hidden" id="heroMyAppsBtn"
                         onclick="switchToDashboard()">
                         📋 My Applications
@@ -660,25 +660,13 @@
                 <p class="service-note">
                     *Application charges by authority will be applicable.
                 </p>
-                <!--
-                Row 2: Official charge from govt / university / college
-                -->
-                <div class="price-row official-charge-row" id="officialChargeRow">
-                    <span>
-                        Official Charge
-                        <!-- Source label: clarifies who levies this charge -->
-                        <span class="official-charge-tag">Govt / University / College</span>
-                    </span>
-                    <span class="price-value">₹<span id="modalOfficialCharge">0</span></span>
-                </div>
-
-                <!-- Row 3: Our service / labour charge -->
+                <!-- Row 2: Our service / labour charge -->
                 <div class="price-row">
                     <span>Our Service Charge</span>
                     <span class="price-value">₹<span id="modalServiceCharge">0</span></span>
                 </div>
 
-                <!-- Row 4: Grand total — highlighted with distinct styling -->
+                <!-- Row 3: Grand total — highlighted with distinct styling -->
                 <div class="price-row total-row">
                     <span>Total Price</span>
                     <span class="price-value">₹<span id="modalPrice">0</span></span>
@@ -771,7 +759,7 @@
                 ────────────────────────────
             -->
             <div class="profile-area">
-                <div class="avatar-btn" id="avatarText" onclick="toggleProfileMenu()">U</div>
+                <div class="avatar-btn" id="avatarText" onclick="toggleDashProfileMenu()">U</div>
                 <div id="dashProfileMenu" class="profile-menu hidden">
                     <div onclick="openProfileModal()">👤 My Profile</div>
                     <div onclick="backToPublic()">🌐 Browse Services</div>

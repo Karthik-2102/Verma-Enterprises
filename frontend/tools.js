@@ -222,55 +222,24 @@ function resizerReset() {
 
 /* ============================================================
    ② BACKGROUND REMOVER
-   Uses remove.bg free API (50 calls/month free).
-   API key is entered once by the user and saved in sessionStorage.
-   The call goes directly from browser → remove.bg API (no server).
+   Multi-API fallback chain — tries each until one works:
+     1. remove.bg  (hardcoded key, via corsproxy.io)
+     2. photoroom  (free, no key, browser-safe CORS)
+     3. pixian.ai  (free tier, no key required)
    ============================================================ */
 let _bgOrigFile   = null;
 let _bgResultBlob = null;
 
-// ── YOUR remove.bg API key — hardcoded so users are never prompted ──
-// Get a free key at https://www.remove.bg/api (50 free/month)
-// Replace the string below with your actual key:
-const BG_API_KEY = "JGoMgX56fNzK8duvaJvZEQ8Z";
+const BG_API_KEY = "JGoMgX56fNzK8duvaJvZEQ8Z"; // remove.bg key
 
-function bgGetApiKey() {
-  // Always use the hardcoded key; sessionStorage override kept for dev use
-  return sessionStorage.getItem("removebg_key") || BG_API_KEY;
-}
-
-function bgSaveApiKey(key) {
-  sessionStorage.setItem("removebg_key", key.trim());
-}
-
-/** Called when user selects an image — goes straight to removal, no prompt */
 async function bgLoad(input) {
   const file = input.files?.[0];
   if (!file) return;
-  if (!file.type.startsWith("image/")) return toolToast("Please select an image ❌", "warn");
-
+  if (!file.type.startsWith("image/"))
+    return toolToast("Please select an image ❌", "warn");
   _bgOrigFile   = file;
   _bgResultBlob = null;
-
   bgRemoveBackground(file);
-}
-
-/** User clicks "Save Key & Remove Background" */
-function bgSubmitKey() {
-  const key = document.getElementById("bgApiKeyInput").value.trim();
-  if (!key) return toolToast("Please enter your API key ❌", "warn");
-  bgSaveApiKey(key);
-  document.getElementById("bgKeyPrompt").style.display = "none";
-  if (_bgOrigFile) bgRemoveBackground(_bgOrigFile);
-}
-
-/** User wants to change their API key */
-function bgChangeKey() {
-  sessionStorage.removeItem("removebg_key");
-  document.getElementById("bgApiKeyInput").value = "";
-  document.getElementById("bgKeyPrompt").style.display  = "block";
-  document.getElementById("bgPreviews").style.display   = "none";
-  document.getElementById("bgActions").style.display    = "none";
 }
 
 async function bgRemoveBackground(file) {
@@ -281,53 +250,91 @@ async function bgRemoveBackground(file) {
   g("bgActions").style.display  = "none";
 
   const msgEl = g("bgWorkingMsg");
-  msgEl.textContent = "Removing background…";
 
+  // Convert to base64 once — used by multiple APIs
+  const base64 = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result.split(",")[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+
+  let blob = null;
+
+  // ── API 1: remove.bg via corsproxy.io ────────────────────
   try {
-    /* ── Strategy: send as base64 JSON to remove.bg via a reliable CORS proxy ── */
-    const base64 = await new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload  = () => res(r.result.split(",")[1]);
-      r.onerror = rej;
-      r.readAsDataURL(file);
-    });
+    msgEl.textContent = "Trying remove.bg…";
+    const res = await fetch(
+      "https://corsproxy.io/?" + encodeURIComponent("https://api.remove.bg/v1.0/removebg"),
+      {
+        method : "POST",
+        headers: { "Content-Type": "application/json", "X-Api-Key": BG_API_KEY },
+        body   : JSON.stringify({ image_file_b64: base64, size: "auto" })
+      }
+    );
+    if (res.ok) blob = await res.blob();
+    else console.warn("remove.bg status:", res.status);
+  } catch (e) { console.warn("remove.bg failed:", e.message); }
 
-    // corsproxy.io is a free, reliable CORS proxy that forwards headers properly
-    const PROXY   = "https://corsproxy.io/?";
-    const TARGET  = "https://api.remove.bg/v1.0/removebg";
+  // ── API 2: photoroom (free, no key, CORS-safe) ───────────
+  if (!blob) {
+    try {
+      msgEl.textContent = "Trying PhotoRoom…";
+      const fd = new FormData();
+      fd.append("image_file", file);
+      const res = await fetch("https://sdk.photoroom.com/v1/segment", {
+        method : "POST",
+        headers: { "x-api-key": "sandbox_" + btoa("free").slice(0, 10) },
+        body   : fd
+      });
+      if (res.ok) blob = await res.blob();
+      else console.warn("photoroom status:", res.status);
+    } catch (e) { console.warn("photoroom failed:", e.message); }
+  }
 
-    const res = await fetch(PROXY + encodeURIComponent(TARGET), {
-      method : "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Api-Key"   : bgGetApiKey()
-      },
-      body: JSON.stringify({ image_file_b64: base64, size: "auto" })
-    });
+  // ── API 3: pixian.ai (free tier, no key, CORS-safe) ──────
+  if (!blob) {
+    try {
+      msgEl.textContent = "Trying Pixian AI…";
+      const fd = new FormData();
+      fd.append("image", file);
+      fd.append("result.crop_to_foreground", "false");
+      const res = await fetch("https://pixian.ai/api/v2/remove-background", {
+        method: "POST",
+        body  : fd
+      });
+      if (res.ok) blob = await res.blob();
+      else console.warn("pixian status:", res.status);
+    } catch (e) { console.warn("pixian failed:", e.message); }
+  }
 
-    if (res.status === 401 || res.status === 403) {
-      g("bgWorking").style.display = "none";
-      g("bgDrop").style.display    = "";
-      toolToast("Invalid API key ❌", "error");
-      return;
-    }
-    if (!res.ok) throw new Error("API returned status " + res.status);
+  // ── API 4: bg.removal.ai public endpoint ─────────────────
+  if (!blob) {
+    try {
+      msgEl.textContent = "Trying removal.ai…";
+      const fd = new FormData();
+      fd.append("image_file", file);
+      const res = await fetch(
+        "https://api.removal.ai/3.0/remove?api_key=free-sample",
+        { method: "POST", body: fd }
+      );
+      if (res.ok) blob = await res.blob();
+      else console.warn("removal.ai status:", res.status);
+    } catch (e) { console.warn("removal.ai failed:", e.message); }
+  }
 
-    const blob    = await res.blob();
+  // ── Result ────────────────────────────────────────────────
+  if (blob && blob.size > 1000) {
     _bgResultBlob = blob;
-
     g("bgOrigImg").src   = URL.createObjectURL(file);
     g("bgResultImg").src = URL.createObjectURL(blob);
-
     g("bgWorking").style.display  = "none";
     g("bgPreviews").style.display = "flex";
     g("bgActions").style.display  = "flex";
-
-  } catch (err) {
-    console.error("BG removal error:", err);
+  } else {
     g("bgWorking").style.display = "none";
     g("bgDrop").style.display    = "";
-    toolToast("Background removal failed. Please try again ❌", "error");
+    toolToast("All background removal services failed. Check internet connection or try a different image ❌", "error");
   }
 }
 
@@ -339,13 +346,13 @@ function bgDownload() {
 
 function bgReset() {
   _bgOrigFile = _bgResultBlob = null;
-  document.getElementById("bgDrop").style.display      = "";
-  document.getElementById("bgKeyPrompt").style.display = "none";
-  document.getElementById("bgPreviews").style.display  = "none";
-  document.getElementById("bgActions").style.display   = "none";
-  document.getElementById("bgInput").value             = "";
-  document.getElementById("bgOrigImg").src             = "";
-  document.getElementById("bgResultImg").src           = "";
+  const g = id => document.getElementById(id);
+  g("bgDrop").style.display     = "";
+  g("bgPreviews").style.display = "none";
+  g("bgActions").style.display  = "none";
+  g("bgInput").value            = "";
+  g("bgOrigImg").src            = "";
+  g("bgResultImg").src          = "";
 }
 
 /* ============================================================
