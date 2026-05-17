@@ -274,68 +274,60 @@ function bgChangeKey() {
 }
 
 async function bgRemoveBackground(file) {
-  document.getElementById("bgDrop").style.display      = "none";
-  document.getElementById("bgKeyPrompt") && (document.getElementById("bgKeyPrompt").style.display = "none");
-  document.getElementById("bgWorking").style.display   = "flex";
-  document.getElementById("bgPreviews").style.display  = "none";
-  document.getElementById("bgActions").style.display   = "none";
+  const g = id => document.getElementById(id);
+  g("bgDrop").style.display     = "none";
+  g("bgWorking").style.display  = "flex";
+  g("bgPreviews").style.display = "none";
+  g("bgActions").style.display  = "none";
 
-  const msgEl = document.getElementById("bgWorkingMsg");
+  const msgEl = g("bgWorkingMsg");
   msgEl.textContent = "Removing background…";
 
   try {
-    // Convert file to base64 — avoids CORS preflight issues
+    /* ── Strategy: send as base64 JSON to remove.bg via a reliable CORS proxy ── */
     const base64 = await new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.onload  = () => res(reader.result.split(",")[1]);
-      reader.onerror = rej;
-      reader.readAsDataURL(file);
+      const r = new FileReader();
+      r.onload  = () => res(r.result.split(",")[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
     });
 
-    // Call remove.bg via their base64 endpoint using no-cors-safe JSON body
-    // We use allorigins.win as a CORS proxy since direct browser→remove.bg is blocked
-    const apiPayload = JSON.stringify({
-      image_file_b64: base64,
-      size: "auto"
-    });
+    // corsproxy.io is a free, reliable CORS proxy that forwards headers properly
+    const PROXY   = "https://corsproxy.io/?";
+    const TARGET  = "https://api.remove.bg/v1.0/removebg";
 
-    const proxyUrl = "https://api.allorigins.win/raw?url=" +
-      encodeURIComponent("https://api.remove.bg/v1.0/removebg");
-
-    const res = await fetch(proxyUrl, {
-      method: "POST",
+    const res = await fetch(PROXY + encodeURIComponent(TARGET), {
+      method : "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Api-Key": bgGetApiKey()
+        "X-Api-Key"   : bgGetApiKey()
       },
-      body: apiPayload
+      body: JSON.stringify({ image_file_b64: base64, size: "auto" })
     });
 
-    if (res.status === 403 || res.status === 401) {
-      sessionStorage.removeItem("removebg_key");
-      document.getElementById("bgWorking").style.display = "none";
-      document.getElementById("bgDrop").style.display    = "";
+    if (res.status === 401 || res.status === 403) {
+      g("bgWorking").style.display = "none";
+      g("bgDrop").style.display    = "";
       toolToast("Invalid API key ❌", "error");
       return;
     }
+    if (!res.ok) throw new Error("API returned status " + res.status);
 
-    if (!res.ok) throw new Error("API error " + res.status);
-
-    const blob = await res.blob();
+    const blob    = await res.blob();
     _bgResultBlob = blob;
 
-    document.getElementById("bgOrigImg").src   = URL.createObjectURL(file);
-    document.getElementById("bgResultImg").src = URL.createObjectURL(blob);
+    g("bgOrigImg").src   = URL.createObjectURL(file);
+    g("bgResultImg").src = URL.createObjectURL(blob);
 
-    document.getElementById("bgWorking").style.display  = "none";
-    document.getElementById("bgPreviews").style.display = "flex";
-    document.getElementById("bgActions").style.display  = "flex";
+    g("bgWorking").style.display  = "none";
+    g("bgPreviews").style.display = "flex";
+    g("bgActions").style.display  = "flex";
 
   } catch (err) {
     console.error("BG removal error:", err);
-    document.getElementById("bgWorking").style.display = "none";
-    document.getElementById("bgDrop").style.display    = "";
-    toolToast("Background removal failed. Check API key or try again ❌", "error");
+    g("bgWorking").style.display = "none";
+    g("bgDrop").style.display    = "";
+    toolToast("Background removal failed. Please try again ❌", "error");
   }
 }
 
