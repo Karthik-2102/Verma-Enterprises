@@ -275,42 +275,53 @@ function bgChangeKey() {
 
 async function bgRemoveBackground(file) {
   document.getElementById("bgDrop").style.display      = "none";
-  document.getElementById("bgKeyPrompt").style.display = "none";
+  document.getElementById("bgKeyPrompt") && (document.getElementById("bgKeyPrompt").style.display = "none");
   document.getElementById("bgWorking").style.display   = "flex";
   document.getElementById("bgPreviews").style.display  = "none";
   document.getElementById("bgActions").style.display   = "none";
 
   const msgEl = document.getElementById("bgWorkingMsg");
-  msgEl.textContent = "Removing background via remove.bg…";
+  msgEl.textContent = "Removing background…";
 
   try {
-    const formData = new FormData();
-    formData.append("image_file", file);
-    formData.append("size", "auto");
+    // Convert file to base64 — avoids CORS preflight issues
+    const base64 = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload  = () => res(reader.result.split(",")[1]);
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    });
 
-    const res = await fetch("https://api.remove.bg/v1.0/removebg", {
+    // Call remove.bg via their base64 endpoint using no-cors-safe JSON body
+    // We use allorigins.win as a CORS proxy since direct browser→remove.bg is blocked
+    const apiPayload = JSON.stringify({
+      image_file_b64: base64,
+      size: "auto"
+    });
+
+    const proxyUrl = "https://api.allorigins.win/raw?url=" +
+      encodeURIComponent("https://api.remove.bg/v1.0/removebg");
+
+    const res = await fetch(proxyUrl, {
       method: "POST",
-      headers: { "X-Api-Key": bgGetApiKey() },
-      body: formData
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": bgGetApiKey()
+      },
+      body: apiPayload
     });
 
     if (res.status === 403 || res.status === 401) {
-      // Bad API key — clear it and ask again
       sessionStorage.removeItem("removebg_key");
-      document.getElementById("bgWorking").style.display   = "none";
-      document.getElementById("bgKeyPrompt").style.display = "block";
-      document.getElementById("bgApiKeyInput").value       = "";
-      toolToast("Invalid API key. Please enter a valid remove.bg key ❌", "error");
+      document.getElementById("bgWorking").style.display = "none";
+      document.getElementById("bgDrop").style.display    = "";
+      toolToast("Invalid API key ❌", "error");
       return;
     }
 
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
-      const msg = errJson?.errors?.[0]?.title || `API error ${res.status}`;
-      throw new Error(msg);
-    }
+    if (!res.ok) throw new Error("API error " + res.status);
 
-    const blob    = await res.blob();
+    const blob = await res.blob();
     _bgResultBlob = blob;
 
     document.getElementById("bgOrigImg").src   = URL.createObjectURL(file);
@@ -324,7 +335,7 @@ async function bgRemoveBackground(file) {
     console.error("BG removal error:", err);
     document.getElementById("bgWorking").style.display = "none";
     document.getElementById("bgDrop").style.display    = "";
-    toolToast("Background removal failed: " + err.message + " ❌", "error");
+    toolToast("Background removal failed. Check API key or try again ❌", "error");
   }
 }
 

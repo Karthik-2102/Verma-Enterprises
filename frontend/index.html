@@ -198,12 +198,12 @@
                         <span class="cta-arrow">→</span>
                     </button>
 
-                    <!-- Logged-out CTA: prompts authentication -->
+                    <!-- Logged-out: prompts login. Hidden after login by updateNavbarAuthState() -->
                     <button class="hero-cta-secondary" id="heroGetStartedBtn" onclick="openLoginModal()">
                         Get Started
                     </button>
 
-                    <!-- Logged-in CTA: starts hidden; revealed after login/page reload with token -->
+                    <!-- Logged-in: hidden by default, shown after login by updateNavbarAuthState() -->
                     <button class="hero-cta-secondary logged-in-cta hidden" id="heroMyAppsBtn"
                         onclick="switchToDashboard()">
                         📋 My Applications

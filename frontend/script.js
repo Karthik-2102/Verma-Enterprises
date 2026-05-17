@@ -213,78 +213,52 @@ function injectBaseStyles() {
     #pageLoader.fade-out { opacity: 0; transition: opacity .5s; }
 
     /* ── WhatsApp fixed button ──────────────────── */
-    #whatsappBtn{
-
-        position:fixed;
-
-        bottom:28px;
-        right:28px;
-
-        z-index:9000;
-
-        width:58px;
-        height:58px;
-
-        overflow:hidden;
-
-        display:flex;
-        align-items:center;
-        justify-content:flex-start;
-
-        gap:12px;
-
-        padding:0 18px;
-
-        border-radius:999px;
-
-        background:
-        linear-gradient(
-            135deg,
-            #25d366,
-            #128c7e
-        );
-
-        color:#fff;
-
-        box-shadow:
-        0 8px 30px rgba(37,211,102,.45);
-
-        text-decoration:none;
-
-        transition:
-        width .35s ease,
-        transform .25s ease;
-
-    }
-
-    #whatsappBtn:hover{
-
-        width:210px;
-
-        transform:
-        translateY(-3px);
-
-    }
-
-    #whatsappBtn .wa-icon{
-
-        min-width:22px;
-        min-height:22px;
-
-        flex-shrink:0;
-
+    #whatsappBtn {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 9000;
+      width: 58px;
+      height: 58px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 18px 0 16px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      color: #fff;
+      box-shadow: 0 8px 30px rgba(37,211,102,.45);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: width .35s cubic-bezier(.34,1.56,.64,1), transform .25s ease, box-shadow .25s ease;
     }
     #whatsappBtn:hover {
-      transform: translateY(-3px) scale(1.04);
-      box-shadow: 0 10px 36px rgba(37,211,102,.55);
+      width: 220px;
+      transform: translateY(-3px);
+      box-shadow: 0 12px 36px rgba(37,211,102,.55);
     }
     #whatsappBtn:active { transform: scale(.97); }
     #whatsappBtn .wa-icon {
-      width: 22px; height: 22px; flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      min-width: 24px;
     }
-    @keyframes waBounceIn {
-      0%   { opacity: 0; transform: translateY(40px) scale(.8); }
-      100% { opacity: 1; transform: translateY(0)   scale(1);   }
+    #whatsappBtn .wa-label {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+      transition: opacity .25s ease .1s, width .3s ease;
+      pointer-events: none;
+    }
+    #whatsappBtn:hover .wa-label {
+      opacity: 1;
+      width: 140px;
     }
 
     /* ── Official charge row ────────────────────── */
@@ -353,7 +327,7 @@ function injectWhatsAppButton() {
                M12 20a7.95 7.95 0 0 1-4.054-1.107l-.29-.173-3.005.856.854-2.938
                -.19-.302A7.96 7.96 0 0 1 4 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
     </svg>
-    WhatsApp Support
+    <span class="wa-label">WhatsApp Support</span>
   `;
   document.body.appendChild(btn);
 }
@@ -692,18 +666,26 @@ function enterSite() {
  * Called both after login and on DOMContentLoaded if token exists.
  */
 function updateNavbarAuthState(user) {
+  // 1. Hide Sign In button, show avatar
   el("navAuthBtn")?.classList.add("hidden");
   const navAv = el("navAvatar");
   if (navAv) {
     navAv.classList.remove("hidden");
     const letter = ((user?.name || "") || "U").charAt(0).toUpperCase();
-    // First child node is the letter text node (before the dropdown div)
     if (navAv.childNodes[0]) navAv.childNodes[0].textContent = letter;
   }
 
-  // Hero CTA swap: hide "Get Started", show "My Applications"
+  // 2. Hero CTA swap: hide "Get Started", show "My Applications"
   el("heroGetStartedBtn")?.classList.add("hidden");
   el("heroMyAppsBtn")?.classList.remove("hidden");
+
+  // 3. Remove "My Applications" from avatar dropdown — it's in hero now
+  const profileMenu = el("profileMenu");
+  if (profileMenu) {
+    Array.from(profileMenu.children).forEach(item => {
+      if (item.textContent.includes("My Applications")) item.remove();
+    });
+  }
 }
 
 // logout() is defined above in the AUTO-LOGOUT section — do not redefine here.
