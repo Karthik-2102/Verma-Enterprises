@@ -220,140 +220,6 @@ function resizerReset() {
   document.getElementById("resizerOutSize").textContent  = "";
 }
 
-/* ============================================================
-   ② BACKGROUND REMOVER
-   Multi-API fallback chain — tries each until one works:
-     1. remove.bg  (hardcoded key, via corsproxy.io)
-     2. photoroom  (free, no key, browser-safe CORS)
-     3. pixian.ai  (free tier, no key required)
-   ============================================================ */
-let _bgOrigFile   = null;
-let _bgResultBlob = null;
-
-const BG_API_KEY = "JGoMgX56fNzK8duvaJvZEQ8Z"; // remove.bg key
-
-async function bgLoad(input) {
-  const file = input.files?.[0];
-  if (!file) return;
-  if (!file.type.startsWith("image/"))
-    return toolToast("Please select an image ❌", "warn");
-  _bgOrigFile   = file;
-  _bgResultBlob = null;
-  bgRemoveBackground(file);
-}
-
-async function bgRemoveBackground(file) {
-  const g = id => document.getElementById(id);
-  g("bgDrop").style.display     = "none";
-  g("bgWorking").style.display  = "flex";
-  g("bgPreviews").style.display = "none";
-  g("bgActions").style.display  = "none";
-
-  const msgEl = g("bgWorkingMsg");
-
-  // Convert to base64 once — used by multiple APIs
-  const base64 = await new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload  = () => res(r.result.split(",")[1]);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-
-  let blob = null;
-
-  // ── API 1: remove.bg via corsproxy.io ────────────────────
-  try {
-    msgEl.textContent = "Trying remove.bg…";
-    const res = await fetch(
-      "https://corsproxy.io/?" + encodeURIComponent("https://api.remove.bg/v1.0/removebg"),
-      {
-        method : "POST",
-        headers: { "Content-Type": "application/json", "X-Api-Key": BG_API_KEY },
-        body   : JSON.stringify({ image_file_b64: base64, size: "auto" })
-      }
-    );
-    if (res.ok) blob = await res.blob();
-    else console.warn("remove.bg status:", res.status);
-  } catch (e) { console.warn("remove.bg failed:", e.message); }
-
-  // ── API 2: photoroom (free, no key, CORS-safe) ───────────
-  if (!blob) {
-    try {
-      msgEl.textContent = "Trying PhotoRoom…";
-      const fd = new FormData();
-      fd.append("image_file", file);
-      const res = await fetch("https://sdk.photoroom.com/v1/segment", {
-        method : "POST",
-        headers: { "x-api-key": "sandbox_" + btoa("free").slice(0, 10) },
-        body   : fd
-      });
-      if (res.ok) blob = await res.blob();
-      else console.warn("photoroom status:", res.status);
-    } catch (e) { console.warn("photoroom failed:", e.message); }
-  }
-
-  // ── API 3: pixian.ai (free tier, no key, CORS-safe) ──────
-  if (!blob) {
-    try {
-      msgEl.textContent = "Trying Pixian AI…";
-      const fd = new FormData();
-      fd.append("image", file);
-      fd.append("result.crop_to_foreground", "false");
-      const res = await fetch("https://pixian.ai/api/v2/remove-background", {
-        method: "POST",
-        body  : fd
-      });
-      if (res.ok) blob = await res.blob();
-      else console.warn("pixian status:", res.status);
-    } catch (e) { console.warn("pixian failed:", e.message); }
-  }
-
-  // ── API 4: bg.removal.ai public endpoint ─────────────────
-  if (!blob) {
-    try {
-      msgEl.textContent = "Trying removal.ai…";
-      const fd = new FormData();
-      fd.append("image_file", file);
-      const res = await fetch(
-        "https://api.removal.ai/3.0/remove?api_key=free-sample",
-        { method: "POST", body: fd }
-      );
-      if (res.ok) blob = await res.blob();
-      else console.warn("removal.ai status:", res.status);
-    } catch (e) { console.warn("removal.ai failed:", e.message); }
-  }
-
-  // ── Result ────────────────────────────────────────────────
-  if (blob && blob.size > 1000) {
-    _bgResultBlob = blob;
-    g("bgOrigImg").src   = URL.createObjectURL(file);
-    g("bgResultImg").src = URL.createObjectURL(blob);
-    g("bgWorking").style.display  = "none";
-    g("bgPreviews").style.display = "flex";
-    g("bgActions").style.display  = "flex";
-  } else {
-    g("bgWorking").style.display = "none";
-    g("bgDrop").style.display    = "";
-    toolToast("All background removal services failed. Check internet connection or try a different image ❌", "error");
-  }
-}
-
-function bgDownload() {
-  if (!_bgResultBlob) return;
-  downloadBlob(_bgResultBlob, "no-bg.png");
-  toolToast("Downloaded ✅", "success");
-}
-
-function bgReset() {
-  _bgOrigFile = _bgResultBlob = null;
-  const g = id => document.getElementById(id);
-  g("bgDrop").style.display     = "";
-  g("bgPreviews").style.display = "none";
-  g("bgActions").style.display  = "none";
-  g("bgInput").value            = "";
-  g("bgOrigImg").src            = "";
-  g("bgResultImg").src          = "";
-}
 
 /* ============================================================
    ③ IMAGE COMPRESSOR
@@ -1013,9 +879,27 @@ function injectToolsCSS() {
     }
     .tool-notice span { font-size: 18px; flex-shrink: 0; }
 
-    /* ── BG remover previews ─────────────────────── */
-    #bgPreviews { gap: 16px; }
-    #bgActions  { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    /* ── BG redirect buttons ─────────────────────── */
+    .bg-redirect-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 22px;
+      border-radius: 14px;
+      color: #fff;
+      text-decoration: none;
+      font-family: 'DM Sans', sans-serif;
+      min-width: 200px;
+      text-align: left;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 4px 18px rgba(0,0,0,.3);
+    }
+    .bg-redirect-btn:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    }
+    .bg-redirect-btn strong { display:block; font-size:15px; font-weight:700; }
+    .bg-redirect-btn small  { display:block; font-size:12px; opacity:.8; margin-top:2px; }
 
     /* ── Responsive ──────────────────────────────── */
     @media (max-width: 600px) {

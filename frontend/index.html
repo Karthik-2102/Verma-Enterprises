@@ -322,42 +322,58 @@
                     </div>
                 </div><!-- /#tool-resizer -->
 
-                <!-- ② BG REMOVER -->
+                <!-- ② BG REMOVER — redirects to free external tools -->
                 <div class="tool-panel" id="tool-bgremover">
-                    <div class="tool-inner">
-                        <!-- Drop zone -->
-                        <div class="tool-drop-zone" id="bgDrop" ondragover="toolDragOver(event,'bgDrop')"
-                            ondragleave="toolDragLeave('bgDrop')" ondrop="toolDrop(event,'bgInput')"
-                            onclick="document.getElementById('bgInput').click()">
-                            <div class="tdz-icon">✂️</div>
-                            <p>Upload your image here or <span class="tdz-link">browse</span></p>
-                            <small>JPG · PNG · WEBP — background removed instantly</small>
+                    <div class="tool-inner" style="text-align:center;padding:36px 24px;">
+                        <div style="font-size:52px;margin-bottom:16px;">✂️</div>
+                        <h3
+                            style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:8px;">
+                            Background Remover</h3>
+                        <p
+                            style="font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(255,255,255,.55);margin-bottom:28px;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.6;">
+                            Click any free tool below — your image opens directly on their site, background removed
+                            instantly. 100% free, no signup needed.
+                        </p>
+                        <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;">
+                            <a href="https://www.remove.bg" target="_blank" rel="noopener noreferrer"
+                                class="bg-redirect-btn" style="background:linear-gradient(135deg,#6c63ff,#4f46e5);">
+                                <span style="font-size:20px;">🎨</span>
+                                <div>
+                                    <strong>remove.bg</strong>
+                                    <small>Most popular · HD quality</small>
+                                </div>
+                            </a>
+                            <a href="https://www.canva.com/features/background-remover/" target="_blank"
+                                rel="noopener noreferrer" class="bg-redirect-btn"
+                                style="background:linear-gradient(135deg,#00c4cc,#0097a7);">
+                                <span style="font-size:20px;">🖌️</span>
+                                <div>
+                                    <strong>Canva BG Remover</strong>
+                                    <small>Free · No signup for 1 use</small>
+                                </div>
+                            </a>
+                            <a href="https://www.erase.bg" target="_blank" rel="noopener noreferrer"
+                                class="bg-redirect-btn" style="background:linear-gradient(135deg,#f97316,#ea580c);">
+                                <span style="font-size:20px;">⚡</span>
+                                <div>
+                                    <strong>erase.bg</strong>
+                                    <small>Fast · No signup needed</small>
+                                </div>
+                            </a>
+                            <a href="https://www.photoroom.com/tools/background-remover" target="_blank"
+                                rel="noopener noreferrer" class="bg-redirect-btn"
+                                style="background:linear-gradient(135deg,#22c55e,#16a34a);">
+                                <span style="font-size:20px;">📸</span>
+                                <div>
+                                    <strong>PhotoRoom</strong>
+                                    <small>Free tier · AI powered</small>
+                                </div>
+                            </a>
                         </div>
-                        <input type="file" id="bgInput" accept="image/*" style="display:none" onchange="bgLoad(this)">
-
-                        <!-- Working spinner -->
-                        <div id="bgWorking" class="tool-working" style="display:none">
-                            <div class="tool-spinner"></div>
-                            <p id="bgWorkingMsg">Removing background…</p>
-                        </div>
-
-                        <!-- Previews -->
-                        <div class="tool-preview-row" id="bgPreviews" style="display:none">
-                            <div class="tool-preview-box">
-                                <p class="tp-label">Original</p>
-                                <img id="bgOrigImg" alt="original">
-                            </div>
-                            <div class="tool-preview-box checker-bg">
-                                <p class="tp-label">Result (background removed)</p>
-                                <img id="bgResultImg" alt="result">
-                            </div>
-                        </div>
-
-                        <!-- Action buttons -->
-                        <div id="bgActions" style="display:none;gap:10px;flex-wrap:wrap;margin-top:16px;">
-                            <button class="tool-action-btn" onclick="bgDownload()">⬇️ Download PNG</button>
-                            <button class="tool-reset-btn" onclick="bgReset()">↺ Try Another</button>
-                        </div>
+                        <p
+                            style="font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(255,255,255,.3);margin-top:24px;">
+                            Opens in a new tab · Your images stay private on their servers
+                        </p>
                     </div>
                 </div><!-- /#tool-bgremover -->
 
@@ -660,13 +676,25 @@
                 <p class="service-note">
                     *Application charges by authority will be applicable.
                 </p>
-                <!-- Row 2: Our service / labour charge -->
+                <!--
+                Row 2: Official charge from govt / university / college
+                -->
+                <div class="price-row official-charge-row" id="officialChargeRow">
+                    <span>
+                        Official Charge
+                        <!-- Source label: clarifies who levies this charge -->
+                        <span class="official-charge-tag">Govt / University / College</span>
+                    </span>
+                    <span class="price-value">₹<span id="modalOfficialCharge">0</span></span>
+                </div>
+
+                <!-- Row 3: Our service / labour charge -->
                 <div class="price-row">
                     <span>Our Service Charge</span>
                     <span class="price-value">₹<span id="modalServiceCharge">0</span></span>
                 </div>
 
-                <!-- Row 3: Grand total — highlighted with distinct styling -->
+                <!-- Row 4: Grand total — highlighted with distinct styling -->
                 <div class="price-row total-row">
                     <span>Total Price</span>
                     <span class="price-value">₹<span id="modalPrice">0</span></span>
@@ -759,7 +787,7 @@
                 ────────────────────────────
             -->
             <div class="profile-area">
-                <div class="avatar-btn" id="avatarText" onclick="toggleDashProfileMenu()">U</div>
+                <div class="avatar-btn" id="avatarText" onclick="toggleProfileMenu()">U</div>
                 <div id="dashProfileMenu" class="profile-menu hidden">
                     <div onclick="openProfileModal()">👤 My Profile</div>
                     <div onclick="backToPublic()">🌐 Browse Services</div>
