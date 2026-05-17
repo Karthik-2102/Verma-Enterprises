@@ -213,48 +213,79 @@ function injectBaseStyles() {
     #pageLoader.fade-out { opacity: 0; transition: opacity .5s; }
 
     /* ── WhatsApp fixed button ──────────────────── */
-    #whatsappBtn {
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
-      z-index: 9000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 56px;
-      padding: 0;
-      gap: 0;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
-      color: #fff;
-      text-decoration: none;
-      box-shadow: 0 6px 24px rgba(37,211,102,.5);
-      overflow: hidden;
-      white-space: nowrap;
-      transition: width .4s cubic-bezier(.34,1.3,.64,1), gap .3s ease,
-                  padding .3s ease, box-shadow .3s ease, transform .2s ease;
+    #whatsappBtn{
+
+        position:fixed;
+
+        bottom:28px;
+        right:28px;
+
+        z-index:9000;
+
+        width:58px;
+        height:58px;
+
+        overflow:hidden;
+
+        display:flex;
+        align-items:center;
+        justify-content:flex-start;
+
+        gap:12px;
+
+        padding:0 18px;
+
+        border-radius:999px;
+
+        background:
+        linear-gradient(
+            135deg,
+            #25d366,
+            #128c7e
+        );
+
+        color:#fff;
+
+        box-shadow:
+        0 8px 30px rgba(37,211,102,.45);
+
+        text-decoration:none;
+
+        transition:
+        width .35s ease,
+        transform .25s ease;
+
+    }
+
+    #whatsappBtn:hover{
+
+        width:210px;
+
+        transform:
+        translateY(-3px);
+
+    }
+
+    #whatsappBtn .wa-icon{
+
+        min-width:22px;
+        min-height:22px;
+
+        flex-shrink:0;
+
     }
     #whatsappBtn:hover {
-      width: 218px;
-      gap: 10px;
-      padding: 0 20px 0 16px;
-      justify-content: flex-start;
-      box-shadow: 0 10px 36px rgba(37,211,102,.6);
-      transform: translateY(-2px);
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 10px 36px rgba(37,211,102,.55);
     }
-    #whatsappBtn:active { transform: scale(.96); }
+    #whatsappBtn:active { transform: scale(.97); }
     #whatsappBtn .wa-icon {
-      width: 26px; height: 26px;
-      flex-shrink: 0; min-width: 26px; display: block;
+      width: 22px; height: 22px; flex-shrink: 0;
     }
-    #whatsappBtn .wa-label {
-      font-size: 14px; font-weight: 700;
-      font-family: 'DM Sans', sans-serif;
-      max-width: 0; overflow: hidden; opacity: 0;
-      transition: max-width .35s ease .05s, opacity .25s ease .1s;
+    @keyframes waBounceIn {
+      0%   { opacity: 0; transform: translateY(40px) scale(.8); }
+      100% { opacity: 1; transform: translateY(0)   scale(1);   }
     }
-    #whatsappBtn:hover .wa-label { max-width: 160px; opacity: 1; }
 
     /* ── Official charge row ────────────────────── */
     .official-charge-row {
@@ -305,11 +336,24 @@ function injectWhatsAppButton() {
   btn.rel    = "noopener noreferrer";
   btn.setAttribute("aria-label", "WhatsApp Support");
   btn.innerHTML = `
-    <svg class="wa-icon" viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 2C8.268 2 2 8.268 2 16c0 2.4.638 4.644 1.752 6.588L2 30l7.608-1.732A13.94 13.94 0 0 0 16 30c7.732 0 14-6.268 14-14S23.732 2 16 2zm0 25.5a11.44 11.44 0 0 1-5.822-1.588l-.416-.248-4.316.98 1.02-4.194-.272-.43A11.44 11.44 0 0 1 4.5 16C4.5 9.596 9.596 4.5 16 4.5S27.5 9.596 27.5 16 22.404 27.5 16 27.5z"/>
-      <path d="M22.1 19.16c-.33-.166-1.952-.964-2.254-1.074-.302-.11-.522-.166-.742.166-.22.33-.852 1.074-1.044 1.294-.192.22-.384.248-.714.082-.33-.166-1.394-.514-2.656-1.64-.982-.876-1.644-1.958-1.836-2.288-.192-.33-.02-.508.144-.674.148-.148.33-.386.496-.578.166-.194.22-.33.33-.552.11-.22.056-.414-.028-.58-.082-.166-.742-1.79-1.016-2.452-.268-.644-.542-.556-.742-.566-.192-.01-.414-.012-.634-.012-.22 0-.578.082-.88.414-.302.33-1.154 1.128-1.154 2.752s1.182 3.192 1.346 3.412c.166.22 2.328 3.556 5.642 4.988.788.34 1.402.544 1.882.696.79.252 1.51.216 2.078.13.634-.094 1.952-.798 2.228-1.57.276-.77.276-1.43.192-1.57-.082-.138-.302-.22-.632-.386z"/>
+    <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15
+               -.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075
+               -.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059
+               -.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52
+               .149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52
+               -.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51
+               -.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372
+               -.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074
+               .149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625
+               .712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413
+               .248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.418
+               A9.953 9.953 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z
+               M12 20a7.95 7.95 0 0 1-4.054-1.107l-.29-.173-3.005.856.854-2.938
+               -.19-.302A7.96 7.96 0 0 1 4 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
     </svg>
-    <span class="wa-label">WhatsApp Support</span>
+    WhatsApp Support
   `;
   document.body.appendChild(btn);
 }
@@ -648,95 +692,28 @@ function enterSite() {
  * Called both after login and on DOMContentLoaded if token exists.
  */
 function updateNavbarAuthState(user) {
-  // 1. Hide Sign In button, show avatar
   el("navAuthBtn")?.classList.add("hidden");
   const navAv = el("navAvatar");
   if (navAv) {
     navAv.classList.remove("hidden");
     const letter = ((user?.name || "") || "U").charAt(0).toUpperCase();
+    // First child node is the letter text node (before the dropdown div)
     if (navAv.childNodes[0]) navAv.childNodes[0].textContent = letter;
   }
 
-  // 2. Hide entire hero section after login
-  const heroSection = el("heroSection");
-  if (heroSection) {
-    heroSection.style.display    = "none";
-    heroSection.style.visibility = "hidden";
-  }
-
-  // 3. Add "My Applications" pill button in navbar next to avatar (only once)
-  if (!el("navMyAppsBtn")) {
-    const btn = document.createElement("button");
-    btn.id        = "navMyAppsBtn";
-    btn.textContent = "📋 My Applications";
-    btn.onclick   = switchToDashboard;
-    btn.style.cssText = [
-      "padding:9px 18px",
-      "border-radius:10px",
-      "border:1.5px solid rgba(255,165,0,.6)",
-      "background:rgba(255,165,0,.12)",
-      "color:#f5a623",
-      "font-family:'DM Sans',sans-serif",
-      "font-size:13px",
-      "font-weight:700",
-      "cursor:pointer",
-      "white-space:nowrap",
-      "transition:background .2s"
-    ].join(";");
-    btn.onmouseover = () => btn.style.background = "rgba(255,165,0,.24)";
-    btn.onmouseout  = () => btn.style.background = "rgba(255,165,0,.12)";
-    const navRight = navAv?.parentElement;
-    if (navRight) navRight.insertBefore(btn, navAv);
-  }
-
-  // 4. Remove "My Applications" from avatar dropdown (now in navbar)
-  const profileMenu = el("profileMenu");
-  if (profileMenu) {
-    Array.from(profileMenu.children).forEach(item => {
-      if (item.textContent.includes("My Applications")) item.remove();
-    });
-  }
+  // Hero CTA swap: hide "Get Started", show "My Applications"
+  el("heroGetStartedBtn")?.classList.add("hidden");
+  el("heroMyAppsBtn")?.classList.remove("hidden");
 }
 
 // logout() is defined above in the AUTO-LOGOUT section — do not redefine here.
 
 /* ============================================================
    PROFILE MENU TOGGLES
-   ─────────────────────────────────────────────────────────────
-   toggleProfileMenu() is called by two different elements:
-     • #navAvatar  → should open/close #profileMenu  (public site)
-     • #avatarText → should open/close #dashProfileMenu (dashboard)
-   We detect which context we're in by checking which page
-   is currently visible, then toggle the correct menu.
    ============================================================ */
-function toggleProfileMenu() {
-  const dashVisible = !el("mainPage")?.classList.contains("hidden");
-  if (dashVisible) {
-    /* ── Dashboard context ── */
-    const dashMenu = el("dashProfileMenu");
-    if (!dashMenu) return;
-    const isHidden = dashMenu.classList.contains("hidden");
-    /* Close nav menu first, then toggle dash menu */
-    el("profileMenu")?.classList.add("hidden");
-    dashMenu.classList.toggle("hidden", !isHidden);
-  } else {
-    /* ── Public site context ── */
-    const navMenu = el("profileMenu");
-    if (!navMenu) return;
-    const isHidden = navMenu.classList.contains("hidden");
-    el("dashProfileMenu")?.classList.add("hidden");
-    navMenu.classList.toggle("hidden", !isHidden);
-  }
-}
-
-function toggleDashProfileMenu() {
-  /* Explicit dash-side toggle (called from dashProfileMenu items) */
-  el("dashProfileMenu")?.classList.toggle("hidden");
-}
-
-/* Make accessible from inline HTML onclick attributes */
-window.toggleProfileMenu     = toggleProfileMenu;
-window.toggleDashProfileMenu = toggleDashProfileMenu;
+function toggleProfileMenu()     { el("profileMenu")?.classList.toggle("hidden"); }
+function toggleDashProfileMenu() { el("dashProfileMenu")?.classList.toggle("hidden"); }
+window.toggleProfileMenu = toggleProfileMenu; // accessible from inline HTML
 
 /* ============================================================
    DASHBOARD TOPBAR  (replaces sidebar)
@@ -1291,6 +1268,21 @@ function buildTimelineHTML(order) {
   });
 
   return html + `</div></div>`;
+}
+
+/* ============================================================
+   INVOICE DOWNLOAD
+   ============================================================ */
+async function downloadInvoice(id) {
+  try {
+    const res = await fetch(`${API}/orders/invoice/${id}`, { headers: authHeaders() });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); return toast(e.message || "Invoice failed ❌", "error"); }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `Verma-Enterprises-Invoice-${id}.pdf`; a.click();
+    URL.revokeObjectURL(url);
+  } catch { toast("Failed to download invoice ❌", "error"); }
 }
 
 /* ============================================================
