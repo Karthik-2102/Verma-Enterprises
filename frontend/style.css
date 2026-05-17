@@ -94,45 +94,6 @@ input, select {
     background: var(--red-hot);
     color: #111;
 }
-html,
-body {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden !important;
-}
-
-/* Prevent any section/container from exceeding screen width */
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-    max-width: 100%;
-}
-
-/* Media elements */
-img,
-video,
-canvas,
-iframe {
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
-
-/* Main wrappers */
-section,
-div,
-header,
-main,
-nav,
-.container,
-.hero-section,
-.hero-content,
-.tools-section,
-.about-section {
-    max-width: 100%;
-    overflow-x: hidden;
-}
 
 
 /* =============================================================
@@ -2240,39 +2201,9 @@ nav,
 
     /* Toast */
     #adminToast { bottom: 14px; right: 14px; left: 14px; text-align: center; max-width: unset; }
-    
-    /* Full mobile fitting */
-    body {
-    overflow-x: hidden !important;
-    }
-
-    #mainNavbar,
-    .hero-section,
-    .hero-content,
-    .tools-wrapper,
-    .about-wrapper,
-    .footer-grid {
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-
-    /* Fix buttons or tabs causing overflow */
-    .category-tabs-bar,
-    .tool-tabs,
-    .nav-right {
-        flex-wrap: wrap !important;
-        overflow-x: hidden !important;
-    }
-
-    /* Fix input/upload box */
-    .upload-box,
-    .upload-area,
-    .tool-card {
-        width: 100% !important;
-        min-width: unset !important;
-    }
 
 }
+
 
 /* =============================================================
    RESPONSIVE — SMALL MOBILE (≤ 480px)
