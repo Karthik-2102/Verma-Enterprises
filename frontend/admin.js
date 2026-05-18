@@ -32,12 +32,6 @@ const TIMELINE_STAGES = [
 document.addEventListener("DOMContentLoaded", initAdmin);
 
 /* ── PAGE LOADER UTILITIES ───────────────────
-   setLoaderProgress(pct, msg)
-     Animates the loader bar to `pct` (0-100)
-     and updates the status message text.
-   hideAdminLoader()
-     Fades out the full-screen loader once all
-     initial data fetches are complete.
    ------------------------------------------ */
 function setLoaderProgress(pct, msg) {
     const bar = document.getElementById("adminLoaderBar");
@@ -56,10 +50,6 @@ function hideAdminLoader() {
 }
 
 /* ── NAV ACTIVE STATE ─────────────────────────
-   Called by onclick on each <a> in .admin-menu.
-   Removes .active from all items and adds it to
-   the clicked element. This is purely visual;
-   the href scroll still fires normally.
    ------------------------------------------ */
 function setActiveNav(el) {
     document.querySelectorAll(".admin-menu a").forEach(a => a.classList.remove("active"));
@@ -67,9 +57,6 @@ function setActiveNav(el) {
 }
 
 /* ── PENDING BADGE ────────────────────────────
-   Updates the small red badge on the Orders nav
-   link to show the count of pending orders.
-   Called by updateStats() after each loadOrders().
    ------------------------------------------ */
 function updatePendingNavBadge(count) {
     const badge = document.getElementById("pendingNavBadge");
@@ -83,11 +70,6 @@ function updatePendingNavBadge(count) {
 }
 
 /* ── MAIN INIT ────────────────────────────────
-   1. Checks token & role (identical to original)
-   2. Drives loader progress bar through each
-      async load call
-   3. Hides loader when everything is ready
-   All backend calls are unchanged.
    ------------------------------------------ */
 async function initAdmin() {
 
@@ -1020,7 +1002,6 @@ function closeAdminProfile() {
 
 /* =============================================
    ADMIN PASSWORD STRENGTH — shared utility
-   Rule: >=6 chars, 1 uppercase, 1 digit, 1 special char
    ============================================= */
 function adminEvaluatePassword(pwd) {
     if (!pwd) return { valid: false, strength: -1, label: "" };

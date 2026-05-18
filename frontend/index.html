@@ -858,11 +858,6 @@
     <!-- =============================================
          PROFILE MODAL  (#profileModal)
          ─────────────────────────────────────────────
-         Shows name + contact (read-only).
-         Password change: new password must match
-         pattern Upper@123 (uppercase + symbol + digit,
-         min 6 chars). No OTP needed — user is already
-         authenticated via session token.
     ============================================= -->
     <div id="profileModal" class="modal hidden" onclick="handleModalBackdropClick(event,'profileModal')">
         <div class="modal-box profile-modal-box">
@@ -934,10 +929,6 @@
     <!-- =============================================
          USER FORGOT PASSWORD MODAL  (#forgotBox)
          ─────────────────────────────────────────────
-         Verification: registered name + email/mobile
-         must match the account. No OTP needed.
-         Calls POST /api/auth/reset-password with
-         { identifier, name, newPassword }
     ============================================= -->
     <div id="forgotBox" class="modal hidden" onclick="handleModalBackdropClick(event,'forgotBox')">
         <div class="modal-box profile-modal-box">
@@ -1006,8 +997,6 @@
 
     <!-- =============================================
          ADMIN FORGOT PASSWORD MODAL  (#adminForgotBox)
-         Step 1: Enter admin email → Send OTP
-         Step 2: Enter OTP + new password + confirm → Reset
     ============================================= -->
     <div id="adminForgotBox" class="modal hidden" onclick="handleModalBackdropClick(event,'adminForgotBox')">
         <div class="modal-box profile-modal-box">
