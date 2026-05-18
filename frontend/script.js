@@ -528,18 +528,28 @@ function handleModalBackdropClick(event, modalId) {
 }
 
 function handleOutsideClick(e) {
-  // Nav avatar menu
+  // Nav avatar menu — close only when click is outside BOTH the avatar AND the menu itself
   const navAv  = el("navAvatar");
   const navM   = el("profileMenu");
-  if (navM && !navM.classList.contains("hidden") && !navAv?.contains(e.target))
-    navM.classList.add("hidden");
+  if (navM && !navM.classList.contains("hidden")) {
+    const clickedInsideMenu   = navM.contains(e.target);
+    const clickedOnAvatar     = navAv?.contains(e.target);
+    const clickedOnAppsBtn    = el("navMyAppsBtn")?.contains(e.target);
+    if (!clickedInsideMenu && !clickedOnAvatar && !clickedOnAppsBtn) {
+      navM.classList.add("hidden");
+    }
+  }
 
-  // Dashboard avatar menu
+  // Dashboard avatar menu — close only when click is outside both avatar text AND menu
   const dashM  = el("dashProfileMenu");
   const dashAv = el("avatarText");
-  if (dashM && !dashM.classList.contains("hidden") &&
-      !dashAv?.contains(e.target) && !dashM.contains(e.target))
-    dashM.classList.add("hidden");
+  if (dashM && !dashM.classList.contains("hidden")) {
+    const clickedInsideDashMenu = dashM.contains(e.target);
+    const clickedOnDashAv       = dashAv?.contains(e.target);
+    if (!clickedInsideDashMenu && !clickedOnDashAv) {
+      dashM.classList.add("hidden");
+    }
+  }
 }
 
 function closeAllMenus() {
@@ -654,7 +664,15 @@ function updateNavbarAuthState(user) {
   if (navAv) {
     navAv.classList.remove("hidden");
     const letter = ((user?.name || "") || "U").charAt(0).toUpperCase();
-    if (navAv.childNodes[0]) navAv.childNodes[0].textContent = letter;
+    // Safely set the letter — works whether navAvatar has a text node or not
+    // Find first text node or set textContent directly
+    const textNode = Array.from(navAv.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+    if (textNode) {
+      textNode.textContent = letter;
+    } else {
+      // No text node found — prepend one so the letter shows
+      navAv.insertBefore(document.createTextNode(letter), navAv.firstChild);
+    }
   }
 
   // 2. Hide entire hero section after login
@@ -709,7 +727,10 @@ function updateNavbarAuthState(user) {
    We detect which context we're in by checking which page
    is currently visible, then toggle the correct menu.
    ============================================================ */
-function toggleProfileMenu() {
+function toggleProfileMenu(event) {
+  // Stop the click from bubbling to handleOutsideClick on the same tick
+  if (event) event.stopPropagation();
+
   const dashVisible = !el("mainPage")?.classList.contains("hidden");
   if (dashVisible) {
     /* ── Dashboard context ── */
