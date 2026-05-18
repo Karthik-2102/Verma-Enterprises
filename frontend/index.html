@@ -595,8 +595,11 @@
                 <!-- Primary action — calls login() which hits /api/auth/login -->
                 <button class="auth-btn" onclick="login()">Sign In</button>
 
-                <!-- Admin-only: opens the two-step OTP reset flow -->
-                <p class="auth-link-secondary" onclick="openAdminResetModal()">Admin Password Reset</p>
+                <!-- User forgot password — OTP flow via /api/otp + /api/auth/reset-password -->
+                <p class="auth-link-secondary" onclick="openForgotModal()">🔑 Forgot Password?</p>
+
+                <!-- Admin-only: opens the two-step OTP reset flow — smaller / dimmer -->
+                <p class="auth-link-admin" onclick="openAdminResetModal()">Admin Password Reset</p>
 
                 <!-- Toggle to the register face -->
                 <p class="auth-switch-text">
@@ -855,6 +858,11 @@
     <!-- =============================================
          PROFILE MODAL  (#profileModal)
          ─────────────────────────────────────────────
+         Shows name + contact (read-only).
+         Password change: new password must match
+         pattern Upper@123 (uppercase + symbol + digit,
+         min 6 chars). No OTP needed — user is already
+         authenticated via session token.
     ============================================= -->
     <div id="profileModal" class="modal hidden" onclick="handleModalBackdropClick(event,'profileModal')">
         <div class="modal-box profile-modal-box">
@@ -864,32 +872,60 @@
                 <button class="modal-close-btn" onclick="closeProfileModal()">✕</button>
             </div>
 
-            <!-- Read-only: full name (set by loadProfile) -->
+            <!-- Read-only info populated by loadProfile() -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">✏️</span>
                 <input id="profileName" type="text" placeholder="Full Name" readonly>
             </div>
 
-            <!-- Read-only: registered email or mobile (set by loadProfile) -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">📱</span>
                 <input id="profileIdentifier" type="text" placeholder="Email or Mobile" readonly>
             </div>
 
-            <!-- Editable: new password — min 4 chars, validated in updateProfile() -->
-            <div class="auth-field-wrap">
-                <span class="auth-field-icon">🔒</span>
-                <input id="profilePassword" type="password" placeholder="New Password">
+            <!-- Divider -->
+            <div class="profile-section-divider">
+                <span>Change Password</span>
             </div>
 
-            <!-- Editable: must match #profilePassword exactly -->
+            <!-- Password strength hint -->
+            <p class="pwd-hint">
+                Must be ≥6 characters with at least one uppercase letter,
+                one number, and one special character &nbsp;
+                <span class="pwd-hint-eg">e.g. &nbsp;Upper@123</span>
+            </p>
+
+            <!-- New password -->
+            <div class="auth-field-wrap" id="profilePassWrap">
+                <span class="auth-field-icon">🔒</span>
+                <input id="profilePassword" type="password"
+                       placeholder="New Password"
+                       oninput="checkProfilePwdStrength(this.value)">
+                <span class="auth-eye" onclick="togglePass('profilePassword',this)">👁</span>
+            </div>
+
+            <!-- Inline strength bar -->
+            <div class="pwd-strength-bar-wrap">
+                <div class="pwd-strength-bar" id="profileStrengthBar"></div>
+            </div>
+            <p class="pwd-strength-msg" id="profileStrengthMsg"></p>
+
+            <!-- Confirm password -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">🔒</span>
                 <input id="confirmPassword" type="password" placeholder="Confirm New Password">
+                <span class="auth-eye" onclick="togglePass('confirmPassword',this)">👁</span>
             </div>
 
-            <!-- Submit → updateProfile() → /api/auth/change-password -->
-            <button class="auth-btn" onclick="updateProfile()">Update Password</button>
+            <!-- Action buttons — side-by-side, well aligned -->
+            <div class="profile-btn-row">
+                <button class="auth-btn profile-update-btn" onclick="updateProfile()">
+                    ✅ Update Password
+                </button>
+                <button class="auth-btn auth-btn-outline profile-cancel-btn" onclick="closeProfileModal()">
+                    Cancel
+                </button>
+            </div>
 
         </div>
     </div><!-- /#profileModal -->
@@ -898,6 +934,10 @@
     <!-- =============================================
          USER FORGOT PASSWORD MODAL  (#forgotBox)
          ─────────────────────────────────────────────
+         Verification: registered name + email/mobile
+         must match the account. No OTP needed.
+         Calls POST /api/auth/reset-password with
+         { identifier, name, newPassword }
     ============================================= -->
     <div id="forgotBox" class="modal hidden" onclick="handleModalBackdropClick(event,'forgotBox')">
         <div class="modal-box profile-modal-box">
@@ -907,21 +947,58 @@
                 <button class="modal-close-btn" onclick="closeForgot()">✕</button>
             </div>
 
-            <!-- Registered email or mobile to identify the account -->
+            <p class="forgot-desc">
+                Enter your registered name and email/mobile to verify your account,
+                then set a new password.
+            </p>
+
+            <!-- Registered full name — must match account -->
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">✏️</span>
+                <input id="fpName" type="text" placeholder="Your Registered Full Name">
+            </div>
+
+            <!-- Registered email or mobile -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">📱</span>
-                <input id="fpIdentifier" type="text" placeholder="Email or Mobile">
+                <input id="fpIdentifier" type="text" placeholder="Registered Email or Mobile">
             </div>
 
-            <!-- New password to set for the matched account -->
+            <!-- New password with strength bar -->
+            <p class="pwd-hint">
+                Must be ≥6 chars · uppercase · number · special character
+                <span class="pwd-hint-eg">e.g. Upper@123</span>
+            </p>
+
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">🔒</span>
-                <input id="newPassword" type="password" placeholder="New Password">
+                <input id="fpNewPassword" type="password"
+                       placeholder="New Password"
+                       oninput="checkForgotPwdStrength(this.value)">
+                <span class="auth-eye" onclick="togglePass('fpNewPassword',this)">👁</span>
             </div>
 
-            <!-- Submit → resetPassword() → POST /api/auth/reset-password -->
-            <button class="auth-btn" onclick="resetPassword()">Reset Password</button>
-            <button class="auth-btn auth-btn-outline" onclick="closeForgot()">Cancel</button>
+            <div class="pwd-strength-bar-wrap">
+                <div class="pwd-strength-bar" id="forgotStrengthBar"></div>
+            </div>
+            <p class="pwd-strength-msg" id="forgotStrengthMsg"></p>
+
+            <!-- Confirm new password -->
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">🔒</span>
+                <input id="fpConfirmPassword" type="password" placeholder="Confirm New Password">
+                <span class="auth-eye" onclick="togglePass('fpConfirmPassword',this)">👁</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="profile-btn-row">
+                <button class="auth-btn profile-update-btn" id="forgotResetBtn" onclick="userResetPassword()">
+                    Reset Password
+                </button>
+                <button class="auth-btn auth-btn-outline profile-cancel-btn" onclick="closeForgot()">
+                    Cancel
+                </button>
+            </div>
 
         </div>
     </div><!-- /#forgotBox -->

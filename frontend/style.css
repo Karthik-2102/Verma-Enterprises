@@ -2394,3 +2394,334 @@ input, select {
     }
 
 }
+
+/* =============================================================
+   FORGOT PASSWORD MODAL — Step UI
+   ============================================================= */
+
+/* Step indicator bar */
+.forgot-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.forgot-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,.36);
+  white-space: nowrap;
+  transition: color .25s;
+}
+
+.forgot-step span:first-child {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  border: 1.5px solid rgba(255,255,255,.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  transition: all .25s;
+}
+
+.forgot-step.active {
+  color: var(--gold, #E57E2F);
+}
+
+.forgot-step.active span:first-child {
+  background: linear-gradient(135deg, #E57E2F, #c55e18);
+  border-color: rgba(229,126,47,.40);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(229,126,47,.40);
+}
+
+.forgot-step-line {
+  flex: 1;
+  height: 1.5px;
+  background: rgba(255,255,255,.08);
+  margin: 0 8px 0 8px;
+  min-width: 20px;
+}
+
+/* OTP hint text below step 2 header */
+.forgot-otp-hint {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: rgba(255,255,255,.55);
+  text-align: center;
+  padding: 10px 14px;
+  background: rgba(34,197,94,.06);
+  border: 1px solid rgba(34,197,94,.16);
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.forgot-otp-hint strong {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+/* OTP input + resend button side by side */
+.otp-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.otp-resend-btn {
+  height: 52px;
+  padding: 0 14px;
+  border-radius: 13px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.10);
+  color: rgba(255,255,255,.45);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+
+.otp-resend-btn:not(:disabled):hover {
+  background: rgba(229,126,47,.12);
+  border-color: rgba(229,126,47,.30);
+  color: #E57E2F;
+}
+
+.otp-resend-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+
+/* =============================================================
+   PROFILE MODAL — OTP flow additions
+   ============================================================= */
+
+/* Divider between info fields and password section */
+.profile-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+
+.profile-section-divider::before,
+.profile-section-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,.08);
+}
+
+.profile-section-divider span {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  color: rgba(255,255,255,.30);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* OTP send hint text */
+.profile-otp-hint {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: rgba(255,255,255,.45);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+/* OTP send button — full width, gold tinted */
+.profile-otp-btn {
+  background: linear-gradient(120deg, rgba(229,126,47,.18), rgba(229,126,47,.10)) !important;
+  border: 1px solid rgba(229,126,47,.35) !important;
+  color: #E57E2F !important;
+  box-shadow: none !important;
+}
+
+.profile-otp-btn:hover {
+  background: linear-gradient(120deg, rgba(229,126,47,.28), rgba(229,126,47,.18)) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Button row — Update Password + Cancel side by side */
+.profile-btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.profile-update-btn {
+  flex: 1;
+}
+
+.profile-cancel-btn {
+  flex: 0 0 auto;
+  min-width: 90px;
+}
+
+/* Admin reset link — smaller, dimmer than the user forgot link */
+.auth-link-admin {
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(255,255,255,.28);
+  cursor: pointer;
+  transition: color .2s;
+  margin-top: -8px;
+}
+
+.auth-link-admin:hover {
+  color: rgba(255,255,255,.55);
+}
+
+/* Responsive — stack button row on small screens */
+@media (max-width: 480px) {
+  .profile-btn-row  { flex-direction: column; }
+  .profile-cancel-btn { min-width: unset; width: 100%; }
+  .otp-input-row    { flex-direction: column; align-items: stretch; }
+  .otp-resend-btn   { width: 100%; }
+}
+
+
+/* =============================================================
+   PASSWORD STRENGTH BAR & HINTS
+   ============================================================= */
+
+/* Short hint text above password field */
+.pwd-hint {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: rgba(255,255,255,.40);
+  line-height: 1.5;
+  padding: 0 2px;
+}
+
+.pwd-hint-eg {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: rgba(255,255,255,.65);
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+
+/* Strength bar container */
+.pwd-strength-bar-wrap {
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255,255,255,.06);
+  overflow: hidden;
+  margin-top: -4px;
+}
+
+/* Animated fill bar — width + colour set by JS */
+.pwd-strength-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  background: #ef4444;
+  transition: width .35s ease, background .35s ease;
+}
+
+/* Strength label message */
+.pwd-strength-msg {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  min-height: 16px;
+  margin-top: -4px;
+  transition: color .2s;
+}
+
+/* Forgot modal description text */
+.forgot-desc {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: rgba(255,255,255,.48);
+  line-height: 1.7;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+/* Profile section divider (name / change password) */
+.profile-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+
+.profile-section-divider::before,
+.profile-section-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,.08);
+}
+
+.profile-section-divider span {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  color: rgba(255,255,255,.30);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Side-by-side button row (Update Password + Cancel) */
+.profile-btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.profile-update-btn { flex: 1; }
+
+.profile-cancel-btn {
+  flex: 0 0 auto;
+  min-width: 90px;
+}
+
+/* Admin reset link — tiny & dim below the user forgot link */
+.auth-link-admin {
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(255,255,255,.26);
+  cursor: pointer;
+  transition: color .2s;
+  margin-top: -8px;
+}
+
+.auth-link-admin:hover { color: rgba(255,255,255,.52); }
+
+/* Responsive — stack buttons on small screens */
+@media (max-width: 480px) {
+  .profile-btn-row    { flex-direction: column; }
+  .profile-cancel-btn { min-width: unset; width: 100%; }
+}

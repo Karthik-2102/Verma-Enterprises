@@ -797,9 +797,21 @@ function scrollToSection(id) {
    ============================================================ */
 function openProfileModal() {
   el("profileModal")?.classList.remove("hidden");
+  /* Clear password fields on every open */
+  ["profilePassword","confirmPassword"].forEach(id => {
+    if (el(id)) el(id).value = "";
+  });
+  /* Reset strength bar */
+  const bar = el("profileStrengthBar");
+  const msg = el("profileStrengthMsg");
+  if (bar) { bar.style.width = "0%"; }
+  if (msg) msg.textContent = "";
   closeAllMenus();
 }
-function closeProfileModal() { el("profileModal")?.classList.add("hidden"); }
+
+function closeProfileModal() {
+  el("profileModal")?.classList.add("hidden");
+}
 
 async function loadProfile() {
   try {
@@ -828,29 +840,31 @@ async function loadProfile() {
 }
 
 async function updateProfile() {
-  const pass    = el("profilePassword")?.value || "";
-  const confirm = el("confirmPassword")?.value  || "";
-  const btn     = document.querySelector("#profileModal .auth-btn");
+  const pass    = el("profilePassword")?.value  || "";
+  const confirm = el("confirmPassword")?.value   || "";
+  const btn     = document.querySelector("#profileModal .profile-update-btn");
 
-  if (pass.length < 4) return toast("Password must be at least 4 characters", "warn");
+  /* Strong password validation */
+  const { valid } = evaluatePassword(pass);
+  if (!valid) return toast("Password must be ≥6 chars with uppercase, number & special character ❌", "warn");
   if (pass !== confirm) return toast("Passwords do not match ❌", "warn");
 
   setBtnLoading(btn, true);
   try {
     const res  = await fetch(`${API}/auth/change-password`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", authorization: getToken() },
+      headers: { "Content-Type": "application/json", Authorization: getToken() },
       body: JSON.stringify({ newPassword: pass })
     });
     const data = await res.json();
-    toast(data.message, data.success ? "success" : "error");
-    if (data.success) {
-      closeProfileModal();
-      el("profilePassword").value = "";
-      el("confirmPassword").value  = "";
-    }
-  } catch { toast("Network error ❌", "error"); }
-  finally { setBtnLoading(btn, false, "Update Password"); }
+    toast(data.message || (data.success ? "Password updated ✅" : "Failed ❌"), data.success ? "success" : "error");
+    if (data.success) closeProfileModal();
+  } catch (err) {
+    console.error("Change password error:", err);
+    toast("Network error — please try again ❌", "error");
+  } finally {
+    setBtnLoading(btn, false, "✅ Update Password");
+  }
 }
 
 /* ============================================================
@@ -1334,32 +1348,163 @@ async function downloadInvoice(orderId) {
 }
 
 /* ============================================================
-   FORGOT PASSWORD — User
+   PASSWORD STRENGTH HELPERS
+   ─────────────────────────────────────────────────────────────
+   Rule: min 6 chars, ≥1 uppercase, ≥1 digit, ≥1 special char
+   Pattern example: Upper@123
    ============================================================ */
-function showForgot()  { closeAdminForgot(); el("forgotBox")?.classList.remove("hidden"); }
-function closeForgot() { el("forgotBox")?.classList.add("hidden"); }
+const PWD_PATTERN = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
 
-async function resetPassword() {
-  const identifier  = el("fpIdentifier")?.value.trim() || "";
-  const newPassword = el("newPassword")?.value          || "";
-  const btn         = document.querySelector("#forgotBox .auth-btn");
+/**
+ * Returns { valid, strength, label }
+ * strength: 0 = weak, 1 = medium, 2 = strong
+ */
+function evaluatePassword(pwd) {
+  if (!pwd) return { valid: false, strength: -1, label: "" };
 
-  if (!identifier || !newPassword) return toast("Please fill all fields ❌", "warn");
+  const hasUpper   = /[A-Z]/.test(pwd);
+  const hasLower   = /[a-z]/.test(pwd);
+  const hasDigit   = /\d/.test(pwd);
+  const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+  const longEnough = pwd.length >= 6;
+  const valid      = hasUpper && hasDigit && hasSpecial && longEnough;
+
+  /* Score */
+  const score = [hasUpper, hasLower, hasDigit, hasSpecial, longEnough, pwd.length >= 10].filter(Boolean).length;
+
+  let strength, label;
+  if (score <= 2)      { strength = 0; label = "Weak"; }
+  else if (score <= 4) { strength = 1; label = "Medium"; }
+  else                 { strength = 2; label = "Strong"; }
+
+  return { valid, strength, label };
+}
+
+/** Update the strength bar + message for the forgot-password modal */
+function checkForgotPwdStrength(pwd) {
+  _renderStrengthBar("forgotStrengthBar", "forgotStrengthMsg", pwd);
+}
+
+/** Update the strength bar + message for the profile modal */
+function checkProfilePwdStrength(pwd) {
+  _renderStrengthBar("profileStrengthBar", "profileStrengthMsg", pwd);
+}
+
+function _renderStrengthBar(barId, msgId, pwd) {
+  const bar = el(barId);
+  const msg = el(msgId);
+  if (!bar && !msg) return;
+
+  const { strength, label, valid } = evaluatePassword(pwd);
+
+  if (!pwd) {
+    if (bar) { bar.style.width = "0%"; bar.className = "pwd-strength-bar"; }
+    if (msg) msg.textContent = "";
+    return;
+  }
+
+  const widths = ["33%", "66%", "100%"];
+  const classes = ["pwd-weak", "pwd-medium", "pwd-strong"];
+  const colors  = ["#ef4444", "#f59e0b", "#22c55e"];
+
+  if (bar) {
+    bar.style.width      = widths[strength] || "33%";
+    bar.style.background = colors[strength] || colors[0];
+    bar.className        = "pwd-strength-bar";
+  }
+
+  const hints = [];
+  if (!/[A-Z]/.test(pwd))       hints.push("uppercase letter");
+  if (!/\d/.test(pwd))          hints.push("number");
+  if (!/[^A-Za-z0-9]/.test(pwd)) hints.push("special character");
+  if (pwd.length < 6)           hints.push("6+ characters");
+
+  if (msg) {
+    msg.textContent = valid
+      ? `✅ ${label} password`
+      : `⚠️ ${label} — add: ${hints.join(", ")}`;
+    msg.style.color = valid ? "#22c55e" : (strength === 1 ? "#f59e0b" : "#ef4444");
+  }
+}
+
+
+/* ============================================================
+   FORGOT PASSWORD — User (NO OTP)
+   ─────────────────────────────────────────────────────────────
+   Verifies: registered name + identifier must match the account.
+   Sends: POST /api/auth/reset-password
+          body: { identifier, name, newPassword }
+   ============================================================ */
+
+function openForgotModal() {
+  closeAdminForgot();
+  closeLoginModal();
+  /* Clear all fields on open */
+  ["fpName","fpIdentifier","fpNewPassword","fpConfirmPassword"].forEach(id => {
+    if (el(id)) el(id).value = "";
+  });
+  const bar = el("forgotStrengthBar");
+  const msg = el("forgotStrengthMsg");
+  if (bar) { bar.style.width = "0%"; }
+  if (msg) msg.textContent = "";
+  el("forgotBox")?.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+/* Legacy alias */
+function showForgot() { openForgotModal(); }
+
+function closeForgot() {
+  el("forgotBox")?.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+async function userResetPassword() {
+  const name        = el("fpName")?.value.trim()        || "";
+  const identifier  = el("fpIdentifier")?.value.trim()  || "";
+  const newPassword = el("fpNewPassword")?.value         || "";
+  const confirm     = el("fpConfirmPassword")?.value     || "";
+  const btn         = el("forgotResetBtn");
+
+  /* Basic presence checks */
+  if (!name)       return toast("Please enter your registered full name ❌", "warn");
+  if (!identifier) return toast("Please enter your registered email or mobile ❌", "warn");
+
+  /* Strong password validation */
+  const { valid } = evaluatePassword(newPassword);
+  if (!valid) return toast("Password must be ≥6 chars with uppercase, number & special character ❌", "warn");
+  if (newPassword !== confirm) return toast("Passwords do not match ❌", "warn");
+
   setBtnLoading(btn, true);
   try {
     const res  = await fetch(`${API}/auth/reset-password`, {
-      method: "POST", headers: jsonHeaders(),
-      body: JSON.stringify({ identifier, newPassword })
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify({ identifier, name, newPassword })
     });
     const data = await res.json();
-    if (data.success) { toast("Password updated ✅", "success"); closeForgot(); }
-    else toast(data.message || "Reset failed ❌", "error");
-  } catch { toast("Network error ❌", "error"); }
-  finally { setBtnLoading(btn, false, "Reset Password"); }
+
+    if (data.success) {
+      toast("Password reset successfully ✅ Please sign in.", "success");
+      closeForgot();
+      openLoginModal();
+    } else {
+      /* Backend will return a message like "Name does not match our records" */
+      toast(data.message || "Verification failed ❌", "error");
+    }
+  } catch {
+    toast("Network error ❌", "error");
+  } finally {
+    setBtnLoading(btn, false, "Reset Password");
+  }
 }
 
+/* Legacy alias */
+async function resetPassword() { await userResetPassword(); }
+
+
 /* ============================================================
-   ADMIN FORGOT PASSWORD
+   ADMIN FORGOT PASSWORD  (unchanged — OTP flow preserved)
    ============================================================ */
 function openAdminResetModal() { closeForgot(); el("adminForgotBox")?.classList.remove("hidden"); }
 function closeAdminForgot() {
