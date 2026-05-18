@@ -1018,11 +1018,69 @@ function closeAdminProfile() {
     document.getElementById("adminProfileModal").classList.add("hidden");
 }
 
+/* =============================================
+   ADMIN PASSWORD STRENGTH — shared utility
+   Rule: >=6 chars, 1 uppercase, 1 digit, 1 special char
+   ============================================= */
+function adminEvaluatePassword(pwd) {
+    if (!pwd) return { valid: false, strength: -1, label: "" };
+    const hasUpper   = /[A-Z]/.test(pwd);
+    const hasLower   = /[a-z]/.test(pwd);
+    const hasDigit   = /\d/.test(pwd);
+    const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+    const longEnough = pwd.length >= 6;
+    const valid      = hasUpper && hasDigit && hasSpecial && longEnough;
+    const score      = [hasUpper, hasLower, hasDigit, hasSpecial, longEnough, pwd.length >= 10].filter(Boolean).length;
+    let strength, label;
+    if (score <= 2)      { strength = 0; label = "Weak"; }
+    else if (score <= 4) { strength = 1; label = "Medium"; }
+    else                 { strength = 2; label = "Strong"; }
+    return { valid, strength, label };
+}
+
+function adminRenderStrength(barId, msgId, pwd) {
+    const bar = document.getElementById(barId);
+    const msg = document.getElementById(msgId);
+    if (!bar || !msg) return;
+    if (!pwd) { bar.style.width = "0%"; msg.textContent = ""; return; }
+    const { strength, label, valid } = adminEvaluatePassword(pwd);
+    const widths  = ["33%", "66%", "100%"];
+    const colors  = ["#ef4444", "#f59e0b", "#22c55e"];
+    bar.style.width      = widths[strength] || "33%";
+    bar.style.background = colors[strength] || colors[0];
+    const hints = [];
+    if (!/[A-Z]/.test(pwd))        hints.push("uppercase letter");
+    if (!/\d/.test(pwd))           hints.push("number");
+    if (!/[^A-Za-z0-9]/.test(pwd)) hints.push("special character");
+    if (pwd.length < 6)            hints.push("6+ characters");
+    msg.textContent = valid
+        ? "✅ " + label + " password"
+        : "⚠️ " + label + " — add: " + hints.join(", ");
+    msg.style.color = valid ? "#22c55e" : (strength === 1 ? "#f59e0b" : "#ef4444");
+}
+
+function checkAdminProfilePwdStrength(pwd) {
+    adminRenderStrength("adminProfileStrengthBar", "adminProfileStrengthMsg", pwd);
+}
+
+function checkAdminForgotPwdStrength(pwd) {
+    if (typeof _renderStrengthBar === "function") {
+        _renderStrengthBar("adminForgotStrengthBar", "adminForgotStrengthMsg", pwd);
+    } else {
+        adminRenderStrength("adminForgotStrengthBar", "adminForgotStrengthMsg", pwd);
+    }
+}
+
+function toggleAdminPass(inputId, iconEl) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.type = input.type === "password" ? "text" : "password";
+    iconEl.style.opacity = input.type === "text" ? "1" : "0.5";
+}
+
 async function sendAdminOtp() {
     const identifier = document.getElementById("adminIdentifier").value.trim();
-
-    if (!identifier) return alert("Admin identifier not loaded. Please reopen profile ❌");
-
+    if (!identifier) return showToast("Admin identifier not loaded. Please reopen profile ❌");
     try {
         const res  = await fetch(`${API}/otp/send-otp`, {
             method: "POST",
@@ -1030,47 +1088,50 @@ async function sendAdminOtp() {
             body: JSON.stringify({ identifier })
         });
         const data = await res.json();
-        alert(data.message || "OTP sent ✅");
-    } catch (err) {
-        alert("Failed to send OTP ❌");
+        showToast(data.message || "OTP sent ✅");
+    } catch {
+        showToast("Failed to send OTP ❌");
     }
 }
 
 async function changeAdminPassword() {
-    const pass       = document.getElementById("adminPass").value;
-    const confirm    = document.getElementById("adminConfirm").value;
-    const otp        = document.getElementById("adminOtp").value.trim();
-    const identifier = document.getElementById("adminIdentifier").value.trim();
+    const pass       = document.getElementById("adminPass")?.value     || "";
+    const confirm    = document.getElementById("adminConfirm")?.value  || "";
+    const otp        = document.getElementById("adminOtp")?.value.trim() || "";
+    const identifier = document.getElementById("adminIdentifier")?.value.trim() || "";
 
-    if (!otp) return alert("Please enter the OTP first ❌");
-    if (!pass) return alert("Please enter a new password ❌");
-    if (pass !== confirm) return alert("Passwords do not match ❌");
+    if (!otp) return showToast("Please enter the OTP first ❌");
+
+    const { valid } = adminEvaluatePassword(pass);
+    if (!valid) return showToast("Password must be ≥6 chars with uppercase, number & special character ❌");
+    if (pass !== confirm) return showToast("Passwords do not match ❌");
 
     try {
-        /* Step 1 — verify OTP */
         const verifyRes  = await fetch(`${API}/otp/verify-otp`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ identifier, otp })
         });
         const verifyData = await verifyRes.json();
+        if (!verifyData.success) return showToast("Invalid OTP ❌");
 
-        if (!verifyData.success) return alert("Invalid OTP ❌");
-
-        /* Step 2 — update password via reset-password but bypass admin block */
-        const hash = pass; /* send plain — backend hashes it */
         const res  = await fetch(`${API}/auth/admin-change-password-direct`, {
             method: "POST",
-            headers: jsonHeaders(),
+            headers: { "Content-Type": "application/json", Authorization: getAdminToken() },
             body: JSON.stringify({ newPassword: pass })
         });
         const data = await res.json();
-
-        alert(data.message || (data.success ? "Password updated ✅" : "Failed ❌"));
-        if (data.success) closeAdminProfile();
-
-    } catch (err) {
-        alert("Network error ❌");
+        showToast(data.message || (data.success ? "Password updated ✅" : "Failed ❌"));
+        if (data.success) {
+            closeAdminProfile();
+            ["adminPass","adminConfirm","adminOtp"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = "";
+            });
+            adminRenderStrength("adminProfileStrengthBar", "adminProfileStrengthMsg", "");
+        }
+    } catch {
+        showToast("Network error ❌");
     }
 }
 

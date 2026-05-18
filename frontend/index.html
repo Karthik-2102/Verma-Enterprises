@@ -1006,7 +1006,8 @@
 
     <!-- =============================================
          ADMIN FORGOT PASSWORD MODAL  (#adminForgotBox)
-         ─────────────────────────────────────────────
+         Step 1: Enter admin email → Send OTP
+         Step 2: Enter OTP + new password + confirm → Reset
     ============================================= -->
     <div id="adminForgotBox" class="modal hidden" onclick="handleModalBackdropClick(event,'adminForgotBox')">
         <div class="modal-box profile-modal-box">
@@ -1016,29 +1017,60 @@
                 <button class="modal-close-btn" onclick="closeAdminForgot()">✕</button>
             </div>
 
-            <!-- Step 1: Admin email address used to send the OTP -->
+            <!-- Step 1: Admin email -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">👤</span>
                 <input id="adminFpIdentifier" type="text" placeholder="Admin Email">
             </div>
 
-            <!-- Step 2a: One-time password received via email -->
+            <!-- Step 1 action -->
+            <button class="auth-btn" id="adminSendOtpBtn" onclick="sendAdminForgotOtp()"
+                style="margin-bottom:14px;">
+                Send OTP
+            </button>
+
+            <!-- Divider -->
+            <div class="profile-section-divider" style="margin:4px 0 16px;">
+                <span>Step 2 — Verify OTP &amp; Set Password</span>
+            </div>
+
+            <!-- OTP input -->
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">📨</span>
-                <input id="adminFpOtp" type="text" placeholder="OTP">
+                <input id="adminFpOtp" type="text" placeholder="Enter OTP received on email">
             </div>
 
-            <!-- Step 2b: Desired new admin password -->
+            <!-- New password with strength -->
+            <p class="pwd-hint">Must be ≥6 chars with uppercase, number &amp; special character</p>
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">🔒</span>
-                <input id="adminFpNewPassword" type="password" placeholder="New Password">
+                <input id="adminFpNewPassword" type="password" placeholder="New Password"
+                       oninput="checkAdminForgotPwdStrength(this.value)">
+                <span class="auth-eye" onclick="togglePass('adminFpNewPassword',this)">👁</span>
+            </div>
+            <div class="pwd-strength-bar-wrap">
+                <div class="pwd-strength-bar" id="adminForgotStrengthBar"></div>
+            </div>
+            <p class="pwd-strength-msg" id="adminForgotStrengthMsg"></p>
+
+            <!-- Confirm password -->
+            <div class="auth-field-wrap">
+                <span class="auth-field-icon">🔒</span>
+                <input id="adminFpConfirmPassword" type="password" placeholder="Confirm New Password">
+                <span class="auth-eye" onclick="togglePass('adminFpConfirmPassword',this)">👁</span>
             </div>
 
-            <!-- Step 1 action: request OTP via sendAdminForgotOtp() -->
-            <button class="auth-btn" onclick="sendAdminForgotOtp()">Send OTP</button>
-            <!-- Step 2 action: verify OTP + set new password via resetAdminPassword() -->
-            <button class="auth-btn" onclick="resetAdminPassword()">Reset Password</button>
-            <button class="auth-btn auth-btn-outline" onclick="closeAdminForgot()">Cancel</button>
+            <!-- Buttons — properly spaced -->
+            <div class="profile-btn-row" style="margin-top:20px;">
+                <button class="auth-btn profile-update-btn" id="adminForgotResetBtn"
+                    onclick="resetAdminPassword()">
+                    Reset Password
+                </button>
+                <button class="auth-btn auth-btn-outline profile-cancel-btn"
+                    onclick="closeAdminForgot()">
+                    Cancel
+                </button>
+            </div>
 
         </div>
     </div><!-- /#adminForgotBox -->

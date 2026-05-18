@@ -2425,3 +2425,44 @@ input, select {
     .topbar-left h1   { font-size: 20px !important; }
 
 }
+
+/* ── Admin Password Strength Bar ─────────────────────── */
+.admin-pwd-strength-wrap {
+    background: rgba(255,255,255,.07);
+    border-radius: 999px;
+    height: 5px;
+    overflow: hidden;
+    margin: 8px 0 4px;
+}
+.admin-pwd-strength-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    transition: width .35s ease, background .35s ease;
+}
+.admin-pwd-strength-msg {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    min-height: 18px;
+    margin: 0 0 12px;
+    transition: color .3s;
+}
+
+/* ── Admin modal eye toggle ───────────────────────────── */
+.admin-eye {
+    cursor: pointer;
+    font-size: 16px;
+    opacity: .5;
+    transition: opacity .2s;
+    flex-shrink: 0;
+    user-select: none;
+}
+.admin-eye:hover { opacity: 1; }
+
+/* ── Admin modal field with eye support ─────────────────── */
+.modal-field-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.modal-field-wrap input { flex: 1; }
