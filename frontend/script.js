@@ -528,25 +528,20 @@ function handleModalBackdropClick(event, modalId) {
 }
 
 function handleOutsideClick(e) {
-  // Nav avatar menu — close only when click is outside BOTH the avatar AND the menu itself
-  const navAv  = el("navAvatar");
-  const navM   = el("profileMenu");
+  // Nav avatar menu — close only when click is outside the avatar AND the menu
+  const navAv = el("navAvatar");
+  const navM  = el("profileMenu");
   if (navM && !navM.classList.contains("hidden")) {
-    const clickedInsideMenu   = navM.contains(e.target);
-    const clickedOnAvatar     = navAv?.contains(e.target);
-    const clickedOnAppsBtn    = el("navMyAppsBtn")?.contains(e.target);
-    if (!clickedInsideMenu && !clickedOnAvatar && !clickedOnAppsBtn) {
+    if (!navAv?.contains(e.target) && !navM.contains(e.target)) {
       navM.classList.add("hidden");
     }
   }
 
-  // Dashboard avatar menu — close only when click is outside both avatar text AND menu
+  // Dashboard avatar menu — close only when click is outside avatar text AND menu
   const dashM  = el("dashProfileMenu");
   const dashAv = el("avatarText");
   if (dashM && !dashM.classList.contains("hidden")) {
-    const clickedInsideDashMenu = dashM.contains(e.target);
-    const clickedOnDashAv       = dashAv?.contains(e.target);
-    if (!clickedInsideDashMenu && !clickedOnDashAv) {
+    if (!dashAv?.contains(e.target) && !dashM.contains(e.target)) {
       dashM.classList.add("hidden");
     }
   }
@@ -664,15 +659,7 @@ function updateNavbarAuthState(user) {
   if (navAv) {
     navAv.classList.remove("hidden");
     const letter = ((user?.name || "") || "U").charAt(0).toUpperCase();
-    // Safely set the letter — works whether navAvatar has a text node or not
-    // Find first text node or set textContent directly
-    const textNode = Array.from(navAv.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
-    if (textNode) {
-      textNode.textContent = letter;
-    } else {
-      // No text node found — prepend one so the letter shows
-      navAv.insertBefore(document.createTextNode(letter), navAv.firstChild);
-    }
+    if (navAv.childNodes[0]) navAv.childNodes[0].textContent = letter;
   }
 
   // 2. Hide entire hero section after login
@@ -720,15 +707,9 @@ function updateNavbarAuthState(user) {
 
 /* ============================================================
    PROFILE MENU TOGGLES
-   ─────────────────────────────────────────────────────────────
-   toggleProfileMenu() is called by two different elements:
-     • #navAvatar  → should open/close #profileMenu  (public site)
-     • #avatarText → should open/close #dashProfileMenu (dashboard)
-   We detect which context we're in by checking which page
-   is currently visible, then toggle the correct menu.
    ============================================================ */
 function toggleProfileMenu(event) {
-  // Stop the click from bubbling to handleOutsideClick on the same tick
+  // Stop this tap/click from bubbling to document's handleOutsideClick on the same tick
   if (event) event.stopPropagation();
 
   const dashVisible = !el("mainPage")?.classList.contains("hidden");
@@ -737,7 +718,6 @@ function toggleProfileMenu(event) {
     const dashMenu = el("dashProfileMenu");
     if (!dashMenu) return;
     const isHidden = dashMenu.classList.contains("hidden");
-    /* Close nav menu first, then toggle dash menu */
     el("profileMenu")?.classList.add("hidden");
     dashMenu.classList.toggle("hidden", !isHidden);
   } else {
@@ -749,6 +729,18 @@ function toggleProfileMenu(event) {
     navMenu.classList.toggle("hidden", !isHidden);
   }
 }
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const profileMenu = el("profileMenu");
+  if (profileMenu) {
+    profileMenu.addEventListener("click", e => e.stopPropagation());
+  }
+  const dashProfileMenu = el("dashProfileMenu");
+  if (dashProfileMenu) {
+    dashProfileMenu.addEventListener("click", e => e.stopPropagation());
+  }
+});
 
 function toggleDashProfileMenu() {
   /* Explicit dash-side toggle (called from dashProfileMenu items) */
