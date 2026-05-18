@@ -51,13 +51,14 @@
     box-sizing: border-box;
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
     font-family: var(--font-body);
     background: var(--bg-deep);
     color: #fff;
     overflow-x: hidden;
+    max-width: 100vw;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
 }
@@ -2037,10 +2038,155 @@ input, select {
 
 
 /* =============================================================
-   MOBILE FIX — POST-LOGIN / DASHBOARD UI  (≤ 768px)
-   Targets only the logged-in dashboard view.
-   Zero impact on desktop or the public landing page.
+   MOBILE FIX — NAVBAR OVERFLOW + WHATSAPP BUTTON (≤ 768px)
+   Prevents left-right scroll on the public/logged-in navbar.
    ============================================================= */
+@media (max-width: 768px) {
+
+    /* ── ROOT OVERFLOW GUARD ─────────────────────────────────
+       Belt-and-suspenders: nothing on the page can push past
+       the viewport edge, not even fixed/injected elements.
+    ──────────────────────────────────────────────────────────── */
+    html, body {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+
+    /* ── LANDING NAVBAR ──────────────────────────────────────
+       Constrain width, prevent any child from blowing it out.
+    ──────────────────────────────────────────────────────────── */
+    .landing-navbar {
+        width: 100%;
+        max-width: 100vw;
+        padding: 0 12px;
+        gap: 8px;
+        overflow: hidden;
+    }
+
+    /* Brand wordmark — let it shrink rather than push other items */
+    .brand-logo-wrap {
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .brand-logo-wrap h2 {
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+
+    /* Nav-right cluster — allow shrinking, no overflow */
+    .nav-right {
+        flex-shrink: 0;
+        min-width: 0;
+        gap: 7px;
+        overflow: hidden;
+    }
+
+    /* "My Applications" injected pill button — compact on mobile */
+    #navMyAppsBtn {
+        padding: 7px 10px !important;
+        font-size: 11px !important;
+        white-space: nowrap;
+        max-width: 130px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Nav avatar */
+    .nav-avatar, #navAvatar {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 13px !important;
+        flex-shrink: 0;
+    }
+
+    /* Login button — hide text on very narrow screens to save space */
+    .nav-login-btn {
+        padding: 0 14px;
+        font-size: 13px;
+    }
+
+    /* ── WHATSAPP BUTTON — HIDE POST-LOGIN ───────────────────
+       When the user is logged in the public hero/landing page
+       is hidden (#heroSection display:none via JS) and the
+       dashboard takes over. The WhatsApp button is always
+       injected but should be hidden during the dashboard view.
+       We detect the "logged-in" context via the body/page state
+       that JS applies. As a safe universal rule: shrink it to
+       not interfere with the layout on mobile.
+    ──────────────────────────────────────────────────────────── */
+
+    /* Keep it visible but smaller and tucked away */
+    #whatsappBtn {
+        width: 46px !important;
+        height: 46px !important;
+        bottom: 18px !important;
+        right: 14px !important;
+        /* Never expand on mobile — kills the layout */
+        transition: box-shadow .3s ease, transform .2s ease !important;
+    }
+
+    #whatsappBtn:hover {
+        width: 46px !important;
+        gap: 0 !important;
+        padding: 0 !important;
+        justify-content: center !important;
+    }
+
+    #whatsappBtn .wa-label {
+        display: none !important;
+    }
+
+    /* ── GLOBAL SECTIONS OVERFLOW GUARD ─────────────────────
+       Any section or card that might be wider than viewport.
+    ──────────────────────────────────────────────────────────── */
+    .landing-section,
+    .hero-section,
+    .footer-contact,
+    .glass-box,
+    .service-card,
+    .order-card-small,
+    .auth-card,
+    .mobile-nav-drawer {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Dashboard main page — full width, no bleed */
+    #mainPage {
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    .content {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+}
+
+/* ── EXTRA NARROW (≤ 400px) ──────────────────────────────────
+   On the narrowest phones, abbreviate "My Applications" further
+──────────────────────────────────────────────────────────────── */
+@media (max-width: 400px) {
+
+    #navMyAppsBtn {
+        max-width: 100px !important;
+        font-size: 10px !important;
+        padding: 6px 8px !important;
+    }
+
+    .brand-logo-wrap h2 {
+        max-width: 90px;
+        font-size: 13px;
+    }
+
+    .nav-right { gap: 5px; }
+
+}
 @media (max-width: 768px) {
 
     /* ── TOPBAR ───────────────────────────────────────────────
