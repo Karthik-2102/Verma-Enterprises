@@ -2193,16 +2193,24 @@ input, select {
        Switch from center-justified + absolute positioned items
        to a proper 3-column flex row: [hamburger | brand | avatar]
     ──────────────────────────────────────────────────────────── */
-    .topbar {
-        height: 60px;
-        padding: 0 14px;
-        justify-content: space-between;
-        gap: 0;
+    /* ── TOPBAR — !important beats the JS-injected <style> ───── */
+    .topbar,
+    .dashboard .topbar {
+        height: 60px !important;
+        padding: 0 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0 !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 400 !important;
+        overflow: visible !important;   /* must NOT be hidden — avatar dropdown must show */
     }
 
-    /* Hamburger — static in flow, no longer absolute */
+    /* Hamburger — back in normal flex flow (JS hides it on dashboard, CSS shows on user page) */
     .topbar .menu-btn {
-        position: static;
+        position: static !important;
         font-size: 22px;
         width: 40px;
         height: 40px;
@@ -2217,35 +2225,51 @@ input, select {
     }
 
     /* Brand title — centered, truncated if needed */
-    .topbar h2 {
-        font-size: 18px;
-        flex: 1;
-        text-align: center;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding: 0 10px;
-        letter-spacing: .3px;
+    .topbar h2,
+    .dashboard .topbar h2 {
+        font-size: 18px !important;
+        flex: 1 !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        padding: 0 10px !important;
+        letter-spacing: .3px !important;
     }
 
-    /* Avatar area — static in flow, no longer absolute */
-    .topbar .profile-area {
-        position: static;
-        flex-shrink: 0;
+    /* ── AVATAR / PROFILE-AREA — force back into flex flow ───────
+       script.js injects a <style> after the stylesheet that sets
+       .dashboard .topbar { justify-content: space-between } which
+       has higher priority than media queries. Meanwhile the base
+       CSS has .topbar .profile-area { position: absolute; right:20px }
+       so the avatar flies OUT of flow and gets hidden/clipped.
+       !important here beats both the base CSS and the injected tag.
+    ──────────────────────────────────────────────────────────────── */
+    .topbar .profile-area,
+    .dashboard .topbar .profile-area {
+        position: static !important;
+        right: auto !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
     }
 
-    /* Avatar button */
-    .avatar-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 14px;
+    /* Avatar button — consistently sized */
+    .avatar-btn,
+    .dashboard .topbar .avatar-btn {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 14px !important;
+        flex-shrink: 0 !important;
     }
 
-    /* Profile dropdown — always anchors to right so it never overflows off-screen */
-    .topbar .profile-area .profile-menu {
-        right: 0;
-        left: auto;
-        width: 190px;
+    /* Profile dropdown — clamp to right edge, never bleeds off-screen */
+    .topbar .profile-area .profile-menu,
+    .dashboard .topbar .profile-area .profile-menu {
+        position: absolute !important;
+        right: 0 !important;
+        left: auto !important;
+        width: 190px !important;
     }
 
 
@@ -2425,10 +2449,11 @@ input, select {
         font-size: 20px;
     }
 
-    .avatar-btn {
-        width: 34px;
-        height: 34px;
-        font-size: 13px;
+    .avatar-btn,
+    .dashboard .topbar .avatar-btn {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 13px !important;
     }
 
     .content { padding: 14px 12px 28px; }
