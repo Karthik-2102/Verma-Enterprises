@@ -178,34 +178,120 @@ router.post("/login", async (req, res) => {
 
 });
 
-/* RESET PASSWORD */
-
+/* RESET PASSWORD — User (no OTP)
+   Verifies: identifier + name must both match the stored account.
+   Body: { identifier, name, newPassword }
+*/
 router.post("/reset-password", async (req, res) => {
     try {
-        let { identifier, newPassword } = req.body;
+        let { identifier, name, newPassword } = req.body;
 
         identifier = normalizeIdentifier(identifier);
 
-        if (!identifier || !newPassword) {
-            return res.json({ success: false, message: "All fields required ❌" });
+        // All fields required
+        if (!identifier || !name || !newPassword) {
+            return res.json({
+                success: false,
+                message: "All fields are required ❌"
+            });
         }
 
+        // Password strength: min 6 chars, uppercase, digit, special char
+        const strongPwd = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
+        if (!strongPwd.test(newPassword)) {
+            return res.json({
+                success: false,
+                message: "Password must be ≥6 chars with uppercase, number & special character (e.g. Upper@123) ❌"
+            });
+        }
+
+        // Find user by identifier
         const user = await User.findOne({ identifier });
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "No account found with this email/mobile ❌"
+            });
+        }
+
+        // Block admin from using this route
+        if (user.role === "admin") {
+            return res.json({
+                success: false,
+                message: "Admin must use the admin reset flow ❌"
+            });
+        }
+
+        // Verify name matches (case-insensitive, trimmed)
+        const storedName  = user.name.trim().toLowerCase();
+        const providedName = name.trim().toLowerCase();
+        if (storedName !== providedName) {
+            return res.json({
+                success: false,
+                message: "Name does not match our records ❌"
+            });
+        }
+
+        // All checks passed — hash and save new password
+        const hash = await bcrypt.hash(newPassword, 10);
+        await User.updateOne({ identifier }, { password: hash });
+
+        res.json({
+            success: true,
+            message: "Password reset successfully ✅ Please sign in."
+        });
+
+    } catch (err) {
+        console.error("reset-password error:", err);
+        res.json({ success: false, message: "Server error ❌" });
+    }
+});
+
+/* CHANGE PASSWORD — Logged-in user from profile modal
+   Requires valid auth token.
+   Body: { newPassword }
+   Password rule: min 6 chars, uppercase, digit, special char (e.g. Upper@123)
+*/
+router.post("/change-password", auth, async (req, res) => {
+    try {
+        const { newPassword } = req.body;
+
+        if (!newPassword) {
+            return res.json({
+                success: false,
+                message: "New password is required ❌"
+            });
+        }
+
+        // Password strength validation
+        const strongPwd = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
+        if (!strongPwd.test(newPassword)) {
+            return res.json({
+                success: false,
+                message: "Password must be ≥6 chars with uppercase, number & special character (e.g. Upper@123) ❌"
+            });
+        }
+
+        const user = await User.findById(req.user.id);
         if (!user) {
             return res.json({ success: false, message: "User not found ❌" });
         }
 
+        // Admin should use admin panel — not this route
         if (user.role === "admin") {
-            return res.json({ success: false, message: "Admin must use the admin panel ❌" });
+            return res.json({
+                success: false,
+                message: "Admin must use the admin panel to change password ❌"
+            });
         }
 
         const hash = await bcrypt.hash(newPassword, 10);
-        await User.updateOne({ identifier }, { password: hash });
+        await User.updateOne({ _id: req.user.id }, { password: hash });
 
-        res.json({ success: true, message: "Password updated ✅" });
+        res.json({ success: true, message: "Password updated successfully ✅" });
 
     } catch (err) {
-        console.error(err);
+        console.error("change-password error:", err);
         res.json({ success: false, message: "Server error ❌" });
     }
 });
