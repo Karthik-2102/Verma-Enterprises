@@ -2037,95 +2037,199 @@ input, select {
 }
 
 
+
 /* =============================================================
-   MOBILE FIX — NAVBAR OVERFLOW + WHATSAPP BUTTON (≤ 768px)
-   Prevents left-right scroll on the public/logged-in navbar.
+   MOBILE — COMPLETE LANDING NAVBAR + DASHBOARD FIX  (≤ 768px)
+   Single source of truth. Replaces all prior mobile patches.
    ============================================================= */
 @media (max-width: 768px) {
 
-    /* ── ROOT OVERFLOW GUARD ─────────────────────────────────
-       Belt-and-suspenders: nothing on the page can push past
-       the viewport edge, not even fixed/injected elements.
-    ──────────────────────────────────────────────────────────── */
+    /* ── 1. ROOT: kill horizontal scroll everywhere ─────────── */
     html, body {
         overflow-x: hidden;
         max-width: 100vw;
     }
 
-    /* ── LANDING NAVBAR ──────────────────────────────────────
-       Constrain width, prevent any child from blowing it out.
-    ──────────────────────────────────────────────────────────── */
+    /* ── 2. LANDING NAVBAR layout ───────────────────────────── */
     .landing-navbar {
-        width: 100%;
-        max-width: 100vw;
         padding: 0 12px;
-        gap: 8px;
-        overflow: hidden;
+        gap: 0;
+        height: 60px;
+        /* MUST be visible so the avatar dropdown can escape */
+        overflow: visible;
     }
 
-    /* Brand wordmark — let it shrink rather than push other items */
+    /* Brand: shrink gracefully */
     .brand-logo-wrap {
         flex-shrink: 1;
         min-width: 0;
+        gap: 7px;
     }
+
+    .brand-logo-wrap img  { width: 28px; height: 28px; }
 
     .brand-logo-wrap h2 {
         font-size: 15px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 120px;
+        max-width: 110px;
     }
 
-    /* Nav-right cluster — allow shrinking, no overflow */
+    /* ── 3. Desktop nav-links: HIDE on mobile ────────────────── */
+    .nav-links { display: none !important; }
+
+    /* ── 4. nav-right cluster ───────────────────────────────── */
     .nav-right {
         flex-shrink: 0;
-        min-width: 0;
         gap: 7px;
-        overflow: hidden;
+        /* overflow visible so avatar dropdown shows */
+        overflow: visible;
     }
 
-    /* "My Applications" injected pill button — compact on mobile */
+    /* Hide the search bar on mobile (nav is too narrow) */
+    #navSearchWrap { display: none !important; }
+
+    /* ── 5. "My Applications" injected pill ─────────────────── */
     #navMyAppsBtn {
         padding: 7px 10px !important;
         font-size: 11px !important;
-        white-space: nowrap;
-        max-width: 130px;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: nowrap !important;
+        max-width: 120px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        flex-shrink: 0 !important;
     }
 
-    /* Nav avatar */
-    .nav-avatar, #navAvatar {
-        width: 34px !important;
-        height: 34px !important;
-        font-size: 13px !important;
+    /* ── 6. AVATAR (nav-avatar) — the core fix ──────────────── */
+    /*
+       .nav-avatar is a flex child of .nav-right.
+       It must stay in flow. Its child .profile-menu is absolutely
+       positioned relative to it, so nav-avatar must NOT be clipped.
+    */
+    #navAvatar,
+    .nav-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 14px !important;
+        flex-shrink: 0 !important;
+        position: relative !important;   /* anchor for dropdown */
+        overflow: visible !important;    /* let dropdown escape */
+        z-index: 600 !important;
+    }
+
+    /* Profile dropdown: clamp to right edge */
+    #navAvatar .profile-menu,
+    .nav-avatar .profile-menu {
+        position: absolute !important;
+        top: calc(100% + 8px) !important;
+        right: 0 !important;
+        left: auto !important;
+        width: 180px !important;
+        z-index: 9999 !important;
+    }
+
+    /* ── 7. Mobile hamburger: show it ──────────────────────── */
+    .mobile-menu-btn {
+        display: flex !important;
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
         flex-shrink: 0;
     }
 
-    /* Login button — hide text on very narrow screens to save space */
+    /* Sign-in button: compact */
     .nav-login-btn {
-        padding: 0 14px;
-        font-size: 13px;
+        padding: 0 12px;
+        font-size: 12px;
+        height: 36px;
+        white-space: nowrap;
     }
 
-    /* ── WHATSAPP BUTTON — HIDE POST-LOGIN ───────────────────
-       When the user is logged in the public hero/landing page
-       is hidden (#heroSection display:none via JS) and the
-       dashboard takes over. The WhatsApp button is always
-       injected but should be hidden during the dashboard view.
-       We detect the "logged-in" context via the body/page state
-       that JS applies. As a safe universal rule: shrink it to
-       not interfere with the layout on mobile.
-    ──────────────────────────────────────────────────────────── */
+    /* ── 8. Dashboard page: no horizontal bleed ─────────────── */
+    #mainPage { max-width: 100vw; overflow-x: hidden; }
+    .content  { max-width: 100%; overflow-x: hidden; padding: 18px 14px 36px; }
 
-    /* Keep it visible but smaller and tucked away */
+    /* ── 9. Dashboard TOPBAR ────────────────────────────────── */
+    /*
+       script.js injects:
+         .dashboard .topbar { justify-content: space-between }
+       AND the base CSS has:
+         .topbar .profile-area { position: absolute; right: 20px }
+       That pulls the avatar out of flex flow and clips it.
+       We beat both with !important.
+    */
+    .topbar,
+    .dashboard .topbar {
+        height: 60px !important;
+        padding: 0 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        overflow: visible !important;
+    }
+
+    .topbar h2,
+    .dashboard .topbar h2 {
+        font-size: 18px !important;
+        flex: 1 !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        padding: 0 10px !important;
+    }
+
+    /* Hamburger back in flow (JS hides it on dashboard anyway) */
+    .topbar .menu-btn {
+        position: static !important;
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: rgba(255,255,255,.05);
+        border: 1px solid rgba(153,186,187,.12);
+    }
+
+    /* Dashboard avatar area */
+    .topbar .profile-area,
+    .dashboard .topbar .profile-area {
+        position: static !important;
+        right: auto !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        overflow: visible !important;
+    }
+
+    .avatar-btn,
+    .dashboard .topbar .avatar-btn {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 14px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .topbar .profile-area .profile-menu,
+    .dashboard .topbar .profile-area .profile-menu {
+        position: absolute !important;
+        top: calc(100% + 8px) !important;
+        right: 0 !important;
+        left: auto !important;
+        width: 180px !important;
+        z-index: 9999 !important;
+    }
+
+    /* ── 10. WhatsApp button: smaller, no expand ────────────── */
     #whatsappBtn {
         width: 46px !important;
         height: 46px !important;
         bottom: 18px !important;
         right: 14px !important;
-        /* Never expand on mobile — kills the layout */
         transition: box-shadow .3s ease, transform .2s ease !important;
     }
 
@@ -2136,184 +2240,20 @@ input, select {
         justify-content: center !important;
     }
 
-    #whatsappBtn .wa-label {
-        display: none !important;
-    }
+    #whatsappBtn .wa-label { display: none !important; }
 
-    /* ── GLOBAL SECTIONS OVERFLOW GUARD ─────────────────────
-       Any section or card that might be wider than viewport.
-    ──────────────────────────────────────────────────────────── */
-    .landing-section,
-    .hero-section,
-    .footer-contact,
-    .glass-box,
-    .service-card,
-    .order-card-small,
-    .auth-card,
-    .mobile-nav-drawer {
+    /* ── 11. Global card/section overflow guard ─────────────── */
+    .landing-section, .hero-section, .footer-contact,
+    .glass-box, .service-card, .order-card-small,
+    .auth-card, .mobile-nav-drawer {
         max-width: 100%;
         box-sizing: border-box;
     }
 
-    /* Dashboard main page — full width, no bleed */
-    #mainPage {
-        max-width: 100vw;
-        overflow-x: hidden;
-    }
+    /* ── 12. Footer ─────────────────────────────────────────── */
+    .footer-contact { padding: 32px 14px 24px; }
 
-    .content {
-        max-width: 100%;
-        overflow-x: hidden;
-    }
-
-}
-
-/* ── EXTRA NARROW (≤ 400px) ──────────────────────────────────
-   On the narrowest phones, abbreviate "My Applications" further
-──────────────────────────────────────────────────────────────── */
-@media (max-width: 400px) {
-
-    #navMyAppsBtn {
-        max-width: 100px !important;
-        font-size: 10px !important;
-        padding: 6px 8px !important;
-    }
-
-    .brand-logo-wrap h2 {
-        max-width: 90px;
-        font-size: 13px;
-    }
-
-    .nav-right { gap: 5px; }
-
-}
-@media (max-width: 768px) {
-
-    /* ── TOPBAR ───────────────────────────────────────────────
-       Switch from center-justified + absolute positioned items
-       to a proper 3-column flex row: [hamburger | brand | avatar]
-    ──────────────────────────────────────────────────────────── */
-    /* ── TOPBAR — !important beats the JS-injected <style> ───── */
-    .topbar,
-    .dashboard .topbar {
-        height: 60px !important;
-        padding: 0 14px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 0 !important;
-        position: sticky !important;
-        top: 0 !important;
-        z-index: 400 !important;
-        overflow: visible !important;   /* must NOT be hidden — avatar dropdown must show */
-    }
-
-    /* Hamburger — back in normal flex flow (JS hides it on dashboard, CSS shows on user page) */
-    .topbar .menu-btn {
-        position: static !important;
-        font-size: 22px;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        border-radius: 10px;
-        background: rgba(255,255,255,.05);
-        border: 1px solid rgba(153,186,187,.12);
-        color: var(--teal-main);
-    }
-
-    /* Brand title — centered, truncated if needed */
-    .topbar h2,
-    .dashboard .topbar h2 {
-        font-size: 18px !important;
-        flex: 1 !important;
-        text-align: center !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        padding: 0 10px !important;
-        letter-spacing: .3px !important;
-    }
-
-    /* ── AVATAR / PROFILE-AREA — force back into flex flow ───────
-       script.js injects a <style> after the stylesheet that sets
-       .dashboard .topbar { justify-content: space-between } which
-       has higher priority than media queries. Meanwhile the base
-       CSS has .topbar .profile-area { position: absolute; right:20px }
-       so the avatar flies OUT of flow and gets hidden/clipped.
-       !important here beats both the base CSS and the injected tag.
-    ──────────────────────────────────────────────────────────────── */
-    .topbar .profile-area,
-    .dashboard .topbar .profile-area {
-        position: static !important;
-        right: auto !important;
-        flex-shrink: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-    }
-
-    /* Avatar button — consistently sized */
-    .avatar-btn,
-    .dashboard .topbar .avatar-btn {
-        width: 36px !important;
-        height: 36px !important;
-        font-size: 14px !important;
-        flex-shrink: 0 !important;
-    }
-
-    /* Profile dropdown — clamp to right edge, never bleeds off-screen */
-    .topbar .profile-area .profile-menu,
-    .dashboard .topbar .profile-area .profile-menu {
-        position: absolute !important;
-        right: 0 !important;
-        left: auto !important;
-        width: 190px !important;
-    }
-
-
-    /* ── SIDEBAR ──────────────────────────────────────────────
-       Comfortable width and tap targets
-    ──────────────────────────────────────────────────────────── */
-    .sidebar {
-        width: 260px;
-        left: -270px;
-        padding: 20px 18px;
-    }
-
-    .sidebar.active { left: 0; }
-
-    .sidebar-header h3 { font-size: 18px; }
-    .close-btn         { font-size: 20px; padding: 4px; }
-
-    .sidebar-avatar {
-        width: 48px;
-        height: 48px;
-        font-size: 18px;
-    }
-
-    .user-menu li {
-        padding: 14px;
-        font-size: 14px;
-        border-radius: 12px;
-        min-height: 50px;      /* generous tap target */
-        display: flex;
-        align-items: center;
-    }
-
-
-    /* ── MAIN CONTENT AREA ────────────────────────────────────
-       Tighter horizontal padding; adequate bottom breathing room
-    ──────────────────────────────────────────────────────────── */
-    .content {
-        padding: 18px 14px 36px;
-    }
-
-
-    /* ── WELCOME BAR ──────────────────────────────────────────
-       Stack vertically; full-width Browse button
-    ──────────────────────────────────────────────────────────── */
+    /* ── 13. Welcome bar ────────────────────────────────────── */
     .dash-welcome-bar {
         flex-direction: column;
         align-items: flex-start;
@@ -2321,13 +2261,8 @@ input, select {
         margin-bottom: 20px;
     }
 
-    .dash-welcome-bar h2 {
-        font-size: 22px;
-    }
-
-    .dash-subtitle {
-        font-size: 12px;
-    }
+    .dash-welcome-bar h2 { font-size: 22px; }
+    .dash-subtitle { font-size: 12px; }
 
     .browse-services-btn {
         width: 100%;
@@ -2339,46 +2274,17 @@ input, select {
         border-radius: 13px;
     }
 
-
-    /* ── ORDER CARDS ──────────────────────────────────────────
-       Tighter padding, slightly smaller text
-    ──────────────────────────────────────────────────────────── */
-    .order-card-small {
-        padding: 18px 16px;
-        border-radius: 16px;
-    }
-
-    .order-card-small h3 {
-        font-size: 15px;
-        line-height: 1.45;
-    }
-
-    .order-card-date {
-        font-size: 11px;
-        margin-bottom: 8px;
-    }
-
-    .status-badge {
-        font-size: 11px;
-        padding: 4px 11px;
-        margin-bottom: 10px;
-    }
-
+    /* ── 14. Order cards ────────────────────────────────────── */
+    .order-card-small { padding: 18px 16px; border-radius: 16px; }
+    .order-card-small h3 { font-size: 15px; line-height: 1.45; }
+    .order-card-date { font-size: 11px; margin-bottom: 8px; }
+    .status-badge { font-size: 11px; padding: 4px 11px; margin-bottom: 10px; }
     .order-reject-reason { font-size: 12px; }
 
+    /* ── 15. Order action buttons: stacked full-width ────────── */
+    .order-right { flex-direction: column; gap: 8px; margin-top: 14px; }
 
-    /* ── ORDER ACTION BUTTONS ─────────────────────────────────
-       Full-width stacked — easy thumb reach
-    ──────────────────────────────────────────────────────────── */
-    .order-right {
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 14px;
-    }
-
-    .order-right a,
-    .invoice-btn,
-    .user-file-btn {
+    .order-right a, .invoice-btn, .user-file-btn {
         width: 100%;
         min-width: unset;
         text-align: center;
@@ -2389,10 +2295,7 @@ input, select {
         box-sizing: border-box;
     }
 
-
-    /* ── ORDER TIMELINE ───────────────────────────────────────
-       Scrollable horizontally; fade hint at right edge
-    ──────────────────────────────────────────────────────────── */
+    /* ── 16. Timeline ───────────────────────────────────────── */
     .order-timeline { margin: 12px 0 4px; }
 
     .timeline-stages {
@@ -2406,19 +2309,10 @@ input, select {
     .tl-label     { font-size: 8px; max-width: 44px; margin-top: 4px; line-height: 1.25; }
     .tl-connector { min-width: 8px; height: 2px; margin-bottom: 18px; }
 
+    /* ── 17. Orders grid: single column ─────────────────────── */
+    #userOrders.services-grid { grid-template-columns: 1fr; gap: 12px; }
 
-    /* ── ORDER CARDS GRID ─────────────────────────────────────
-       Single column inside dashboard
-    ──────────────────────────────────────────────────────────── */
-    #userOrders.services-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-
-
-    /* ── PROFILE MODAL (post-login) ───────────────────────────
-       Edge-to-edge feel with comfortable padding
-    ──────────────────────────────────────────────────────────── */
+    /* ── 18. Profile modal ──────────────────────────────────── */
     .profile-modal-box {
         width: min(100%, 460px);
         padding: 24px 18px;
@@ -2426,50 +2320,77 @@ input, select {
         gap: 12px;
     }
 
-    .profile-modal-box .auth-btn {
-        width: 100%;
-        height: 48px;
+    .profile-modal-box .auth-btn { width: 100%; height: 48px; font-size: 14px; }
+
+    /* ── 19. Sidebar ────────────────────────────────────────── */
+    .sidebar { width: 260px; left: -270px; padding: 20px 18px; }
+    .sidebar.active { left: 0; }
+    .sidebar-header h3 { font-size: 18px; }
+    .close-btn { font-size: 20px; padding: 4px; }
+    .sidebar-avatar { width: 48px; height: 48px; font-size: 18px; }
+
+    .user-menu li {
+        padding: 14px;
         font-size: 14px;
+        border-radius: 12px;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
     }
 
 }
 
 
 /* =============================================================
-   MOBILE FIX — SMALL MOBILE  (≤ 480px)
-   Extra tightening for very narrow devices (≤ 375px territory)
+   EXTRA-NARROW PHONES  (≤ 480px)
    ============================================================= */
 @media (max-width: 480px) {
 
-    .topbar h2 { font-size: 16px; }
+    .brand-logo-wrap h2 { font-size: 13px; max-width: 90px; }
 
-    .topbar .menu-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 20px;
+    #navMyAppsBtn {
+        font-size: 10px !important;
+        padding: 6px 8px !important;
+        max-width: 100px !important;
     }
 
-    .avatar-btn,
-    .dashboard .topbar .avatar-btn {
-        width: 34px !important;
-        height: 34px !important;
+    #navAvatar, .nav-avatar {
+        width: 32px !important;
+        height: 32px !important;
         font-size: 13px !important;
+    }
+
+    .mobile-menu-btn { width: 32px; height: 32px; font-size: 16px; }
+
+    .topbar h2, .dashboard .topbar h2 { font-size: 16px !important; }
+
+    .topbar .menu-btn { width: 36px !important; height: 36px !important; }
+
+    .avatar-btn, .dashboard .topbar .avatar-btn {
+        width: 32px !important; height: 32px !important; font-size: 13px !important;
     }
 
     .content { padding: 14px 12px 28px; }
 
-    .dash-welcome-bar h2   { font-size: 20px; }
-    .browse-services-btn   { font-size: 13px; height: 44px; }
+    .dash-welcome-bar h2 { font-size: 20px; }
+    .browse-services-btn { font-size: 13px; height: 44px; }
 
-    .order-card-small      { padding: 16px 14px; }
-    .order-card-small h3   { font-size: 14px; }
+    .order-card-small { padding: 16px 14px; }
+    .order-card-small h3 { font-size: 14px; }
 
     .tl-step      { min-width: 38px; }
     .tl-dot       { width: 18px; height: 18px; }
     .tl-label     { font-size: 7px; max-width: 38px; }
     .tl-connector { min-width: 6px; }
 
-    .sidebar       { width: 240px; left: -250px; }
-    .user-menu li  { font-size: 13px; padding: 12px; }
+    .sidebar { width: 240px; left: -250px; }
+    .user-menu li { font-size: 13px; padding: 12px; }
+
+    #whatsappBtn {
+        width: 42px !important;
+        height: 42px !important;
+        bottom: 14px !important;
+        right: 10px !important;
+    }
 
 }
