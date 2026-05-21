@@ -436,16 +436,51 @@ function showSkeleton(containerId, count = 4) {
    LAYOUT VISIBILITY
    ============================================================ */
 function showPublicSite() {
-  el("publicSite")?.classList.remove("hidden");
-  el("mainPage")?.classList.add("hidden");
+  const pub  = el("publicSite");
+  const dash = el("mainPage");
+
+  /* ── Page transition: exit dashboard, enter public ── */
+  if (dash && !dash.classList.contains("hidden")) {
+    dash.classList.add("page-exit");
+    setTimeout(() => {
+      dash.classList.add("hidden");
+      dash.classList.remove("page-exit");
+      if (pub) {
+        pub.classList.remove("hidden");
+        pub.classList.add("page-enter");
+        setTimeout(() => pub.classList.remove("page-enter"), 400);
+      }
+    }, 300);
+  } else {
+    pub?.classList.remove("hidden");
+  }
+
   stopLiveTracking();
 }
 
 function showDashboard() {
-  el("publicSite")?.classList.add("hidden");
-  el("mainPage")?.classList.remove("hidden");
-  el("ordersSection")?.classList.remove("hidden");
-  renderDashTopbar();
+  const pub  = el("publicSite");
+  const dash = el("mainPage");
+
+  /* ── Page transition: exit public, enter dashboard ── */
+  if (pub && !pub.classList.contains("hidden")) {
+    pub.classList.add("page-exit");
+    setTimeout(() => {
+      pub.classList.add("hidden");
+      pub.classList.remove("page-exit");
+      if (dash) {
+        dash.classList.remove("hidden");
+        dash.classList.add("page-enter");
+        el("ordersSection")?.classList.remove("hidden");
+        renderDashTopbar();
+        setTimeout(() => dash.classList.remove("page-enter"), 400);
+      }
+    }, 300);
+  } else {
+    dash?.classList.remove("hidden");
+    el("ordersSection")?.classList.remove("hidden");
+    renderDashTopbar();
+  }
 }
 
 function backToPublic() {
@@ -938,6 +973,10 @@ function renderUserServices() {
         <span class="service-cat-badge">${short}</span>
       </div>
       <p class="service-price">₹${total}</p>`;
+
+    /* Attach quick-preview popup */
+    attachServicePreview(card, service);
+
     grid.appendChild(card);
   });
 }
@@ -1559,4 +1598,183 @@ async function sendOTP(type) {
     const data = await res.json();
     toast(data.message || "OTP sent ✅", data.success ? "success" : "error");
   } catch { toast("Failed to send OTP ❌", "error"); }
+}
+
+/* ============================================================
+   VISUAL / UX UPGRADES
+   ─────────────────────────────────────────────────────────────
+   1. Animated stat counters  (countUp + IntersectionObserver)
+   2. Page transitions        (patched into showPublicSite/showDashboard above)
+   3. Back-to-Top button      (inject + scroll listener)
+   4. Service card quick-preview popup  (attachServicePreview)
+   ============================================================ */
+
+
+/* ── 1. ANIMATED STAT COUNTERS ─────────────────────────────── */
+
+/**
+ * Animates a number from 0 to `target` over `duration` ms.
+ * Handles suffixes like "+" and "%" attached to the original text.
+ * @param {HTMLElement} el   - the .stat-num element
+ * @param {number}      duration  - animation length in ms (default 1400)
+ */
+function countUpElement(el, duration = 1400) {
+  if (!el || el.dataset.counted) return;   // run once only
+  el.dataset.counted = "1";
+
+  const raw    = el.textContent.trim();          // e.g. "500+" or "100%"
+  const suffix = raw.replace(/[\d,.]/g, "");     // "+", "%", "/7", etc.
+  const target = parseFloat(raw.replace(/[^0-9.]/g, "")) || 0;
+
+  if (!target) return; // non-numeric stat (e.g. "24/7") — leave as-is
+
+  const startTime = performance.now();
+
+  function step(now) {
+    const elapsed  = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    /* Ease-out cubic for natural deceleration */
+    const eased    = 1 - Math.pow(1 - progress, 3);
+    const current  = Math.round(eased * target);
+
+    el.textContent = current + suffix;
+
+    /* Pop scale effect on each tick */
+    el.classList.add("counting");
+    setTimeout(() => el.classList.remove("counting"), 80);
+
+    if (progress < 1) requestAnimationFrame(step);
+    else el.textContent = raw; // restore exact original string
+  }
+
+  requestAnimationFrame(step);
+}
+
+/**
+ * Observes hero stat elements and fires countUp the first time
+ * each one enters the viewport.
+ */
+function initStatCounters() {
+  const stats = document.querySelectorAll(".stat-num");
+  if (!stats.length) return;
+
+  /* Modern IntersectionObserver — no layout thrashing */
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        countUpElement(entry.target);
+        observer.unobserve(entry.target); // fire once, then detach
+      }
+    });
+  }, { threshold: 0.6 });
+
+  stats.forEach(s => observer.observe(s));
+}
+
+/* Boot counters after page load */
+document.addEventListener("DOMContentLoaded", initStatCounters);
+
+
+/* ── 3. BACK-TO-TOP BUTTON ─────────────────────────────────── */
+
+(function initBackToTop() {
+  /* Inject the button once */
+  const btn = document.createElement("button");
+  btn.id          = "backToTopBtn";
+  btn.innerHTML   = "↑";
+  btn.setAttribute("aria-label", "Back to top");
+  btn.title       = "Back to top";
+  btn.onclick     = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  document.body.appendChild(btn);
+
+  /* Show/hide on scroll — throttled with requestAnimationFrame */
+  let ticking = false;
+  const THRESHOLD = 400; // px from top before button appears
+
+  window.addEventListener("scroll", () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const visible = window.scrollY > THRESHOLD;
+      btn.classList.toggle("btt-visible", visible);
+      ticking = false;
+    });
+  }, { passive: true });
+})();
+
+
+/* ── 4. SERVICE CARD QUICK-PREVIEW POPUP ───────────────────── */
+
+/* Shared single popup element — reused across all cards */
+let _previewEl = null;
+let _previewHideTimer = null;
+
+function _getPreviewEl() {
+  if (!_previewEl) {
+    _previewEl = document.createElement("div");
+    _previewEl.className = "svc-preview";
+    /* Clicks on the popup itself should not fire */
+    _previewEl.addEventListener("click", e => e.stopPropagation());
+    document.body.appendChild(_previewEl);
+  }
+  return _previewEl;
+}
+
+/**
+ * Build the popup content from the service object and
+ * reposition it over the given card element.
+ */
+function _showPreview(card, service) {
+  clearTimeout(_previewHideTimer);
+
+  const total = service.finalPrice || service.basePrice || 0;
+  const docs  = (service.documents || []).slice(0, 5); // cap at 5 chips
+
+  const popup = _getPreviewEl();
+
+  popup.innerHTML = `
+    <div class="svc-preview__name">${service.name}</div>
+    <div class="svc-preview__price">₹${total}</div>
+    ${docs.length ? `
+      <div class="svc-preview__docs-label">Required Documents</div>
+      <div class="svc-preview__docs">
+        ${docs.map(d => `<span class="svc-preview__doc">${d}</span>`).join("")}
+        ${service.documents?.length > 5
+          ? `<span class="svc-preview__doc">+${service.documents.length - 5} more</span>`
+          : ""}
+      </div>` : ""}
+    <div class="svc-preview__hint">👆 Click card to apply</div>
+  `;
+
+  /* Position: anchor popup to card */
+  card.appendChild(popup);
+  popup.classList.add("visible");
+}
+
+function _hidePreview() {
+  _previewHideTimer = setTimeout(() => {
+    if (_previewEl) {
+      _previewEl.classList.remove("visible");
+      /* Move back to body so it doesn't affect card layout */
+      if (_previewEl.parentElement !== document.body) {
+        document.body.appendChild(_previewEl);
+      }
+    }
+  }, 80); // tiny delay so moving between card→popup doesn't flicker
+}
+
+/**
+ * Attach hover/focus listeners for the quick-preview popup.
+ * Called from renderUserServices() for every card.
+ * Touch devices: skip preview (tap directly opens the modal).
+ */
+function attachServicePreview(card, service) {
+  /* Desktop hover */
+  card.addEventListener("mouseenter", () => _showPreview(card, service));
+  card.addEventListener("mouseleave", _hidePreview);
+
+  /* Keyboard focus (accessibility) */
+  card.setAttribute("tabindex", "0");
+  card.addEventListener("focus", () => _showPreview(card, service));
+  card.addEventListener("blur",  _hidePreview);
 }
