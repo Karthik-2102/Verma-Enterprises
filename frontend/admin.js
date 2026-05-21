@@ -72,7 +72,6 @@ function updatePendingNavBadge(count) {
 /* ── MAIN INIT ────────────────────────────────
    ------------------------------------------ */
 async function initAdmin() {
-    initAdminDarkMode();
 
     /* Step 0 — authenticate */
     setLoaderProgress(10, "Authenticating session...");
@@ -1120,65 +1119,37 @@ async function changeAdminPassword() {
 /* =============================================
    TOAST NOTIFICATION
    ============================================= */
-function showToast(msg, type) {
-    if (!type) {
-        if (msg.includes("❌")) type = "error";
-        else if (msg.includes("⚠️")) type = "warn";
-        else if (msg.includes("✅")) type = "success";
-        else type = "info";
+function showToast(msg) {
+    let toast = document.getElementById("adminToast");
+
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "adminToast";
+        toast.style.cssText = `
+            position:fixed;
+            bottom:32px;
+            right:32px;
+            background:linear-gradient(90deg,#2C4550,#3E5E68);
+            color:#fff;
+            padding:16px 26px;
+            border-radius:16px;
+            font-weight:800;
+            font-size:16px;
+            z-index:9999;
+            box-shadow:0 12px 30px rgba(0,0,0,.4);
+            transition:.4s;
+            transform:translateY(80px);
+            opacity:0;
+        `;
+        document.body.appendChild(toast);
     }
-    let c = document.getElementById("adminToastContainer");
-    if (!c) {
-        c = document.createElement("div");
-        c.id = "adminToastContainer";
-        c.style.cssText = "position:fixed;bottom:32px;right:32px;z-index:99999;display:flex;flex-direction:column-reverse;gap:10px;pointer-events:none;max-width:340px;";
-        document.body.appendChild(c);
-    }
-    const icons = { success: "✅", error: "❌", warn: "⚠️", info: "ℹ️" };
-    const t = document.createElement("div");
-    t.className = "admin-ve-toast at-" + type;
-    t.innerHTML = '<span class="admin-toast-icon">' + (icons[type]||icons.info) + '</span>' +
-                  '<span class="admin-toast-body">' + msg + '</span>' +
-                  '<button class="admin-toast-close" onclick="this.closest(\'.admin-ve-toast\').remove()">✕</button>';
-    c.appendChild(t);
-    const dismiss = function() { t.classList.add("at-exit"); setTimeout(function(){ t.remove(); }, 320); };
-    const timer = setTimeout(dismiss, 4000);
-    t.querySelector(".admin-toast-close").addEventListener("click", function(){ clearTimeout(timer); });
-}
 
-/* ── Admin Dark Mode ──────────────────────────────────── */
-function initAdminDarkMode() {
-    const saved = localStorage.getItem("ve_dark_mode");
-    if (saved === "light") {
-        document.documentElement.classList.add("light-mode");
-        const btn = document.getElementById("adminDarkModeToggle");
-        if (btn) btn.textContent = "☀️";
-    }
-}
+    toast.textContent = msg;
+    toast.style.transform = "translateY(0)";
+    toast.style.opacity = "1";
 
-function toggleAdminDarkMode() {
-    const html = document.documentElement;
-    const btn  = document.getElementById("adminDarkModeToggle");
-    const isLight = html.classList.toggle("light-mode");
-    if (btn) btn.textContent = isLight ? "☀️" : "🌙";
-    localStorage.setItem("ve_dark_mode", isLight ? "light" : "dark");
+    setTimeout(() => {
+        toast.style.transform = "translateY(80px)";
+        toast.style.opacity = "0";
+    }, 3000);
 }
-
-/* ── Admin Panel Spinner ──────────────────────────────── */
-function showAdminSpinner(containerId, message) {
-    const c = document.getElementById(containerId);
-    if (!c) return;
-    c.innerHTML = '<div class="admin-panel-spinner-wrap"><div class="admin-panel-spinner"></div><p>' + (message || "Loading…") + '</p></div>';
-}
-
-/* ── Admin Skeleton ───────────────────────────────────── */
-function showAdminSkeleton(containerId, count, type) {
-    const c = document.getElementById(containerId);
-    if (!c) return;
-    const cls = type === "stat" ? "admin-skeleton-stat" : "admin-skeleton-row";
-    let html = "";
-    for (let i = 0; i < (count || 5); i++) html += '<div class="' + cls + '"></div>';
-    c.innerHTML = html;
-}
-
-function showToast(msg, type) { console.log(msg); }

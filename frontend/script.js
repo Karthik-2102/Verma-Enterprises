@@ -27,19 +27,6 @@ const SERVICE_CATEGORIES = [
   "Pension & Welfare Services"
 ];
 
-/* ─── THEME — runs synchronously before first paint ─────────
-   Sets data-theme on <html> instantly so there is zero
-   flash-of-wrong-theme even on hard reload.               */
-document.documentElement.setAttribute(
-  'data-theme', localStorage.getItem('ve-theme') || 'dark'
-);
-
-function toggleTheme() {
-  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-  document.documentElement.setAttribute('data-theme', isLight ? 'dark' : 'light');
-  localStorage.setItem('ve-theme', isLight ? 'dark' : 'light');
-}
-
 /* ─── MUTABLE STATE ──────────────────────────────────────── */
 let currentServiceId      = null;
 let allUserServices       = [];
@@ -127,59 +114,69 @@ function injectBaseStyles() {
   const s = document.createElement("style");
   s.id = "veBaseStyles";
   s.textContent = `
-    /* ── Auth field upgrade — uses CSS vars so light mode works ── */
+    /* ── Auth field upgrade ─────────────────── */
     .auth-field-wrap {
-      display: flex; align-items: center; gap: 10px;
-      background: var(--bg-input);
-      border: 1.5px solid var(--surface-border);
-      border-radius: 12px; padding: 12px 16px; margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.07);
+      border: 1.5px solid rgba(255,255,255,0.13);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
       transition: border-color .2s, background .2s;
     }
     .auth-field-wrap:focus-within {
-      border-color: var(--gold); background: var(--gold-glow);
+      border-color: rgba(255,165,0,.7);
+      background: rgba(255,255,255,0.10);
     }
     .auth-field-wrap input {
-      flex: 1; background: transparent; border: none; outline: none;
-      color: var(--text-primary); font-size: 15px; font-family: inherit;
-      caret-color: var(--gold);
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 15px;
+      font-family: inherit;
+      caret-color: orange;
     }
-    .auth-field-wrap input::placeholder { color: var(--text-placeholder); }
+    .auth-field-wrap input::placeholder { color: rgba(255,255,255,.38); }
     .auth-field-icon { font-size: 18px; flex-shrink: 0; user-select: none; }
     .auth-eye { cursor: pointer; font-size: 17px; flex-shrink: 0; opacity: .5; transition: opacity .2s; }
     .auth-eye:hover { opacity: 1; }
 
-    /* ── Dashboard layout ── */
+    /* ── Dashboard: no sidebar, full-width layout ── */
     .dashboard { display: flex; flex-direction: column; min-height: 100vh; }
     .dashboard .topbar {
       display: flex; align-items: center; justify-content: space-between;
       padding: 14px 28px; position: sticky; top: 0; z-index: 200;
-      background: var(--surface-2); backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--surface-border);
+      background: rgba(10,10,15,.96); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,.07);
     }
-    .dashboard .topbar h2 { font-size: 20px; font-weight: 700; color: var(--gold); letter-spacing: .5px; }
+    .dashboard .topbar h2 { font-size: 20px; font-weight: 700; color: #e8a000; letter-spacing: .5px; }
+    /* Hide the old hamburger — no sidebar */
     .dashboard .menu-btn { display: none !important; }
+    /* Hide the old sidebar + overlay */
     #sidebar, #overlay { display: none !important; }
 
-    /* ── Dash welcome bar ── */
+    /* ── Dash welcome bar with inline nav buttons ── */
     .dash-welcome-bar {
       display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
     }
     .dash-nav-btns { display: flex; gap: 10px; flex-wrap: wrap; }
     .dash-nav-btn {
-      padding: 9px 20px; border-radius: 10px;
-      border: 1.5px solid var(--surface-border);
-      background: var(--bg-card); color: var(--text-primary);
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      transition: background .2s, border-color .2s;
+      padding: 9px 20px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.06); color: #fff; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background .2s, border-color .2s;
     }
-    .dash-nav-btn:hover { background: var(--bg-card-hover); border-color: var(--gold); }
-    .dash-nav-btn.active { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+    .dash-nav-btn:hover { background: rgba(255,255,255,.13); border-color: rgba(255,165,0,.5); }
+    .dash-nav-btn.active { background: rgba(255,165,0,.18); border-color: #e8a000; color: #e8a000; }
 
-    /* ── Live dot ── */
+    /* ── Live tracking pulse indicator ── */
     .live-dot {
       display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-      background: var(--green); margin-right: 6px;
+      background: #22c55e; margin-right: 6px;
       animation: livePulse 1.6s ease-in-out infinite;
     }
     @keyframes livePulse {
@@ -187,76 +184,112 @@ function injectBaseStyles() {
       50%      { opacity: .4; transform: scale(1.4); }
     }
 
-    /* ── File rows ── */
+    /* ── File rows ─────────────────────────────── */
     .file-row {
       display: flex; align-items: center; gap: 12px; padding: 10px 14px;
-      background: var(--bg-card); border-radius: 10px; margin-top: 10px;
-      border: 1px solid var(--surface-border); transition: background .2s;
+      background: rgba(255,255,255,.06); border-radius: 10px; margin-top: 10px;
+      border: 1px solid rgba(255,255,255,.1); transition: background .2s;
     }
-    .file-row:hover { background: var(--bg-card-hover); }
+    .file-row:hover { background: rgba(255,255,255,.1); }
     .file-row-icon { font-size: 24px; flex-shrink: 0; }
     .file-row-info { flex: 1; min-width: 0; }
-    .file-row-name { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .file-row-size { font-size: 11px; color: var(--text-muted); }
+    .file-row-name { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-row-size { font-size: 11px; opacity: .6; }
     .file-row-delete {
-      background: var(--red-soft); color: var(--red); border: none;
+      background: rgba(239,68,68,.15); color: #ef4444; border: none;
       border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .2s;
     }
-    .file-row-delete:hover { background: rgba(220,53,69,.35); }
-    .file-drop-zone.dragging { border-color: var(--gold); background: var(--gold-glow); }
+    .file-row-delete:hover { background: rgba(239,68,68,.35); }
+    .file-drop-zone.dragging { border-color: #e8a000; background: rgba(232,160,0,.08); }
 
-    /* ── Animations ── */
+    /* ── Toast ──────────────────────────────────── */
     @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+
+    /* ── Skeleton shimmer ───────────────────────── */
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* ── Page loader fade ───────────────────────── */
     #pageLoader.fade-out { opacity: 0; transition: opacity .5s; }
 
-    /* ── WhatsApp button — always green, theme-independent ── */
+    /* ── WhatsApp fixed button ──────────────────── */
     #whatsappBtn {
-      position: fixed; bottom: 28px; right: 28px; z-index: 9000;
-      display: flex; align-items: center; justify-content: center;
-      width: 56px; height: 56px; padding: 0; gap: 0; border-radius: 999px;
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      padding: 0;
+      gap: 0;
+      border-radius: 999px;
       background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
-      color: #fff; text-decoration: none;
+      color: #fff;
+      text-decoration: none;
       box-shadow: 0 6px 24px rgba(37,211,102,.5);
-      overflow: hidden; white-space: nowrap;
+      overflow: hidden;
+      white-space: nowrap;
       transition: width .4s cubic-bezier(.34,1.3,.64,1), gap .3s ease,
                   padding .3s ease, box-shadow .3s ease, transform .2s ease;
     }
     #whatsappBtn:hover {
-      width: 218px; gap: 10px; padding: 0 20px 0 16px; justify-content: flex-start;
-      box-shadow: 0 10px 36px rgba(37,211,102,.6); transform: translateY(-2px);
+      width: 218px;
+      gap: 10px;
+      padding: 0 20px 0 16px;
+      justify-content: flex-start;
+      box-shadow: 0 10px 36px rgba(37,211,102,.6);
+      transform: translateY(-2px);
     }
     #whatsappBtn:active { transform: scale(.96); }
-    #whatsappBtn .wa-icon { width: 26px; height: 26px; flex-shrink: 0; min-width: 26px; display: block; }
+    #whatsappBtn .wa-icon {
+      width: 26px; height: 26px;
+      flex-shrink: 0; min-width: 26px; display: block;
+    }
     #whatsappBtn .wa-label {
-      font-size: 14px; font-weight: 700; font-family: "DM Sans", sans-serif;
+      font-size: 14px; font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
       max-width: 0; overflow: hidden; opacity: 0;
       transition: max-width .35s ease .05s, opacity .25s ease .1s;
     }
     #whatsappBtn:hover .wa-label { max-width: 160px; opacity: 1; }
 
-    /* ── Official charge row ── */
+    /* ── Official charge row ────────────────────── */
     .official-charge-row {
-      background: var(--blue-soft); border: 1px solid rgba(67,97,238,.22);
-      border-radius: 8px; padding: 10px 14px !important; margin: 2px 0;
+      background: rgba(99,102,241,.08);
+      border: 1px solid rgba(99,102,241,.22);
+      border-radius: 8px;
+      padding: 10px 14px !important;
+      margin: 2px 0;
     }
     .official-charge-tag {
-      display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 700;
-      letter-spacing: .4px; text-transform: uppercase;
-      background: var(--blue-soft); color: var(--blue);
-      border: 1px solid rgba(67,97,238,.35);
-      border-radius: 4px; padding: 2px 6px; vertical-align: middle;
+      display: inline-block;
+      margin-left: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      background: rgba(99,102,241,.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99,102,241,.35);
+      border-radius: 4px;
+      padding: 2px 6px;
+      vertical-align: middle;
     }
 
-    /* ── Logged-in hero CTA ── */
+    /* ── Hero CTA swap (logged-in) ──────────────── */
     .hero-cta-secondary.logged-in-cta {
-      background: var(--gold-soft); border: 1.5px solid var(--gold);
-      color: var(--gold); font-weight: 700;
+      background: linear-gradient(135deg, rgba(255,165,0,.18), rgba(255,165,0,.08));
+      border: 1.5px solid rgba(255,165,0,.6);
+      color: #f5a623;
+      font-weight: 700;
     }
-    .hero-cta-secondary.logged-in-cta:hover { background: var(--gold-glow); }
+    .hero-cta-secondary.logged-in-cta:hover {
+      background: rgba(255,165,0,.25);
+    }
   `;
-
   document.head.appendChild(s);
 }
 
