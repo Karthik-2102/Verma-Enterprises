@@ -2462,3 +2462,193 @@ input, select {
     gap: 10px;
 }
 .modal-field-wrap input { flex: 1; }
+/* =============================================================
+   DARK MODE — LIGHT MODE OVERRIDES FOR ADMIN
+   ============================================================= */
+:root {
+    --color-bg:           #020710;
+    --color-surface:      #0d1826;
+    --color-card:         rgba(255,255,255,.035);
+    --color-border:       rgba(255,255,255,.08);
+    --color-text:         #ffffff;
+    --color-text-muted:   rgba(255,255,255,.5);
+    --color-input-bg:     rgba(255,255,255,.06);
+    --color-sidebar-bg:   #060d18;
+    --color-topbar-bg:    rgba(6,13,24,.97);
+    --color-skeleton-base:  rgba(255,255,255,.05);
+    --color-skeleton-shine: rgba(255,255,255,.10);
+    --dm-toggle-bg:       rgba(255,255,255,.08);
+}
+
+html.light-mode {
+    --color-bg:           #f0f4f8;
+    --color-surface:      #ffffff;
+    --color-card:         rgba(0,0,0,.035);
+    --color-border:       rgba(0,0,0,.10);
+    --color-text:         #0d1a26;
+    --color-text-muted:   rgba(0,0,0,.5);
+    --color-input-bg:     rgba(0,0,0,.05);
+    --color-sidebar-bg:   #1a2535;
+    --color-topbar-bg:    rgba(255,255,255,.97);
+    --color-skeleton-base:  rgba(0,0,0,.06);
+    --color-skeleton-shine: rgba(0,0,0,.12);
+    --bg-deep:            #f0f4f8;
+    --bg-card:            rgba(0,0,0,.04);
+    --dm-toggle-bg:       rgba(0,0,0,.08);
+}
+
+html.light-mode body { background: var(--color-bg); color: var(--color-text); }
+
+html.light-mode .admin-topbar {
+    background: var(--color-topbar-bg) !important;
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+
+html.light-mode .admin-topbar h1,
+html.light-mode .admin-topbar p { color: var(--color-text); }
+
+html.light-mode .admin-card,
+html.light-mode .admin-modal-box,
+html.light-mode .modal-field-wrap {
+    background: var(--color-surface) !important;
+    border-color: var(--color-border) !important;
+    color: var(--color-text);
+}
+
+html.light-mode .admin-table th {
+    background: rgba(0,0,0,.05) !important;
+    color: var(--color-text);
+}
+html.light-mode .admin-table td { color: var(--color-text); }
+html.light-mode .admin-table tr:hover { background: rgba(0,0,0,.03) !important; }
+
+html.light-mode .modal-field-wrap input,
+html.light-mode .admin-search input {
+    color: var(--color-text) !important;
+    background: var(--color-input-bg) !important;
+}
+
+html.light-mode .admin-main { background: var(--color-bg); }
+
+/* ── Admin Dark Mode Toggle ──────────────────────────── */
+#adminDarkModeToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--dm-toggle-bg);
+    border: 1.5px solid var(--color-border);
+    cursor: pointer;
+    font-size: 17px;
+    transition: background .25s, transform .2s, border-color .25s;
+    flex-shrink: 0;
+    color: var(--color-text);
+}
+#adminDarkModeToggle:hover {
+    background: var(--gold-soft);
+    border-color: var(--gold);
+    transform: rotate(20deg) scale(1.1);
+}
+
+/* ── Smooth admin transition ─────────────────────── */
+body, .admin-card, .admin-topbar, .admin-table td,
+.admin-table th, .admin-modal-box, .modal-field-wrap {
+    transition: background .3s ease, color .3s ease, border-color .3s ease;
+}
+
+/* =============================================================
+   ADMIN SKELETON LOADING
+   ============================================================= */
+.admin-skeleton-row {
+    background: linear-gradient(
+        90deg,
+        var(--color-skeleton-base) 25%,
+        var(--color-skeleton-shine) 50%,
+        var(--color-skeleton-base) 75%
+    );
+    background-size: 200% 100%;
+    animation: adminSkeletonShimmer 1.5s ease-in-out infinite;
+    border-radius: 8px;
+    height: 48px;
+    margin-bottom: 8px;
+}
+
+.admin-skeleton-stat {
+    background: linear-gradient(
+        90deg,
+        var(--color-skeleton-base) 25%,
+        var(--color-skeleton-shine) 50%,
+        var(--color-skeleton-base) 75%
+    );
+    background-size: 200% 100%;
+    animation: adminSkeletonShimmer 1.5s ease-in-out infinite;
+    border-radius: 16px;
+    height: 110px;
+}
+
+@keyframes adminSkeletonShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* =============================================================
+   ADMIN TOAST — upgraded
+   ============================================================= */
+.admin-ve-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 16px;
+    border-radius: 14px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #fff;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    animation: adminToastIn .3s cubic-bezier(.34,1.56,.64,1) both;
+    pointer-events: all;
+    min-width: 240px;
+    max-width: 340px;
+    border: 1px solid rgba(255,255,255,.1);
+    position: relative;
+}
+.admin-ve-toast.at-success { background: linear-gradient(135deg,#1a6e34,#22c55e22); border-color:rgba(34,197,94,.3); }
+.admin-ve-toast.at-error   { background: linear-gradient(135deg,#7f1d1d,#ef444422); border-color:rgba(239,68,68,.3); }
+.admin-ve-toast.at-warn    { background: linear-gradient(135deg,#78350f,#f59e0b22); border-color:rgba(245,158,11,.3); }
+.admin-ve-toast.at-info    { background: linear-gradient(135deg,#1e3a5f,#4361ee22); border-color:rgba(67,97,238,.3); }
+.admin-ve-toast.at-exit    { animation: adminToastOut .3s ease forwards; }
+
+.admin-toast-icon  { font-size:18px; flex-shrink:0; }
+.admin-toast-body  { flex:1; }
+.admin-toast-close {
+    background:none; border:none; color:rgba(255,255,255,.5);
+    font-size:15px; cursor:pointer; padding:0; transition:color .2s; flex-shrink:0;
+}
+.admin-toast-close:hover { color:#fff; }
+
+@keyframes adminToastIn  { from{opacity:0;transform:translateX(50px) scale(.9)} to{opacity:1;transform:none} }
+@keyframes adminToastOut { from{opacity:1;transform:none} to{opacity:0;transform:translateX(50px)} }
+
+/* =============================================================
+   ADMIN PANEL SPINNER
+   ============================================================= */
+.admin-panel-spinner-wrap {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px; padding: 48px 0;
+}
+.admin-panel-spinner {
+    width: 42px; height: 42px;
+    border: 4px solid var(--color-border);
+    border-top-color: var(--red-hot);
+    border-radius: 50%;
+    animation: adminSpin .8s linear infinite;
+}
+.admin-panel-spinner-wrap p {
+    font-family: var(--font-ui); font-size:13px; color: var(--color-text-muted);
+}
+@keyframes adminSpin { to { transform: rotate(360deg); } }

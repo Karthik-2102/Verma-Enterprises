@@ -893,9 +893,8 @@
             <!-- New password -->
             <div class="auth-field-wrap" id="profilePassWrap">
                 <span class="auth-field-icon">🔒</span>
-                <input id="profilePassword" type="password"
-                       placeholder="New Password"
-                       oninput="checkProfilePwdStrength(this.value)">
+                <input id="profilePassword" type="password" placeholder="New Password"
+                    oninput="checkProfilePwdStrength(this.value)">
                 <span class="auth-eye" onclick="togglePass('profilePassword',this)">👁</span>
             </div>
 
@@ -963,9 +962,8 @@
 
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">🔒</span>
-                <input id="fpNewPassword" type="password"
-                       placeholder="New Password"
-                       oninput="checkForgotPwdStrength(this.value)">
+                <input id="fpNewPassword" type="password" placeholder="New Password"
+                    oninput="checkForgotPwdStrength(this.value)">
                 <span class="auth-eye" onclick="togglePass('fpNewPassword',this)">👁</span>
             </div>
 
@@ -1013,8 +1011,7 @@
             </div>
 
             <!-- Step 1 action -->
-            <button class="auth-btn" id="adminSendOtpBtn" onclick="sendAdminForgotOtp()"
-                style="margin-bottom:14px;">
+            <button class="auth-btn" id="adminSendOtpBtn" onclick="sendAdminForgotOtp()" style="margin-bottom:14px;">
                 Send OTP
             </button>
 
@@ -1034,7 +1031,7 @@
             <div class="auth-field-wrap">
                 <span class="auth-field-icon">🔒</span>
                 <input id="adminFpNewPassword" type="password" placeholder="New Password"
-                       oninput="checkAdminForgotPwdStrength(this.value)">
+                    oninput="checkAdminForgotPwdStrength(this.value)">
                 <span class="auth-eye" onclick="togglePass('adminFpNewPassword',this)">👁</span>
             </div>
             <div class="pwd-strength-bar-wrap">
@@ -1051,18 +1048,17 @@
 
             <!-- Buttons — properly spaced -->
             <div class="profile-btn-row" style="margin-top:20px;">
-                <button class="auth-btn profile-update-btn" id="adminForgotResetBtn"
-                    onclick="resetAdminPassword()">
+                <button class="auth-btn profile-update-btn" id="adminForgotResetBtn" onclick="resetAdminPassword()">
                     Reset Password
                 </button>
-                <button class="auth-btn auth-btn-outline profile-cancel-btn"
-                    onclick="closeAdminForgot()">
+                <button class="auth-btn auth-btn-outline profile-cancel-btn" onclick="closeAdminForgot()">
                     Cancel
                 </button>
             </div>
 
         </div>
     </div><!-- /#adminForgotBox -->
+    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme"></button>
 
 
     <!--
