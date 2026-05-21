@@ -12,7 +12,7 @@ const generateToken = (user) => {
             role: user.role
         },
 
-        "verma_enterprises_secure_2003",
+        process.env.JWT_SECRET,
 
         {
             expiresIn: "7d"

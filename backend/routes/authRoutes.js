@@ -137,7 +137,7 @@ router.post("/login", async (req, res) => {
 
             },
 
-            "verma_enterprises_secure_2003",
+            process.env.JWT_SECRET,
 
             {
 

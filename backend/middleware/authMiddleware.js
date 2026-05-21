@@ -25,13 +25,7 @@ const authMiddleware = (req, res, next) => {
         /* Verify JWT token */
 
         const decoded =
-        jwt.verify(
-
-            token,
-
-            "verma_enterprises_secure_2003"
-
-        );
+        jwt.verify(token, process.env.JWT_SECRET)
 
         /* Attach user data to request */
 
