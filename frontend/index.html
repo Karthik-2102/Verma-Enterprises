@@ -296,12 +296,14 @@
                                     </select>
                                 </div>
                                 <div class="tool-field-group">
-                                    <label>Width</label>
-                                    <input type="number" id="resizerW" min="1" oninput="resizerSyncAR('w')">
+                                    <label>Width (px)</label>
+                                    <input type="number" id="resizerW" min="1"
+                                        oninput="resizerSyncAR('w');resizerUpdateHint()">
                                 </div>
                                 <div class="tool-field-group">
-                                    <label>Height</label>
-                                    <input type="number" id="resizerH" min="1" oninput="resizerSyncAR('h')">
+                                    <label>Height (px)</label>
+                                    <input type="number" id="resizerH" min="1"
+                                        oninput="resizerSyncAR('h');resizerUpdateHint()">
                                 </div>
                                 <div class="tool-field-group tool-field-check">
                                     <label><input type="checkbox" id="resizerAR" checked> Keep ratio</label>
@@ -315,8 +317,10 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="resizer-dim-hint" id="resizerDimHint"></div>
                             <button class="tool-action-btn" onclick="resizerDownload()">⬇️ Download Resized
                                 Image</button>
+                            <button class="tool-crop-btn" onclick="resizerCrop()">✂️ Crop First</button>
                             <button class="tool-reset-btn" onclick="resizerReset()">↺ Reset</button>
                         </div>
                     </div>
@@ -418,6 +422,7 @@
                             </div>
                             <div class="comp-saving-badge" id="compSaving"></div>
                             <button class="tool-action-btn" onclick="compDownload()">⬇️ Download Compressed</button>
+                            <button class="tool-crop-btn" onclick="compCrop()">✂️ Crop First</button>
                             <button class="tool-reset-btn" onclick="compReset()">↺ Reset</button>
                         </div>
                     </div>

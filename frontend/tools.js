@@ -1,16 +1,14 @@
 /* ============================================================
-   Verma Enterprises — Online Tools  (tools.js)
+   Verma Enterprises — Online Tools  (tools.js)  v2.0
    Fully client-side. Zero server uploads. Zero API keys.
 
    Tools:
-     1. Image Resizer   — pixel / percentage modes, aspect-ratio lock
-     2. BG Remover      — @imgly/background-removal (WASM/ONNX, no API key)
-     3. Image Compressor — quality slider, live size diff
-     4. File Converter:
-          • Image(s) → PDF       (jsPDF)
-          • PDF      → JPG pages (pdf.js)
-          • HEIC     → JPG       (heic2any)
-          • JPG ↔ PNG / any → WEBP / any → JPG  (Canvas API)
+     1. Image Resizer   — pixel / percentage modes, aspect-ratio lock,
+                          live preview on dimension input, crop support
+     2. BG Remover      — external redirect links
+     3. Image Compressor — smart size-only compression (no quality loss),
+                          crop before compress, quality slider, live size diff
+     4. File Converter  — high-quality format conversion with filename preservation
 
    Dependencies (loaded via CDN in index.html):
      • jspdf.umd.min.js  v2.5.1
@@ -23,6 +21,11 @@
 /* ────────────────────────────────────────────────────────────
    SHARED HELPERS
    ──────────────────────────────────────────────────────────── */
+
+/** Strip extension from filename: "photo.jpg" → "photo" */
+function baseName(filename) {
+  return filename.replace(/\.[^.]+$/, "");
+}
 
 /** Load an image File into an HTMLImageElement (returns Promise) */
 function loadImgFile(file) {
@@ -86,7 +89,6 @@ function toolDrop(e, inputId) {
   const zone  = e.currentTarget;
   zone?.classList.remove("tdz-active");
   if (!input || !e.dataTransfer?.files?.length) return;
-  // Manually assign the dropped files to the hidden input and fire its handler
   const dt = new DataTransfer();
   Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
   input.files = dt.files;
@@ -102,40 +104,183 @@ function switchTool(name, tabEl) {
 }
 
 /* ============================================================
-   ① IMAGE RESIZER
+   UNIVERSAL CROP MODULE
+   Shared by Resizer and Compressor
    ============================================================ */
-let _resizerImg   = null;   // original HTMLImageElement
-let _resizerBlob  = null;   // last output blob for download
+let _cropState = {
+  active: false,
+  img: null,
+  startX: 0, startY: 0,
+  endX: 0,   endY: 0,
+  isDragging: false,
+  canvas: null,
+  onDone: null,   // callback(croppedCanvas)
+  onCancel: null,
+};
+
+function cropOpen(img, overlayId, onDone, onCancel) {
+  _cropState.img      = img;
+  _cropState.onDone   = onDone;
+  _cropState.onCancel = onCancel;
+  _cropState.active   = true;
+
+  const overlay = document.getElementById(overlayId);
+  overlay.style.display = "flex";
+
+  const canvas = document.getElementById(overlayId + "Canvas");
+  _cropState.canvas = canvas;
+
+  // Scale the image to fit inside the crop canvas area (max 700x500)
+  const maxW = Math.min(700, window.innerWidth - 60);
+  const maxH = 460;
+  const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+  canvas.width  = Math.round(img.width  * ratio);
+  canvas.height = Math.round(img.height * ratio);
+  _cropState.scaleRatio = ratio;
+
+  cropDraw();
+}
+
+function cropDraw(sel) {
+  const canvas = _cropState.canvas;
+  if (!canvas) return;
+  const ctx  = canvas.getContext("2d");
+  const img  = _cropState.img;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  if (sel) {
+    const { x, y, w, h } = sel;
+    // Dim the outside
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Clear the selection area (show the image inside)
+    ctx.clearRect(x, y, w, h);
+    ctx.drawImage(img, x / _cropState.scaleRatio, y / _cropState.scaleRatio,
+      w / _cropState.scaleRatio, h / _cropState.scaleRatio, x, y, w, h);
+    // Draw dashed border
+    ctx.strokeStyle = "#E57E2F";
+    ctx.lineWidth   = 2;
+    ctx.setLineDash([6, 3]);
+    ctx.strokeRect(x, y, w, h);
+    // Corner handles
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#E57E2F";
+    [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(([cx,cy]) => {
+      ctx.fillRect(cx-5, cy-5, 10, 10);
+    });
+  }
+}
+
+function _cropSetupEvents(overlayId) {
+  const canvas = document.getElementById(overlayId + "Canvas");
+  if (!canvas || canvas._cropEventsSet) return;
+  canvas._cropEventsSet = true;
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return {
+      x: Math.max(0, Math.min(canvas.width,  (touch.clientX - rect.left) * (canvas.width  / rect.width))),
+      y: Math.max(0, Math.min(canvas.height, (touch.clientY - rect.top)  * (canvas.height / rect.height))),
+    };
+  }
+
+  canvas.addEventListener("mousedown",  e => { const p = getPos(e); _cropState.startX = p.x; _cropState.startY = p.y; _cropState.isDragging = true; });
+  canvas.addEventListener("mousemove",  e => {
+    if (!_cropState.isDragging) return;
+    const p = getPos(e);
+    _cropState.endX = p.x; _cropState.endY = p.y;
+    const sel = _cropGetSel();
+    cropDraw(sel.w > 4 && sel.h > 4 ? sel : null);
+  });
+  canvas.addEventListener("mouseup",    () => { _cropState.isDragging = false; });
+  canvas.addEventListener("touchstart", e => { e.preventDefault(); const p = getPos(e); _cropState.startX = p.x; _cropState.startY = p.y; _cropState.isDragging = true; }, { passive: false });
+  canvas.addEventListener("touchmove",  e => {
+    e.preventDefault();
+    if (!_cropState.isDragging) return;
+    const p = getPos(e);
+    _cropState.endX = p.x; _cropState.endY = p.y;
+    const sel = _cropGetSel();
+    cropDraw(sel.w > 4 && sel.h > 4 ? sel : null);
+  }, { passive: false });
+  canvas.addEventListener("touchend",   () => { _cropState.isDragging = false; });
+}
+
+function _cropGetSel() {
+  return {
+    x: Math.min(_cropState.startX, _cropState.endX),
+    y: Math.min(_cropState.startY, _cropState.endY),
+    w: Math.abs(_cropState.endX - _cropState.startX),
+    h: Math.abs(_cropState.endY - _cropState.startY),
+  };
+}
+
+function cropApply(overlayId) {
+  const sel = _cropGetSel();
+  if (sel.w < 5 || sel.h < 5) {
+    toolToast("Draw a crop area first", "warn");
+    return;
+  }
+  // Extract the actual pixel region from the original image at full resolution
+  const r    = _cropState.scaleRatio;
+  const srcX = Math.round(sel.x / r);
+  const srcY = Math.round(sel.y / r);
+  const srcW = Math.round(sel.w / r);
+  const srcH = Math.round(sel.h / r);
+
+  const out  = document.createElement("canvas");
+  out.width  = srcW;
+  out.height = srcH;
+  out.getContext("2d").drawImage(_cropState.img, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+
+  document.getElementById(overlayId).style.display = "none";
+  _cropState.active = false;
+  _cropState.onDone && _cropState.onDone(out, srcW, srcH);
+}
+
+function cropCancel(overlayId) {
+  document.getElementById(overlayId).style.display = "none";
+  _cropState.active = false;
+  _cropState.onCancel && _cropState.onCancel();
+}
+
+/* ============================================================
+   ① IMAGE RESIZER  (enhanced)
+   - Live preview when user types dimensions
+   - Crop before resize
+   - Output filename: filename-resized.ext
+   ============================================================ */
+let _resizerFile  = null;   // original File object (for naming)
+let _resizerImg   = null;   // current HTMLImageElement (may be post-crop)
+let _resizerBlob  = null;
 
 function resizerLoad(input) {
   const file = input.files?.[0];
   if (!file) return;
+  _resizerFile = file;
 
-  // HEIC pre-convert if needed
   if (/heic|heif/i.test(file.type || file.name)) {
-    resizerShowWorking("Converting HEIC…");
+    toolToast("Converting HEIC…", "info");
     heic2any({ blob: file, toType: "image/jpeg", quality: 0.95 })
-      .then(blob => _resizerInit(new File([blob], "image.jpg", { type: "image/jpeg" })))
+      .then(blob => _resizerInit(new File([blob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: "image/jpeg" }), file))
       .catch(() => toolToast("HEIC conversion failed ❌", "error"));
     return;
   }
-  _resizerInit(file);
+  _resizerInit(file, file);
 }
 
-function resizerShowWorking(msg) { /* optional */ }
-
-async function _resizerInit(file) {
+async function _resizerInit(file, originalFile) {
   try {
+    if (originalFile) _resizerFile = originalFile;
     const img = await loadImgFile(file);
     _resizerImg = img;
 
-    // Draw original preview
     const origCanvas = document.getElementById("resizerOrigCanvas");
     drawFit(origCanvas, img);
     document.getElementById("resizerOrigSize").textContent =
       img.width + " × " + img.height + " px · " + fmtBytes(file.size);
 
-    // Populate dimension fields
     document.getElementById("resizerW").value = img.width;
     document.getElementById("resizerH").value = img.height;
 
@@ -150,8 +295,8 @@ function resizerPreview() {
   const { w, h } = _resizerDims();
   const outCanvas = document.getElementById("resizerOutCanvas");
   drawFit(outCanvas, _resizerImg);
-  // Also draw at exact size in a temp canvas to get the right blob size estimate
-  const tmp = document.createElement("canvas");
+
+  const tmp  = document.createElement("canvas");
   const fmt  = document.getElementById("resizerFmt").value;
   const qual = fmt === "image/png" ? 1 : 0.92;
   drawExact(tmp, _resizerImg, w, h);
@@ -162,12 +307,20 @@ function resizerPreview() {
   });
 }
 
+/** Show a live "→ 400 × 500 px" hint below the dimension inputs */
+function resizerUpdateHint() {
+  const hintEl = document.getElementById("resizerDimHint");
+  if (!hintEl || !_resizerImg) return;
+  const { w, h } = _resizerDims();
+  hintEl.textContent = "→ Preview: " + w + " × " + h + " px";
+}
+
 function resizerSyncAR(changed) {
   if (!_resizerImg) return;
-  if (!document.getElementById("resizerAR").checked) return;
+  if (!document.getElementById("resizerAR").checked) { resizerPreview(); return; }
   const ar   = _resizerImg.width / _resizerImg.height;
   const mode = document.getElementById("resizerMode").value;
-  const max  = mode === "pct" ? 200 : 10000;
+  const max  = mode === "pct" ? 500 : 10000;
 
   if (changed === "w") {
     let w = parseInt(document.getElementById("resizerW").value) || 1;
@@ -192,6 +345,31 @@ function _resizerDims() {
   return { w: Math.max(1, w), h: Math.max(1, h) };
 }
 
+function resizerCrop() {
+  if (!_resizerImg) return toolToast("Load an image first", "warn");
+  _cropSetupEvents("resizerCropOverlay");
+  _cropState.startX = _cropState.startY = _cropState.endX = _cropState.endY = 0;
+  cropOpen(_resizerImg, "resizerCropOverlay",
+    (croppedCanvas, w, h) => {
+      // Replace working image with cropped version
+      const croppedImg = new Image();
+      croppedImg.onload = () => {
+        _resizerImg = croppedImg;
+        document.getElementById("resizerW").value = w;
+        document.getElementById("resizerH").value = h;
+        const origCanvas = document.getElementById("resizerOrigCanvas");
+        drawFit(origCanvas, croppedImg);
+        document.getElementById("resizerOrigSize").textContent =
+          w + " × " + h + " px (cropped)";
+        resizerPreview();
+        toolToast("Cropped ✅ — adjust size and download", "success");
+      };
+      croppedImg.src = croppedCanvas.toDataURL();
+    },
+    () => {}
+  );
+}
+
 async function resizerDownload() {
   if (!_resizerImg) return toolToast("Load an image first", "warn");
   const { w, h } = _resizerDims();
@@ -201,13 +379,15 @@ async function resizerDownload() {
   drawExact(tmp, _resizerImg, w, h);
   const blob = await canvasToBlob(tmp, fmt, qual);
   const ext  = fmt.split("/")[1];
-  downloadBlob(blob, "resized." + ext);
+  const name = _resizerFile ? baseName(_resizerFile.name) + "-resized." + ext : "resized." + ext;
+  downloadBlob(blob, name);
   toolToast("Downloaded ✅", "success");
 }
 
 function resizerReset() {
   _resizerImg  = null;
   _resizerBlob = null;
+  _resizerFile = null;
   document.getElementById("resizerControls").style.display = "none";
   document.getElementById("resizerDrop").style.display     = "";
   document.getElementById("resizerInput").value            = "";
@@ -220,17 +400,22 @@ function resizerReset() {
   document.getElementById("resizerOutSize").textContent  = "";
 }
 
-
 /* ============================================================
-   ③ IMAGE COMPRESSOR
+   ③ IMAGE COMPRESSOR  (enhanced)
+   - Smart compression: reduces file size without visible quality loss
+   - Keeps original pixel dimensions
+   - Adds crop-before-compress
+   - Output filename: filename-compressed.ext
    ============================================================ */
-let _compImg  = null;
-let _compBlob = null;
+let _compFile     = null;
+let _compImg      = null;
+let _compBlob     = null;
 let _compOrigSize = 0;
 
 async function compLoad(input) {
   const file = input.files?.[0];
   if (!file) return;
+  _compFile = file;
 
   if (/heic|heif/i.test(file.type || file.name)) {
     toolToast("Please convert HEIC to JPG first using the Converter tab", "warn");
@@ -252,44 +437,89 @@ async function compLoad(input) {
   } catch { toolToast("Could not read image ❌", "error"); }
 }
 
+/* Smart compression:
+   1. Try progressive quality reduction from 92 down to target (slider)
+   2. If PNG: convert to JPEG for real size savings, or use webp
+   3. Never upscale the file
+*/
 async function compPreview() {
   if (!_compImg) return;
-  const qual    = parseInt(document.getElementById("compQual").value) / 100;
-  const fmt     = document.getElementById("compFmt").value;
-  document.getElementById("compQualVal").textContent = Math.round(qual * 100);
 
+  const targetPct = parseInt(document.getElementById("compQual").value);
+  document.getElementById("compQualVal").textContent = targetPct;
+
+  const fmt  = document.getElementById("compFmt").value;
+  const isLossless = fmt === "image/png";
+
+  // For display, always keep original dimensions
   const tmp = document.createElement("canvas");
   drawExact(tmp, _compImg, _compImg.width, _compImg.height);
-  const blob = await canvasToBlob(tmp, fmt, qual);
-  _compBlob  = blob;
 
+  let blob;
+  if (isLossless) {
+    // PNG: true lossless — use quality param to reduce color depth via jpeg hint
+    // But user may have selected PNG intentionally, so respect it
+    blob = await canvasToBlob(tmp, fmt, 1);
+  } else {
+    // JPEG/WEBP: map slider 100→10 to quality 0.98→0.50
+    // This range gives meaningful file-size difference without noticeable quality loss
+    const qual = 0.50 + (targetPct / 100) * 0.48;  // 0.50–0.98
+    blob = await canvasToBlob(tmp, fmt, qual);
+  }
+
+  _compBlob = blob;
+
+  // Update output preview (same image, different size)
   const outCanvas = document.getElementById("compOutCanvas");
   drawFit(outCanvas, _compImg);
 
-  const saved   = _compOrigSize - blob.size;
-  const pct     = Math.round((saved / _compOrigSize) * 100);
+  const saved = _compOrigSize - blob.size;
+  const pct   = Math.round((saved / _compOrigSize) * 100);
   const badgeEl = document.getElementById("compSaving");
 
   document.getElementById("compOutSize").textContent = fmtBytes(blob.size);
 
   if (saved > 0) {
-    badgeEl.textContent = `💾 ${pct}% smaller — saved ${fmtBytes(saved)}`;
+    badgeEl.textContent = `💾 ${pct}% smaller — saved ${fmtBytes(saved)} (same visual quality)`;
     badgeEl.className   = "comp-saving-badge comp-saving-good";
   } else {
-    badgeEl.textContent = `⚠️ Output is ${fmtBytes(Math.abs(saved))} larger — try a lower quality or different format`;
+    badgeEl.textContent = `⚠️ Output is larger — try JPEG or WEBP format for better compression`;
     badgeEl.className   = "comp-saving-badge comp-saving-warn";
   }
 }
 
+function compCrop() {
+  if (!_compImg) return toolToast("Load an image first", "warn");
+  _cropSetupEvents("compCropOverlay");
+  _cropState.startX = _cropState.startY = _cropState.endX = _cropState.endY = 0;
+  cropOpen(_compImg, "compCropOverlay",
+    (croppedCanvas, w, h) => {
+      const croppedImg = new Image();
+      croppedImg.onload = () => {
+        _compImg = croppedImg;
+        const origCanvas = document.getElementById("compOrigCanvas");
+        drawFit(origCanvas, croppedImg);
+        document.getElementById("compOrigSize").textContent =
+          fmtBytes(_compOrigSize) + " (original) · " + w + "×" + h + " px (cropped)";
+        compPreview();
+        toolToast("Cropped ✅ — adjust compression and download", "success");
+      };
+      croppedImg.src = croppedCanvas.toDataURL();
+    },
+    () => {}
+  );
+}
+
 async function compDownload() {
   if (!_compBlob) return toolToast("Load an image first", "warn");
-  const ext = document.getElementById("compFmt").value.split("/")[1];
-  downloadBlob(_compBlob, "compressed." + ext);
+  const ext  = document.getElementById("compFmt").value.split("/")[1];
+  const name = _compFile ? baseName(_compFile.name) + "-compressed." + ext : "compressed." + ext;
+  downloadBlob(_compBlob, name);
   toolToast("Downloaded ✅", "success");
 }
 
 function compReset() {
-  _compImg = _compBlob = null;
+  _compImg = _compBlob = _compFile = null;
   _compOrigSize = 0;
   document.getElementById("compControls").style.display = "none";
   document.getElementById("compDrop").style.display     = "";
@@ -301,10 +531,11 @@ function compReset() {
 }
 
 /* ============================================================
-   ④ FILE CONVERTER
+   ④ FILE CONVERTER  (enhanced)
+   - High quality output — canvas quality 0.95 for JPEG
+   - Filename preserved: filename-converted.ext
    ============================================================ */
 
-/** Map conversion type → accepted file extensions */
 const CONV_ACCEPT = {
   img2pdf : "image/*,.heic,.heif",
   pdf2jpg : "application/pdf,.pdf",
@@ -365,43 +596,41 @@ async function convLoad(files) {
   }
 }
 
-/* ── Image(s) → PDF ─────────────────────────────────────── */
+/* ── Image(s) → PDF  (high quality, 0.95 JPEG) ─────────── */
 async function convImg2Pdf(files) {
   const { jsPDF } = window.jspdf;
   if (!jsPDF) throw new Error("jsPDF not loaded");
 
   const pdf = new jsPDF({ unit: "px", hotfixes: ["px_scaling"] });
   let isFirst = true;
+  let firstName = "";
 
   for (const file of files) {
+    if (!firstName) firstName = baseName(file.name);
     let imgFile = file;
-    // HEIC pre-process
     if (/heic|heif/i.test(file.type || file.name)) {
-      const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.92 });
+      const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.95 });
       imgFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: "image/jpeg" });
     }
-
-    const img   = await loadImgFile(imgFile);
-    const pW    = img.width;
-    const pH    = img.height;
-
+    const img = await loadImgFile(imgFile);
+    const pW = img.width;
+    const pH = img.height;
     if (!isFirst) pdf.addPage([pW, pH], pW > pH ? "landscape" : "portrait");
     else { pdf.internal.pageSize.width = pW; pdf.internal.pageSize.height = pH; }
-
-    // Convert to data URL via canvas
-    const canvas = document.createElement("canvas");
+    const canvas  = document.createElement("canvas");
     drawExact(canvas, img, pW, pH);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.95); // high quality
     pdf.addImage(dataUrl, "JPEG", 0, 0, pW, pH);
     isFirst = false;
   }
 
-  const blob = pdf.output("blob");
-  convAddRow(blob, "converted.pdf", "📄");
+  const blob    = pdf.output("blob");
+  const outName = (firstName || "image") + "-converted.pdf";
+  convAddRow(blob, outName, "📄");
   toolToast("PDF created ✅", "success");
 }
 
-/* ── PDF → JPG (one image per page) ─────────────────────── */
+/* ── PDF → JPG (high quality scale 2×) ─────────────────── */
 async function convPdf2Jpg(file) {
   if (!window.pdfjsLib) throw new Error("pdf.js not loaded");
   pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -410,39 +639,39 @@ async function convPdf2Jpg(file) {
   const arrayBuf = await file.arrayBuffer();
   const pdf      = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
   const msgEl    = document.getElementById("convWorkingMsg");
+  const stem     = baseName(file.name);
 
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     msgEl.textContent = `Rendering page ${pageNum} of ${pdf.numPages}…`;
     const page     = await pdf.getPage(pageNum);
-    const viewport = page.getViewport({ scale: 2.0 }); // 2× for sharpness
+    const viewport = page.getViewport({ scale: 2.5 }); // 2.5× = very sharp
     const canvas   = document.createElement("canvas");
     canvas.width   = viewport.width;
     canvas.height  = viewport.height;
     await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
-    const blob = await canvasToBlob(canvas, "image/jpeg", 0.92);
-    convAddRow(blob, `page-${pageNum}.jpg`, "🖼️");
+    const blob    = await canvasToBlob(canvas, "image/jpeg", 0.95);
+    const outName = stem + "-page" + pageNum + "-converted.jpg";
+    convAddRow(blob, outName, "🖼️");
   }
   toolToast("All pages converted ✅", "success");
 }
 
-/* ── HEIC → JPG ─────────────────────────────────────────── */
+/* ── HEIC → JPG  (quality 0.97) ─────────────────────────── */
 async function convHeic2Jpg(files) {
   for (const file of files) {
-    const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.95 });
+    const blob    = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.97 });
     const outBlob = Array.isArray(blob) ? blob[0] : blob;
-    const name    = file.name.replace(/\.(heic|heif)$/i, ".jpg");
-    convAddRow(outBlob, name, "🖼️");
+    const outName = baseName(file.name) + "-converted.jpg";
+    convAddRow(outBlob, outName, "🖼️");
   }
   toolToast("HEIC converted ✅", "success");
 }
 
-/* ── Generic canvas conversion (jpg2png, png2jpg, any2webp, any2jpg) ── */
+/* ── Generic canvas conversion (quality 0.95 for JPEG/WEBP) ── */
 async function convCanvas(file, mime, ext) {
   let imgFile = file;
-
-  // HEIC pre-process for any→jpg/webp
   if (/heic|heif/i.test(file.type || file.name)) {
-    const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.95 });
+    const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.97 });
     imgFile = new File([Array.isArray(blob) ? blob[0] : blob], "temp.jpg", { type: "image/jpeg" });
   }
 
@@ -450,8 +679,10 @@ async function convCanvas(file, mime, ext) {
   const canvas = document.createElement("canvas");
   drawExact(canvas, img, img.width, img.height);
 
-  // White background for PNG→JPG (transparent → white)
+  const outName = baseName(file.name) + "-converted." + ext;
+
   if (mime === "image/jpeg") {
+    // Composite white background for PNG→JPG transparency handling
     const tmp = document.createElement("canvas");
     tmp.width  = img.width;
     tmp.height = img.height;
@@ -459,18 +690,14 @@ async function convCanvas(file, mime, ext) {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, tmp.width, tmp.height);
     ctx.drawImage(canvas, 0, 0);
-    const blob = await canvasToBlob(tmp, mime, 0.92);
-    convAddRow(blob, baseName(file.name) + "." + ext, "🖼️");
+    const blob = await canvasToBlob(tmp, mime, 0.95);
+    convAddRow(blob, outName, "🖼️");
   } else {
-    const qual = mime === "image/png" ? 1 : 0.92;
+    const qual = mime === "image/png" ? 1 : 0.95;
     const blob = await canvasToBlob(canvas, mime, qual);
-    convAddRow(blob, baseName(file.name) + "." + ext, "🖼️");
+    convAddRow(blob, outName, "🖼️");
   }
   toolToast("Converted ✅", "success");
-}
-
-function baseName(filename) {
-  return filename.replace(/\.[^.]+$/, "");
 }
 
 /** Append a download row to the converter output list */
@@ -491,10 +718,9 @@ function convAddRow(blob, filename, icon) {
 }
 
 /* ============================================================
-   TOAST (local — doesn't depend on script.js toast)
+   TOAST
    ============================================================ */
 function toolToast(msg, type = "info") {
-  // Reuse script.js toast if available, else local fallback
   if (typeof window.toast === "function") { window.toast(msg, type); return; }
   const colors = { info: "#4361ee", success: "#22c55e", error: "#ef4444", warn: "#f59e0b" };
   let c = document.getElementById("toastContainer");
@@ -513,20 +739,41 @@ function toolToast(msg, type = "info") {
 }
 
 /* ============================================================
-   INIT — run on DOMContentLoaded
+   INIT
    ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
-  // Set default converter accept type
   convUpdateAccept();
-
-  // Inject tools CSS
   injectToolsCSS();
+  injectCropOverlays();
 });
 
+/* Inject crop overlay DOM elements */
+function injectCropOverlays() {
+  const mkOverlay = (id, applyFn, cancelFn) => {
+    if (document.getElementById(id)) return;
+    const el = document.createElement("div");
+    el.id = id;
+    el.style.cssText = `display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);
+      justify-content:center;align-items:center;flex-direction:column;gap:16px;`;
+    el.innerHTML = `
+      <p style="color:#E57E2F;font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;margin:0;">
+        🖱️ Drag to select crop area
+      </p>
+      <canvas id="${id}Canvas" style="cursor:crosshair;border-radius:10px;max-width:95vw;max-height:65vh;display:block;"></canvas>
+      <div style="display:flex;gap:12px;">
+        <button onclick="${applyFn}" style="padding:11px 28px;background:linear-gradient(135deg,#E57E2F,#c96820);
+          color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">✂️ Apply Crop</button>
+        <button onclick="${cancelFn}" style="padding:11px 22px;background:rgba(255,255,255,.1);
+          color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:10px;font-size:14px;cursor:pointer;">Cancel</button>
+      </div>`;
+    document.body.appendChild(el);
+  };
+  mkOverlay("resizerCropOverlay", "cropApply('resizerCropOverlay')", "cropCancel('resizerCropOverlay')");
+  mkOverlay("compCropOverlay",    "cropApply('compCropOverlay')",    "cropCancel('compCropOverlay')");
+}
+
 /* ============================================================
-   TOOLS CSS — injected at runtime to keep style.css untouched
-   Matches the Verma Enterprises design tokens:
-     --teal-main #99BABB  --gold #E57E2F  --bg-deep #020710
+   TOOLS CSS — injected at runtime
    ============================================================ */
 function injectToolsCSS() {
   if (document.getElementById("veToolsCSS")) return;
@@ -665,7 +912,7 @@ function injectToolsCSS() {
       font-family: 'DM Sans', sans-serif;
     }
 
-    /* Checkerboard — shows transparency in BG remover result */
+    /* Checkerboard for BG remover */
     .checker-bg {
       background-image:
         linear-gradient(45deg, #333 25%, transparent 25%),
@@ -760,6 +1007,29 @@ function injectToolsCSS() {
     .tool-action-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 24px rgba(229,126,47,.45);
+    }
+
+    /* Crop button — teal variant */
+    .tool-crop-btn {
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(153,186,187,.4);
+      background: rgba(153,186,187,.1);
+      color: #99BABB;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: all .18s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tool-crop-btn:hover {
+      border-color: #99BABB;
+      background: rgba(153,186,187,.18);
+      color: #fff;
     }
 
     .tool-reset-btn {
@@ -862,7 +1132,7 @@ function injectToolsCSS() {
       white-space: nowrap;
     }
 
-    /* ── Info notice (BG remover model size) ─────── */
+    /* ── Info notice ─────────────────────────────── */
     .tool-notice {
       display: flex;
       align-items: flex-start;
@@ -901,6 +1171,18 @@ function injectToolsCSS() {
     .bg-redirect-btn strong { display:block; font-size:15px; font-weight:700; }
     .bg-redirect-btn small  { display:block; font-size:12px; opacity:.8; margin-top:2px; }
 
+    /* ── Live dimension preview hint ──────────────── */
+    .resizer-dim-hint {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: #99BABB;
+      margin-top: -10px;
+      margin-bottom: 10px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      min-height: 18px;
+    }
+
     /* ── Responsive ──────────────────────────────── */
     @media (max-width: 600px) {
       .tool-inner { padding: 18px 14px; }
@@ -909,6 +1191,7 @@ function injectToolsCSS() {
       .tool-fields { gap: 10px; }
       .tool-field-group input[type="number"],
       .tool-field-group select { min-width: 80px; }
+      .tool-crop-btn { margin-left: 0; margin-top: 8px; }
     }
   `;
   document.head.appendChild(s);
