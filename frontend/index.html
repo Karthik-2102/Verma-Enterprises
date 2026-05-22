@@ -255,6 +255,8 @@
                 <button class="tool-tab" data-tool="compress" onclick="switchTool('compress',this)">📦
                     Compressor</button>
                 <button class="tool-tab" data-tool="convert" onclick="switchTool('convert',this)">🔄 Converter</button>
+                <button class="tool-tab" data-tool="pdfcomp" onclick="switchTool('pdfcomp',this)">📉 PDF
+                    Compressor</button>
             </div>
 
             <!-- ── Tool panels ─────────────────────────────── -->
@@ -431,7 +433,8 @@
                 <!-- ④ CONVERTER -->
                 <div class="tool-panel" id="tool-convert">
                     <div class="tool-inner">
-                        <div class="tool-fields" style="margin-bottom:18px">
+                        <div class="tool-fields"
+                            style="margin-bottom:18px;align-items:flex-end;flex-wrap:wrap;gap:14px;">
                             <div class="tool-field-group">
                                 <label>Convert from</label>
                                 <select id="convFrom" onchange="convUpdateAccept()">
@@ -443,6 +446,21 @@
                                     <option value="any2webp">Image → WEBP</option>
                                     <option value="any2jpg">Image → JPG</option>
                                 </select>
+                            </div>
+                            <!-- Target file size (optional) -->
+                            <div class="tool-field-group" id="convTargetSizeGroup">
+                                <label>Target size <span style="font-weight:400;opacity:.6;">(optional)</span></label>
+                                <div style="display:flex;gap:6px;align-items:center;">
+                                    <input type="number" id="convTargetSize" min="1" max="99999" placeholder="e.g. 500"
+                                        style="min-width:90px;width:90px;" oninput="convTargetSizeHint()">
+                                    <select id="convTargetUnit" style="min-width:70px;" oninput="convTargetSizeHint()">
+                                        <option value="kb">KB</option>
+                                        <option value="mb">MB</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="tool-field-group" style="justify-content:flex-end;padding-bottom:2px;">
+                                <span id="convTargetHint" class="conv-target-hint"></span>
                             </div>
                         </div>
 
@@ -467,6 +485,109 @@
                 </div><!-- /#tool-convert -->
 
             </div><!-- /.tools-panel-wrap -->
+
+            <!-- ⑤ PDF COMPRESSOR -->
+            <div class="tool-panel" id="tool-pdfcomp">
+                <div class="tool-inner">
+
+                    <div class="tool-notice">
+                        <span>ℹ️</span>
+                        <span>PDF compression works by re-rendering each page at your chosen quality. Text and vector
+                            elements remain sharp — only embedded images are compressed. Pure text PDFs may see
+                            minimal size change.</span>
+                    </div>
+
+                    <!-- Drop zone -->
+                    <div class="tool-drop-zone" id="pdfcompDrop" ondragover="toolDragOver(event,'pdfcompDrop')"
+                        ondragleave="toolDragLeave('pdfcompDrop')" ondrop="toolDrop(event,'pdfcompInput')"
+                        onclick="document.getElementById('pdfcompInput').click()">
+                        <div class="tdz-icon">📄</div>
+                        <p>Drop PDF here or <span class="tdz-link">browse</span></p>
+                        <small>PDF files only · All pages processed</small>
+                    </div>
+                    <input type="file" id="pdfcompInput" accept="application/pdf,.pdf" style="display:none"
+                        onchange="pdfcompLoad(this)">
+
+                    <!-- Controls (hidden until file loaded) -->
+                    <div id="pdfcompControls" style="display:none">
+
+                        <!-- File info bar -->
+                        <div class="pdfcomp-info-bar">
+                            <span id="pdfcompFileName">file.pdf</span>
+                            <span class="pdfcomp-pages" id="pdfcompPages"></span>
+                            <span class="pdfcomp-origsize" id="pdfcompOrigSize"></span>
+                        </div>
+
+                        <div class="tool-fields" style="flex-wrap:wrap;gap:18px;align-items:flex-end;">
+                            <!-- Quality preset -->
+                            <div class="tool-field-group">
+                                <label>Quality Preset</label>
+                                <select id="pdfcompPreset" onchange="pdfcompPresetChange()">
+                                    <option value="screen">Screen / Web (smallest)</option>
+                                    <option value="ebook" selected>eBook / Balanced</option>
+                                    <option value="print">Print Quality</option>
+                                    <option value="custom">Custom…</option>
+                                </select>
+                            </div>
+                            <!-- Custom quality slider (hidden unless Custom chosen) -->
+                            <div class="tool-field-group" id="pdfcompCustomWrap" style="flex:1;display:none;">
+                                <label>Image Quality: <strong id="pdfcompQualVal">75</strong>%</label>
+                                <input type="range" id="pdfcompQual" min="10" max="100" value="75"
+                                    oninput="pdfcompQualUpdate()">
+                            </div>
+                            <!-- Target size (optional) -->
+                            <div class="tool-field-group">
+                                <label>Target size <span style="font-weight:400;opacity:.6;">(optional)</span></label>
+                                <div style="display:flex;gap:6px;">
+                                    <input type="number" id="pdfcompTargetSize" min="1" placeholder="e.g. 2"
+                                        style="min-width:80px;width:80px;">
+                                    <select id="pdfcompTargetUnit" style="min-width:70px;">
+                                        <option value="mb">MB</option>
+                                        <option value="kb">KB</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compress button -->
+                        <button class="tool-action-btn" id="pdfcompBtn" onclick="pdfcompRun()">
+                            📉 Compress PDF
+                        </button>
+                        <button class="tool-reset-btn" onclick="pdfcompReset()">↺ Reset</button>
+
+                        <!-- Progress / working -->
+                        <div id="pdfcompWorking" class="tool-working" style="display:none">
+                            <div class="tool-spinner"></div>
+                            <p id="pdfcompWorkingMsg">Compressing…</p>
+                            <!-- Progress bar -->
+                            <div class="pdfcomp-progress-wrap">
+                                <div class="pdfcomp-progress-bar" id="pdfcompProgressBar"></div>
+                            </div>
+                        </div>
+
+                        <!-- Result -->
+                        <div id="pdfcompResult" style="display:none;margin-top:18px;">
+                            <div class="pdfcomp-result-card">
+                                <div class="pdfcomp-result-row">
+                                    <span class="pdfcomp-result-label">Original</span>
+                                    <span class="pdfcomp-result-val" id="pdfcompResultOrig">—</span>
+                                </div>
+                                <div class="pdfcomp-result-row">
+                                    <span class="pdfcomp-result-label">Compressed</span>
+                                    <span class="pdfcomp-result-val" id="pdfcompResultNew">—</span>
+                                </div>
+                                <div class="pdfcomp-result-row">
+                                    <span class="pdfcomp-result-label">Saved</span>
+                                    <span class="pdfcomp-result-val pdfcomp-saved" id="pdfcompResultSaved">—</span>
+                                </div>
+                            </div>
+                            <div id="pdfcompDownloadWrap" style="margin-top:16px;"></div>
+                        </div>
+
+                    </div><!-- /#pdfcompControls -->
+
+                </div>
+            </div><!-- /#tool-pdfcomp -->
 
         </section><!-- /#toolsSection -->
 

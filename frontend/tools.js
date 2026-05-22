@@ -564,6 +564,50 @@ function convUpdateAccept() {
   document.getElementById("convDropHint").textContent  = CONV_HINTS[type] || "";
   document.getElementById("convOutputList").innerHTML  = "";
   document.getElementById("convWorking").style.display = "none";
+
+  // Target size input only useful for image formats (not multi-page pdf2jpg)
+  const sizeGroup = document.getElementById("convTargetSizeGroup");
+  if (sizeGroup) sizeGroup.style.display = (type === "img2pdf") ? "none" : "";
+  convTargetSizeHint();
+}
+
+/** Show a live hint: e.g. "→ ~512 KB target" */
+function convTargetSizeHint() {
+  const el   = document.getElementById("convTargetHint");
+  if (!el) return;
+  const val  = parseFloat(document.getElementById("convTargetSize")?.value);
+  const unit = document.getElementById("convTargetUnit")?.value;
+  if (!val || val <= 0) { el.textContent = ""; return; }
+  el.textContent = "→ Target: " + val + " " + unit.toUpperCase();
+}
+
+/** Get target bytes from UI inputs (returns null if not set) */
+function convGetTargetBytes() {
+  const val  = parseFloat(document.getElementById("convTargetSize")?.value);
+  const unit = document.getElementById("convTargetUnit")?.value;
+  if (!val || val <= 0) return null;
+  return unit === "mb" ? val * 1024 * 1024 : val * 1024;
+}
+
+/**
+ * Binary-search for the JPEG/WEBP quality that gets the blob
+ * as close as possible to targetBytes without exceeding it.
+ */
+async function findQualityForSize(canvas, mime, targetBytes) {
+  let lo = 0.05, hi = 0.99, best = null, bestBlob = null;
+  for (let i = 0; i < 14; i++) {
+    const mid  = (lo + hi) / 2;
+    const blob = await canvasToBlob(canvas, mime, mid);
+    if (blob.size <= targetBytes) {
+      best = mid; bestBlob = blob; lo = mid;
+    } else {
+      hi = mid;
+    }
+    if (hi - lo < 0.005) break;
+  }
+  // If even lowest quality exceeds target, just return the smallest possible
+  if (!bestBlob) bestBlob = await canvasToBlob(canvas, mime, 0.05);
+  return bestBlob;
 }
 
 async function convLoad(files) {
@@ -667,7 +711,7 @@ async function convHeic2Jpg(files) {
   toolToast("HEIC converted ✅", "success");
 }
 
-/* ── Generic canvas conversion (quality 0.95 for JPEG/WEBP) ── */
+/* ── Generic canvas conversion (quality 0.95 for JPEG/WEBP, target size aware) ── */
 async function convCanvas(file, mime, ext) {
   let imgFile = file;
   if (/heic|heif/i.test(file.type || file.name)) {
@@ -679,10 +723,10 @@ async function convCanvas(file, mime, ext) {
   const canvas = document.createElement("canvas");
   drawExact(canvas, img, img.width, img.height);
 
-  const outName = baseName(file.name) + "-converted." + ext;
+  const outName    = baseName(file.name) + "-converted." + ext;
+  const targetBytes = convGetTargetBytes();
 
   if (mime === "image/jpeg") {
-    // Composite white background for PNG→JPG transparency handling
     const tmp = document.createElement("canvas");
     tmp.width  = img.width;
     tmp.height = img.height;
@@ -690,11 +734,15 @@ async function convCanvas(file, mime, ext) {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, tmp.width, tmp.height);
     ctx.drawImage(canvas, 0, 0);
-    const blob = await canvasToBlob(tmp, mime, 0.95);
+    const blob = targetBytes
+      ? await findQualityForSize(tmp, mime, targetBytes)
+      : await canvasToBlob(tmp, mime, 0.95);
     convAddRow(blob, outName, "🖼️");
   } else {
-    const qual = mime === "image/png" ? 1 : 0.95;
-    const blob = await canvasToBlob(canvas, mime, qual);
+    const qual = (mime === "image/png") ? 1 : 0.95;
+    const blob = (targetBytes && mime !== "image/png")
+      ? await findQualityForSize(canvas, mime, targetBytes)
+      : await canvasToBlob(canvas, mime, qual);
     convAddRow(blob, outName, "🖼️");
   }
   toolToast("Converted ✅", "success");
@@ -715,6 +763,193 @@ function convAddRow(blob, filename, icon) {
     <a class="tool-action-btn conv-dl-btn" href="${url}" download="${filename}">⬇️ Download</a>
   `;
   listEl.appendChild(row);
+}
+
+/* ============================================================
+   ⑤ PDF COMPRESSOR
+   Strategy: use pdf.js to render each page at chosen quality,
+   then reassemble with jsPDF. Binary-search quality to hit
+   a target file size if the user supplies one.
+   ============================================================ */
+let _pdfcompFile     = null;
+let _pdfcompOrigSize = 0;
+let _pdfcompDoc      = null;   // pdfjsLib doc object
+
+const PDFCOMP_PRESETS = {
+  screen: { scale: 1.0, qual: 0.50, label: "Screen/Web" },
+  ebook:  { scale: 1.5, qual: 0.72, label: "eBook/Balanced" },
+  print:  { scale: 2.0, qual: 0.88, label: "Print Quality" },
+};
+
+async function pdfcompLoad(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+    toolToast("Please select a PDF file ❌", "error"); return;
+  }
+  _pdfcompFile     = file;
+  _pdfcompOrigSize = file.size;
+
+  // Load with pdf.js
+  if (!window.pdfjsLib) { toolToast("pdf.js not loaded ❌", "error"); return; }
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  const buf = await file.arrayBuffer();
+  _pdfcompDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+
+  document.getElementById("pdfcompFileName").textContent = file.name;
+  document.getElementById("pdfcompPages").textContent    = _pdfcompDoc.numPages + " page" + (_pdfcompDoc.numPages > 1 ? "s" : "");
+  document.getElementById("pdfcompOrigSize").textContent = fmtBytes(file.size);
+
+  document.getElementById("pdfcompDrop").style.display     = "none";
+  document.getElementById("pdfcompControls").style.display = "block";
+  document.getElementById("pdfcompResult").style.display   = "none";
+  document.getElementById("pdfcompDownloadWrap").innerHTML = "";
+}
+
+function pdfcompPresetChange() {
+  const v = document.getElementById("pdfcompPreset").value;
+  const wrap = document.getElementById("pdfcompCustomWrap");
+  wrap.style.display = v === "custom" ? "" : "none";
+}
+
+function pdfcompQualUpdate() {
+  document.getElementById("pdfcompQualVal").textContent =
+    document.getElementById("pdfcompQual").value;
+}
+
+async function pdfcompRun() {
+  if (!_pdfcompDoc) return toolToast("Load a PDF first", "warn");
+
+  const preset   = document.getElementById("pdfcompPreset").value;
+  const cfg      = PDFCOMP_PRESETS[preset] || PDFCOMP_PRESETS.ebook;
+  const scale    = cfg.scale;
+  const baseQual = preset === "custom"
+    ? parseInt(document.getElementById("pdfcompQual").value) / 100
+    : cfg.qual;
+
+  // Optional target size
+  const tVal  = parseFloat(document.getElementById("pdfcompTargetSize").value);
+  const tUnit = document.getElementById("pdfcompTargetUnit").value;
+  const targetBytes = (tVal > 0) ? (tUnit === "mb" ? tVal * 1024 * 1024 : tVal * 1024) : null;
+
+  const btn     = document.getElementById("pdfcompBtn");
+  const working = document.getElementById("pdfcompWorking");
+  const msgEl   = document.getElementById("pdfcompWorkingMsg");
+  const progBar = document.getElementById("pdfcompProgressBar");
+
+  btn.disabled          = true;
+  working.style.display = "flex";
+  document.getElementById("pdfcompResult").style.display = "none";
+  progBar.style.width   = "0%";
+
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { toolToast("jsPDF not loaded ❌", "error"); btn.disabled = false; working.style.display = "none"; return; }
+
+  const numPages = _pdfcompDoc.numPages;
+  let   qual     = baseQual;
+
+  try {
+    /* ── First pass: render all pages at chosen quality ── */
+    const pages = [];
+    for (let p = 1; p <= numPages; p++) {
+      msgEl.textContent   = `Rendering page ${p} of ${numPages}…`;
+      progBar.style.width = Math.round((p / numPages) * 60) + "%";
+
+      const page     = await _pdfcompDoc.getPage(p);
+      const viewport = page.getViewport({ scale });
+      const canvas   = document.createElement("canvas");
+      canvas.width   = viewport.width;
+      canvas.height  = viewport.height;
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+      pages.push({ canvas, w: viewport.width, h: viewport.height });
+    }
+
+    /* ── Build PDF from rendered pages ── */
+    const buildPdf = async (q) => {
+      const firstPage = pages[0];
+      const doc = new jsPDF({
+        unit: "px",
+        hotfixes: ["px_scaling"],
+        format: [firstPage.w, firstPage.h],
+        orientation: firstPage.w > firstPage.h ? "landscape" : "portrait",
+      });
+
+      for (let i = 0; i < pages.length; i++) {
+        const { canvas, w, h } = pages[i];
+        if (i > 0) doc.addPage([w, h], w > h ? "landscape" : "portrait");
+        const dataUrl = canvas.toDataURL("image/jpeg", q);
+        doc.addImage(dataUrl, "JPEG", 0, 0, w, h);
+      }
+      return doc.output("blob");
+    };
+
+    msgEl.textContent   = "Assembling PDF…";
+    progBar.style.width = "70%";
+
+    let resultBlob = await buildPdf(qual);
+
+    /* ── Binary-search quality to hit target size ── */
+    if (targetBytes && resultBlob.size > targetBytes) {
+      msgEl.textContent = "Optimising for target size…";
+      let lo = 0.05, hi = qual;
+      for (let i = 0; i < 10; i++) {
+        const mid  = (lo + hi) / 2;
+        const blob = await buildPdf(mid);
+        if (blob.size <= targetBytes) { resultBlob = blob; lo = mid; }
+        else { hi = mid; }
+        progBar.style.width = 70 + Math.round((i / 10) * 25) + "%";
+        if (hi - lo < 0.01) break;
+      }
+    }
+
+    progBar.style.width = "100%";
+
+    /* ── Show results ── */
+    const saved  = _pdfcompOrigSize - resultBlob.size;
+    const pct    = Math.round((saved / _pdfcompOrigSize) * 100);
+    const outName = baseName(_pdfcompFile.name) + "-compressed.pdf";
+
+    document.getElementById("pdfcompResultOrig").textContent  = fmtBytes(_pdfcompOrigSize);
+    document.getElementById("pdfcompResultNew").textContent   = fmtBytes(resultBlob.size);
+
+    const savedEl = document.getElementById("pdfcompResultSaved");
+    if (saved > 0) {
+      savedEl.textContent  = `${fmtBytes(saved)} (${pct}% smaller)`;
+      savedEl.style.color  = "#28a745";
+    } else {
+      savedEl.textContent  = "PDF could not be reduced further";
+      savedEl.style.color  = "#ffc107";
+    }
+
+    const url = URL.createObjectURL(resultBlob);
+    document.getElementById("pdfcompDownloadWrap").innerHTML = `
+      <a class="tool-action-btn" href="${url}" download="${outName}">⬇️ Download Compressed PDF</a>
+    `;
+
+    document.getElementById("pdfcompResult").style.display = "block";
+    toolToast("PDF compressed ✅", "success");
+
+  } catch (err) {
+    console.error("PDF compress error:", err);
+    toolToast("Compression failed: " + (err.message || "unknown error") + " ❌", "error");
+  } finally {
+    btn.disabled          = false;
+    working.style.display = "none";
+  }
+}
+
+function pdfcompReset() {
+  _pdfcompFile = null;
+  _pdfcompOrigSize = 0;
+  _pdfcompDoc  = null;
+  document.getElementById("pdfcompControls").style.display = "none";
+  document.getElementById("pdfcompDrop").style.display     = "";
+  document.getElementById("pdfcompInput").value            = "";
+  document.getElementById("pdfcompResult").style.display   = "none";
+  document.getElementById("pdfcompDownloadWrap").innerHTML = "";
+  document.getElementById("pdfcompProgressBar").style.width = "0%";
 }
 
 /* ============================================================
@@ -1181,6 +1416,95 @@ function injectToolsCSS() {
       font-weight: 600;
       letter-spacing: .3px;
       min-height: 18px;
+    }
+
+    /* ── Converter target size hint ──────────────── */
+    .conv-target-hint {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #E57E2F;
+      letter-spacing: .3px;
+    }
+
+    /* ── PDF Compressor ──────────────────────────── */
+    .pdfcomp-info-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .pdfcomp-info-bar span:first-child {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pdfcomp-pages {
+      font-size: 12px;
+      color: #99BABB;
+      font-weight: 600;
+      background: rgba(153,186,187,.12);
+      border-radius: 6px;
+      padding: 3px 9px;
+    }
+    .pdfcomp-origsize {
+      font-size: 12px;
+      color: rgba(255,255,255,.45);
+    }
+
+    .pdfcomp-progress-wrap {
+      width: 100%;
+      max-width: 360px;
+      height: 6px;
+      background: rgba(255,255,255,.08);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .pdfcomp-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #E57E2F, #f5a623);
+      border-radius: 99px;
+      transition: width .3s ease;
+    }
+
+    .pdfcomp-result-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pdfcomp-result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+    }
+    .pdfcomp-result-label {
+      color: rgba(255,255,255,.5);
+      font-weight: 500;
+    }
+    .pdfcomp-result-val {
+      font-weight: 700;
+      color: #fff;
+    }
+    .pdfcomp-saved {
+      color: #28a745;
     }
 
     /* ── Responsive ──────────────────────────────── */
