@@ -435,11 +435,14 @@ function showSkeleton(containerId, count = 4) {
 /* ============================================================
    LAYOUT VISIBILITY
    ============================================================ */
+/* ── first-show guard so we only fetch stats once ── */
+let _heroStatsFetched = false;
+
 function showPublicSite() {
   const pub  = el("publicSite");
   const dash = el("mainPage");
 
-  /* ── Page transition: exit dashboard, enter public ── */
+  /* Page transition: exit dashboard → enter public */
   if (dash && !dash.classList.contains("hidden")) {
     dash.classList.add("page-exit");
     setTimeout(() => {
@@ -455,6 +458,12 @@ function showPublicSite() {
     pub?.classList.remove("hidden");
   }
 
+  /* Fetch live stats the first time the public site is shown */
+  if (!_heroStatsFetched) {
+    _heroStatsFetched = true;
+    fetchHeroStats();
+  }
+
   stopLiveTracking();
 }
 
@@ -462,7 +471,7 @@ function showDashboard() {
   const pub  = el("publicSite");
   const dash = el("mainPage");
 
-  /* ── Page transition: exit public, enter dashboard ── */
+  /* Page transition: exit public → enter dashboard */
   if (pub && !pub.classList.contains("hidden")) {
     pub.classList.add("page-exit");
     setTimeout(() => {
@@ -974,7 +983,7 @@ function renderUserServices() {
       </div>
       <p class="service-price">₹${total}</p>`;
 
-    /* Attach quick-preview popup */
+    /* Attach fixed-position quick-preview — no overflow issues */
     attachServicePreview(card, service);
 
     grid.appendChild(card);
@@ -1603,67 +1612,125 @@ async function sendOTP(type) {
 /* ============================================================
    VISUAL / UX UPGRADES
    ─────────────────────────────────────────────────────────────
-   1. Animated stat counters  (countUp + IntersectionObserver)
-   2. Page transitions        (patched into showPublicSite/showDashboard above)
-   3. Back-to-Top button      (inject + scroll listener)
-   4. Service card quick-preview popup  (attachServicePreview)
+   1. Live hero stat counters  (GET /api/orders/stats)
+   2. Page transitions         (patched into show* above)
+   3. Back-to-Top button
+   4. Service card quick-preview popup (position:fixed — no overflow bug)
    ============================================================ */
 
 
-/* ── 1. ANIMATED STAT COUNTERS ─────────────────────────────── */
+/* ── 1. LIVE HERO STAT COUNTERS ────────────────────────────── */
 
 /**
- * Animates a number from 0 to `target` over `duration` ms.
- * Handles suffixes like "+" and "%" attached to the original text.
- * @param {HTMLElement} el   - the .stat-num element
- * @param {number}      duration  - animation length in ms (default 1400)
+ * Fetches GET /api/orders/stats (public — no token needed)
+ * and updates the three .stat-num elements:
+ *   "Services Done"  → stats.completed
+ *   "Verified"       → hardcoded "100%" (trust badge, not a DB field)
+ *   "Support"        → hardcoded "24/7" (not a DB field)
+ *
+ * We also store total/pending/rejected for potential future use.
  */
-function countUpElement(el, duration = 1400) {
-  if (!el || el.dataset.counted) return;   // run once only
-  el.dataset.counted = "1";
+async function fetchHeroStats() {
+  try {
+    const res  = await fetch(`${API}/orders/stats`);
+    const data = await res.json();
+    if (!data.success) return;
 
-  const raw    = el.textContent.trim();          // e.g. "500+" or "100%"
-  const suffix = raw.replace(/[\d,.]/g, "");     // "+", "%", "/7", etc.
-  const target = parseFloat(raw.replace(/[^0-9.]/g, "")) || 0;
+    const { completed } = data.stats;
 
-  if (!target) return; // non-numeric stat (e.g. "24/7") — leave as-is
+    /* Update "Services Done" stat with real completed orders count */
+    const doneEl = document.querySelector(
+      '.hero-stat:nth-child(1) .stat-num, ' +
+      '.hero-stats .stat-num:first-child'
+    );
+
+    /* Find by sibling label text — most robust approach */
+    document.querySelectorAll(".hero-stat").forEach(stat => {
+      const label = stat.querySelector(".stat-label");
+      const num   = stat.querySelector(".stat-num");
+      if (!label || !num) return;
+
+      if (label.textContent.toLowerCase().includes("services done") ||
+          label.textContent.toLowerCase().includes("done")) {
+        /* Animate from current value to real completed count */
+        const suffix = completed >= 1000 ? "+" : completed > 0 ? "+" : "";
+        const display = completed >= 1000
+          ? Math.floor(completed / 100) * 100   // round to nearest 100
+          : completed;
+        num.dataset.target  = display;
+        num.dataset.suffix  = suffix;
+        /* Trigger count-up */
+        countUpTo(num, display, suffix);
+      }
+      /* "Verified" and "Support" stay hardcoded — they're brand trust badges */
+    });
+
+  } catch (err) {
+    /* Silent fail — hardcoded fallback values remain in the HTML */
+    console.warn("fetchHeroStats failed — using fallback values:", err.message);
+  }
+}
+
+/**
+ * Animates a .stat-num element from 0 to `target`.
+ * Called by fetchHeroStats() and also by the IntersectionObserver.
+ * @param {HTMLElement} el
+ * @param {number}      target
+ * @param {string}      suffix  e.g. "+" or "%"
+ * @param {number}      duration ms (default 1600)
+ */
+function countUpTo(el, target, suffix = "", duration = 1600) {
+  if (!el) return;
+  el.dataset.counted = "1"; // prevent double-run from observer
 
   const startTime = performance.now();
 
   function step(now) {
     const elapsed  = now - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    /* Ease-out cubic for natural deceleration */
+    /* Ease-out cubic — decelerates naturally */
     const eased    = 1 - Math.pow(1 - progress, 3);
     const current  = Math.round(eased * target);
 
     el.textContent = current + suffix;
 
-    /* Pop scale effect on each tick */
+    /* Micro pop on each frame */
     el.classList.add("counting");
     setTimeout(() => el.classList.remove("counting"), 80);
 
     if (progress < 1) requestAnimationFrame(step);
-    else el.textContent = raw; // restore exact original string
+    else el.textContent = target + suffix; // lock to exact value
   }
 
   requestAnimationFrame(step);
 }
 
 /**
- * Observes hero stat elements and fires countUp the first time
- * each one enters the viewport.
+ * Parses the existing text of a .stat-num element and runs countUpTo on it.
+ * Used by the IntersectionObserver for the hardcoded stats (100%, 24/7).
  */
+function countUpElement(el, duration = 1400) {
+  if (!el || el.dataset.counted) return;
+
+  const raw    = el.textContent.trim();
+  const suffix = raw.replace(/[\d,.]/g, "");
+  const target = parseFloat(raw.replace(/[^0-9.]/g, "")) || 0;
+
+  if (!target) return; // non-numeric (24/7) — skip
+
+  countUpTo(el, target, suffix, duration);
+}
+
+/** Set up IntersectionObserver for all .stat-num elements */
 function initStatCounters() {
   const stats = document.querySelectorAll(".stat-num");
   if (!stats.length) return;
 
-  /* Modern IntersectionObserver — no layout thrashing */
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         countUpElement(entry.target);
-        observer.unobserve(entry.target); // fire once, then detach
+        observer.unobserve(entry.target);
       }
     });
   }, { threshold: 0.6 });
@@ -1671,32 +1738,28 @@ function initStatCounters() {
   stats.forEach(s => observer.observe(s));
 }
 
-/* Boot counters after page load */
 document.addEventListener("DOMContentLoaded", initStatCounters);
 
 
 /* ── 3. BACK-TO-TOP BUTTON ─────────────────────────────────── */
-
 (function initBackToTop() {
-  /* Inject the button once */
+  if (document.getElementById("backToTopBtn")) return;
+
   const btn = document.createElement("button");
-  btn.id          = "backToTopBtn";
-  btn.innerHTML   = "↑";
+  btn.id        = "backToTopBtn";
+  btn.innerHTML = "↑";
   btn.setAttribute("aria-label", "Back to top");
-  btn.title       = "Back to top";
-  btn.onclick     = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  btn.title     = "Back to top";
+  btn.onclick   = () => window.scrollTo({ top: 0, behavior: "smooth" });
   document.body.appendChild(btn);
 
-  /* Show/hide on scroll — throttled with requestAnimationFrame */
+  /* Throttled scroll listener */
   let ticking = false;
-  const THRESHOLD = 400; // px from top before button appears
-
   window.addEventListener("scroll", () => {
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
-      const visible = window.scrollY > THRESHOLD;
-      btn.classList.toggle("btt-visible", visible);
+      btn.classList.toggle("btt-visible", window.scrollY > 400);
       ticking = false;
     });
   }, { passive: true });
@@ -1704,34 +1767,42 @@ document.addEventListener("DOMContentLoaded", initStatCounters);
 
 
 /* ── 4. SERVICE CARD QUICK-PREVIEW POPUP ───────────────────── */
+/*
+   FIX: Uses position:fixed + getBoundingClientRect() so the popup
+   is anchored to the VIEWPORT — completely immune to card overflow,
+   grid clipping, scroll containers, or z-index stacking context issues.
+   One shared popup element is reused across all cards.
+*/
 
-/* Shared single popup element — reused across all cards */
-let _previewEl = null;
-let _previewHideTimer = null;
+let _previewEl      = null;   // single shared DOM node
+let _previewTimer   = null;   // hide delay handle
+let _previewVisible = false;
 
+/** Lazily create the shared popup element and attach it to <body> */
 function _getPreviewEl() {
   if (!_previewEl) {
     _previewEl = document.createElement("div");
     _previewEl.className = "svc-preview";
-    /* Clicks on the popup itself should not fire */
-    _previewEl.addEventListener("click", e => e.stopPropagation());
+    /* Clicks inside popup must not bubble to the card */
+    _previewEl.addEventListener("mousedown", e => e.stopPropagation());
     document.body.appendChild(_previewEl);
   }
   return _previewEl;
 }
 
 /**
- * Build the popup content from the service object and
- * reposition it over the given card element.
+ * Position and populate the popup, anchored to the card's viewport rect.
+ * @param {HTMLElement} card     - the hovered service card
+ * @param {Object}      service  - the service data object
  */
 function _showPreview(card, service) {
-  clearTimeout(_previewHideTimer);
-
-  const total = service.finalPrice || service.basePrice || 0;
-  const docs  = (service.documents || []).slice(0, 5); // cap at 5 chips
+  clearTimeout(_previewTimer);
 
   const popup = _getPreviewEl();
+  const total = service.finalPrice || service.basePrice || 0;
+  const docs  = (service.documents || []).slice(0, 5);
 
+  /* ── Populate content ── */
   popup.innerHTML = `
     <div class="svc-preview__name">${service.name}</div>
     <div class="svc-preview__price">₹${total}</div>
@@ -1739,42 +1810,124 @@ function _showPreview(card, service) {
       <div class="svc-preview__docs-label">Required Documents</div>
       <div class="svc-preview__docs">
         ${docs.map(d => `<span class="svc-preview__doc">${d}</span>`).join("")}
-        ${service.documents?.length > 5
+        ${(service.documents?.length || 0) > 5
           ? `<span class="svc-preview__doc">+${service.documents.length - 5} more</span>`
           : ""}
       </div>` : ""}
-    <div class="svc-preview__hint">👆 Click card to apply</div>
+    <div class="svc-preview__hint">👆 Click to apply</div>
   `;
 
-  /* Position: anchor popup to card */
-  card.appendChild(popup);
-  popup.classList.add("visible");
-}
+  /* ── Position using fixed coordinates ── */
+  _repositionPreview(card, popup);
 
-function _hidePreview() {
-  _previewHideTimer = setTimeout(() => {
-    if (_previewEl) {
-      _previewEl.classList.remove("visible");
-      /* Move back to body so it doesn't affect card layout */
-      if (_previewEl.parentElement !== document.body) {
-        document.body.appendChild(_previewEl);
-      }
-    }
-  }, 80); // tiny delay so moving between card→popup doesn't flicker
+  popup.classList.add("visible");
+  _previewVisible = true;
 }
 
 /**
- * Attach hover/focus listeners for the quick-preview popup.
- * Called from renderUserServices() for every card.
- * Touch devices: skip preview (tap directly opens the modal).
+ * Calculate where the popup should sit relative to the viewport.
+ * Prefers ABOVE the card; falls back to BELOW if not enough room.
+ */
+function _repositionPreview(card, popup) {
+  /* Make temporarily visible but off-screen to measure its size */
+  popup.style.visibility = "hidden";
+  popup.style.position   = "fixed";
+  popup.style.left       = "0";
+  popup.style.top        = "0";
+  popup.style.transform  = "none";
+
+  const cardRect   = card.getBoundingClientRect();
+  const popupW     = popup.offsetWidth  || 240;
+  const popupH     = popup.offsetHeight || 180;
+  const viewW      = window.innerWidth;
+  const viewH      = window.innerHeight;
+  const GAP        = 10; // px between card edge and popup
+
+  /* ── Horizontal: centre over card, clamp to viewport ── */
+  let left = cardRect.left + cardRect.width / 2 - popupW / 2;
+  left = Math.max(8, Math.min(left, viewW - popupW - 8));
+
+  /* ── Vertical: prefer above, fall back to below ── */
+  let top;
+  const spaceAbove = cardRect.top;
+  const spaceBelow = viewH - cardRect.bottom;
+
+  if (spaceAbove >= popupH + GAP) {
+    /* Enough room above */
+    top = cardRect.top - popupH - GAP;
+    popup.dataset.arrow = "down";
+  } else if (spaceBelow >= popupH + GAP) {
+    /* Fall back to below */
+    top = cardRect.bottom + GAP;
+    popup.dataset.arrow = "up";
+  } else {
+    /* Very tight — anchor to whichever side has more space */
+    top = spaceAbove > spaceBelow
+      ? Math.max(8, cardRect.top - popupH - GAP)
+      : Math.min(cardRect.bottom + GAP, viewH - popupH - 8);
+    popup.dataset.arrow = spaceAbove > spaceBelow ? "down" : "up";
+  }
+
+  popup.style.left       = left + "px";
+  popup.style.top        = top  + "px";
+  popup.style.visibility = "";
+}
+
+/** Hide popup with a short delay (allows cursor to move card→popup without flicker) */
+function _hidePreview() {
+  _previewTimer = setTimeout(() => {
+    if (_previewEl) {
+      _previewEl.classList.remove("visible");
+      _previewVisible = false;
+    }
+  }, 100);
+}
+
+/** Cancel hide if cursor re-enters */
+function _cancelHide() {
+  clearTimeout(_previewTimer);
+}
+
+/**
+ * Attach hover (desktop) and focus (keyboard) listeners.
+ * Touch devices skip the preview — tap opens modal directly.
+ * @param {HTMLElement} card
+ * @param {Object}      service
  */
 function attachServicePreview(card, service) {
-  /* Desktop hover */
+  /* Detect touch device — skip popup entirely */
+  const isTouch = window.matchMedia("(hover: none)").matches;
+  if (isTouch) return;
+
   card.addEventListener("mouseenter", () => _showPreview(card, service));
   card.addEventListener("mouseleave", _hidePreview);
 
-  /* Keyboard focus (accessibility) */
+  /* Keep popup alive when cursor moves onto it */
+  if (_previewEl) {
+    _previewEl.addEventListener("mouseenter", _cancelHide);
+    _previewEl.addEventListener("mouseleave", _hidePreview);
+  }
+
+  /* Keyboard accessibility */
   card.setAttribute("tabindex", "0");
   card.addEventListener("focus", () => _showPreview(card, service));
   card.addEventListener("blur",  _hidePreview);
 }
+
+/* Re-position popup on scroll/resize so it doesn't drift */
+window.addEventListener("scroll", () => {
+  if (_previewVisible && _previewEl) {
+    /* Find which card is currently being hovered */
+    const hovered = document.querySelector(".service-card:hover");
+    if (hovered) _repositionPreview(hovered, _previewEl);
+    else _hidePreview();
+  }
+}, { passive: true });
+
+window.addEventListener("resize", () => {
+  if (_previewVisible && _previewEl) {
+    const hovered = document.querySelector(".service-card:hover");
+    if (hovered) _repositionPreview(hovered, _previewEl);
+    else _hidePreview();
+  }
+}, { passive: true });

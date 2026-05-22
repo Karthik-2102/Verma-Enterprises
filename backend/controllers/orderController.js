@@ -363,11 +363,50 @@ async function downloadInvoice(req, res) {
     }
 }
 
+/* =============================================
+   PUBLIC STATS — NO AUTH REQUIRED
+   GET /api/orders/stats
+   ─────────────────────────────────────────────
+   Returns live counts from the Order collection.
+   Used by the landing page hero stat counters.
+   Response shape:
+   {
+     success: true,
+     stats: {
+       total:     <number>,   // all orders ever placed
+       completed: <number>,   // status === "completed"
+       pending:   <number>,   // status === "pending"
+       rejected:  <number>    // status === "rejected"
+     }
+   }
+   ============================================= */
+async function getPublicStats(req, res) {
+    try {
+        /* Run all counts in parallel for minimum latency */
+        const [total, completed, pending, rejected] = await Promise.all([
+            Order.countDocuments(),
+            Order.countDocuments({ status: "completed" }),
+            Order.countDocuments({ status: "pending" }),
+            Order.countDocuments({ status: "rejected" })
+        ]);
+
+        res.json({
+            success: true,
+            stats: { total, completed, pending, rejected }
+        });
+
+    } catch (err) {
+        console.error("getPublicStats error:", err);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+}
+
 module.exports = {
     createOrder,
     getUserOrders,
     getAllOrders,
     updateOrderStatus,
     downloadInvoice,
-    uploadFinalWork
+    uploadFinalWork,
+    getPublicStats          /* ← new export */
 };

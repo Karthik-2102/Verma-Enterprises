@@ -11,12 +11,21 @@ const {
     getAllOrders,
     updateOrderStatus,
     downloadInvoice,
-    uploadFinalWork
+    uploadFinalWork,
+    getPublicStats          /* ← new */
 } = require("../controllers/orderController");
 
 const Order = require("../models/Order");
 const ActivityLog = require("../models/ActivityLog");
 const User = require("../models/User");
+
+/* ─────────────────────────────────────────────────────
+   PUBLIC STATS — no auth required
+   Used by landing page hero counters.
+   Must be declared BEFORE the "/:id" style routes so
+   Express does not mistake "stats" for an order ID.
+   ───────────────────────────────────────────────────── */
+router.get("/stats", getPublicStats);
 
 /* Order Creation */
 router.post(
