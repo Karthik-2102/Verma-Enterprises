@@ -2729,10 +2729,10 @@ input, select {
    1. Animated stat counters
    2. Page transitions
    3. Back-to-Top button
-   4. Service card quick-preview popup (position:fixed — no overflow bug)
+   4. Service card quick-preview popup (position:fixed)
    ============================================================= */
 
-/* ── 1. ANIMATED STAT COUNTERS ── */
+/* ── 1. STAT COUNTER POP ANIMATION ── */
 .stat-num {
   display: inline-block;
   transition: transform .15s cubic-bezier(.34,1.56,.64,1);
@@ -2740,23 +2740,19 @@ input, select {
 .stat-num.counting { transform: scale(1.15); }
 
 /* ── 2. PAGE TRANSITIONS ── */
-#publicSite,
-#mainPage {
+#publicSite, #mainPage {
   transition: opacity .32s cubic-bezier(.4,0,.2,1),
               transform .32s cubic-bezier(.4,0,.2,1);
   will-change: opacity, transform;
 }
-
 .page-exit {
   opacity: 0 !important;
   transform: translateY(-10px) !important;
   pointer-events: none;
 }
-
 .page-enter {
   animation: pageEnter .38s cubic-bezier(.4,0,.2,1) forwards;
 }
-
 @keyframes pageEnter {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -2775,7 +2771,6 @@ input, select {
   border: 1px solid rgba(229,126,47,.40);
   color: var(--gold, #E57E2F);
   font-size: 20px;
-  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2787,22 +2782,18 @@ input, select {
               transform .3s cubic-bezier(.34,1.56,.64,1),
               background .2s, border-color .2s, box-shadow .2s;
 }
-
 #backToTopBtn.btt-visible {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
 }
-
 #backToTopBtn:hover {
   background: rgba(229,126,47,.28);
   border-color: rgba(229,126,47,.70);
   box-shadow: 0 6px 20px rgba(229,126,47,.28);
   transform: translateY(-3px) scale(1.08);
 }
-
 #backToTopBtn:active { transform: scale(.93); }
-
 #backToTopBtn.btt-visible::after {
   content: "";
   position: absolute;
@@ -2811,22 +2802,15 @@ input, select {
   border: 1.5px solid rgba(229,126,47,.30);
   animation: bttPulse 2s ease-in-out 1;
 }
-
 @keyframes bttPulse {
   0%   { transform: scale(1);   opacity: .8; }
   100% { transform: scale(1.6); opacity: 0; }
 }
-
 @media (max-width: 480px) {
   #backToTopBtn { width: 40px; height: 40px; right: 16px; bottom: 90px; font-size: 17px; }
 }
 
-/* ── 4. SERVICE CARD QUICK-PREVIEW POPUP ──
-   position:fixed — anchored to viewport via JS getBoundingClientRect().
-   Completely immune to overflow, clip, scroll, z-index stacking issues.
-   ──────────────────────────────────────────────────────────────────── */
-
-/* Popup lives in <body> — no card positioning needed */
+/* ── 4. SERVICE CARD QUICK-PREVIEW POPUP (position:fixed) ── */
 .svc-preview {
   position: fixed;
   z-index: 9500;
@@ -2838,22 +2822,19 @@ input, select {
   box-shadow: 0 16px 48px rgba(0,0,0,.55),
               0 0 0 1px rgba(255,255,255,.04) inset;
   backdrop-filter: blur(18px);
-  /* Hidden by default */
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transition: opacity .2s cubic-bezier(.4,0,.2,1),
               visibility .2s cubic-bezier(.4,0,.2,1);
 }
-
-/* Visible — added by JS */
 .svc-preview.visible {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
 }
 
-/* Arrow — pointing down (popup is ABOVE the card) */
+/* Arrow — down (popup above card) */
 .svc-preview[data-arrow="down"]::after {
   content: "";
   position: absolute;
@@ -2863,8 +2844,7 @@ input, select {
   border-top-color: rgba(229,126,47,.35);
   pointer-events: none;
 }
-
-/* Arrow — pointing up (popup is BELOW the card) */
+/* Arrow — up (popup below card) */
 .svc-preview[data-arrow="up"]::before {
   content: "";
   position: absolute;
@@ -2875,68 +2855,33 @@ input, select {
   pointer-events: none;
 }
 
-/* Service name */
 .svc-preview__name {
   font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 6px;
-  line-height: 1.35;
+  font-size: 14px; font-weight: 700; color: #fff;
+  margin-bottom: 6px; line-height: 1.35;
 }
-
-/* Price */
 .svc-preview__price {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--gold, #E57E2F);
-  margin-bottom: 10px;
+  font-size: 20px; font-weight: 800;
+  color: var(--gold, #E57E2F); margin-bottom: 10px;
 }
-
-/* Required docs label */
 .svc-preview__docs-label {
   font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .8px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.38);
-  margin-bottom: 6px;
+  font-size: 10px; font-weight: 700; letter-spacing: .8px;
+  text-transform: uppercase; color: rgba(255,255,255,.38); margin-bottom: 6px;
 }
-
-/* Chips row */
-.svc-preview__docs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-/* Individual chip */
+.svc-preview__docs { display: flex; flex-wrap: wrap; gap: 5px; }
 .svc-preview__doc {
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: rgba(153,186,187,.10);
-  border: 1px solid rgba(153,186,187,.20);
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(153,186,187,.10); border: 1px solid rgba(153,186,187,.20);
   font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255,255,255,.72);
-  white-space: nowrap;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,.72);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-
-/* Apply hint */
 .svc-preview__hint {
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 10px; padding-top: 10px;
   border-top: 1px solid rgba(255,255,255,.06);
   font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 11px;
-  color: rgba(229,126,47,.75);
-  font-weight: 600;
-  text-align: center;
-  letter-spacing: .3px;
+  font-size: 11px; color: rgba(229,126,47,.75);
+  font-weight: 600; text-align: center; letter-spacing: .3px;
 }
