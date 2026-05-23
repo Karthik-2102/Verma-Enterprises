@@ -767,19 +767,26 @@ function convAddRow(blob, filename, icon) {
 
 /* ============================================================
    ⑤ PDF COMPRESSOR
-   Strategy: use pdf.js to render each page at chosen quality,
-   then reassemble with jsPDF. Binary-search quality to hit
-   a target file size if the user supplies one.
+   Strategy:
+   - Always render pages at high resolution (scale 3.0) so visual
+     quality is preserved regardless of compression level.
+   - File size is controlled ONLY by JPEG quality (0.95 → 0.03).
+   - If user gives a target size, binary-search the quality range
+     until we land at or below that target — ignoring the preset.
+   - If no target, use the preset quality with high render scale.
    ============================================================ */
 let _pdfcompFile     = null;
 let _pdfcompOrigSize = 0;
-let _pdfcompDoc      = null;   // pdfjsLib doc object
+let _pdfcompDoc      = null;
 
 const PDFCOMP_PRESETS = {
-  screen: { scale: 1.0, qual: 0.50, label: "Screen/Web" },
-  ebook:  { scale: 1.5, qual: 0.72, label: "eBook/Balanced" },
-  print:  { scale: 2.0, qual: 0.88, label: "Print Quality" },
+  screen: { qual: 0.55, label: "Screen/Web (smallest)" },
+  ebook:  { qual: 0.75, label: "eBook/Balanced" },
+  print:  { qual: 0.92, label: "Print Quality" },
 };
+
+// Always render at this scale for sharpness — size controlled by quality only
+const PDFCOMP_RENDER_SCALE = 2.5;
 
 async function pdfcompLoad(input) {
   const file = input.files?.[0];
@@ -790,7 +797,6 @@ async function pdfcompLoad(input) {
   _pdfcompFile     = file;
   _pdfcompOrigSize = file.size;
 
-  // Load with pdf.js
   if (!window.pdfjsLib) { toolToast("pdf.js not loaded ❌", "error"); return; }
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -810,8 +816,7 @@ async function pdfcompLoad(input) {
 
 function pdfcompPresetChange() {
   const v = document.getElementById("pdfcompPreset").value;
-  const wrap = document.getElementById("pdfcompCustomWrap");
-  wrap.style.display = v === "custom" ? "" : "none";
+  document.getElementById("pdfcompCustomWrap").style.display = v === "custom" ? "" : "none";
 }
 
 function pdfcompQualUpdate() {
@@ -822,14 +827,15 @@ function pdfcompQualUpdate() {
 async function pdfcompRun() {
   if (!_pdfcompDoc) return toolToast("Load a PDF first", "warn");
 
-  const preset   = document.getElementById("pdfcompPreset").value;
-  const cfg      = PDFCOMP_PRESETS[preset] || PDFCOMP_PRESETS.ebook;
-  const scale    = cfg.scale;
-  const baseQual = preset === "custom"
-    ? parseInt(document.getElementById("pdfcompQual").value) / 100
-    : cfg.qual;
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { toolToast("jsPDF not loaded ❌", "error"); return; }
 
-  // Optional target size
+  // ── Read user inputs ──────────────────────────────────────
+  const preset = document.getElementById("pdfcompPreset").value;
+  const presetQual = preset === "custom"
+    ? parseInt(document.getElementById("pdfcompQual").value) / 100
+    : (PDFCOMP_PRESETS[preset]?.qual ?? 0.75);
+
   const tVal  = parseFloat(document.getElementById("pdfcompTargetSize").value);
   const tUnit = document.getElementById("pdfcompTargetUnit").value;
   const targetBytes = (tVal > 0) ? (tUnit === "mb" ? tVal * 1024 * 1024 : tVal * 1024) : null;
@@ -844,92 +850,125 @@ async function pdfcompRun() {
   document.getElementById("pdfcompResult").style.display = "none";
   progBar.style.width   = "0%";
 
-  const { jsPDF } = window.jspdf;
-  if (!jsPDF) { toolToast("jsPDF not loaded ❌", "error"); btn.disabled = false; working.style.display = "none"; return; }
-
   const numPages = _pdfcompDoc.numPages;
-  let   qual     = baseQual;
 
   try {
-    /* ── First pass: render all pages at chosen quality ── */
+    // ── Step 1: render all pages at HIGH scale (sharp) ──────
+    // We render once at high resolution and cache the canvases.
+    // JPEG quality is then varied for size control — no re-render needed.
+    msgEl.textContent = "Rendering pages at full quality…";
     const pages = [];
     for (let p = 1; p <= numPages; p++) {
-      msgEl.textContent   = `Rendering page ${p} of ${numPages}…`;
-      progBar.style.width = Math.round((p / numPages) * 60) + "%";
+      msgEl.textContent   = `Rendering page ${p} of ${numPages} (high quality)…`;
+      progBar.style.width = Math.round((p / numPages) * 55) + "%";
 
       const page     = await _pdfcompDoc.getPage(p);
-      const viewport = page.getViewport({ scale });
+      const viewport = page.getViewport({ scale: PDFCOMP_RENDER_SCALE });
       const canvas   = document.createElement("canvas");
       canvas.width   = viewport.width;
       canvas.height  = viewport.height;
       await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
-      pages.push({ canvas, w: viewport.width, h: viewport.height });
+
+      // Store as ImageBitmap for fast reuse during binary search
+      const imgData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
+      pages.push({ imgData, w: canvas.width, h: canvas.height });
     }
 
-    /* ── Build PDF from rendered pages ── */
+    // ── Helper: build PDF blob at a given JPEG quality ───────
     const buildPdf = async (q) => {
-      const firstPage = pages[0];
+      const { w: fw, h: fh } = pages[0];
+      // jsPDF unit "pt" + explicit page dimensions gives correct PDF page size
       const doc = new jsPDF({
-        unit: "px",
-        hotfixes: ["px_scaling"],
-        format: [firstPage.w, firstPage.h],
-        orientation: firstPage.w > firstPage.h ? "landscape" : "portrait",
+        unit    : "pt",
+        format  : [fw * 0.75, fh * 0.75],  // 96dpi px → 72pt conversion
+        orientation: fw > fh ? "landscape" : "portrait",
+        compress: true,
       });
 
       for (let i = 0; i < pages.length; i++) {
-        const { canvas, w, h } = pages[i];
-        if (i > 0) doc.addPage([w, h], w > h ? "landscape" : "portrait");
-        const dataUrl = canvas.toDataURL("image/jpeg", q);
-        doc.addImage(dataUrl, "JPEG", 0, 0, w, h);
+        const { imgData, w, h } = pages[i];
+        if (i > 0) {
+          doc.addPage([w * 0.75, h * 0.75], w > h ? "landscape" : "portrait");
+        }
+        // Put imgData back onto a canvas to get dataURL at desired quality
+        const tmp = document.createElement("canvas");
+        tmp.width  = w;
+        tmp.height = h;
+        tmp.getContext("2d").putImageData(imgData, 0, 0);
+        const dataUrl = tmp.toDataURL("image/jpeg", q);
+        doc.addImage(dataUrl, "JPEG", 0, 0, w * 0.75, h * 0.75, undefined, "FAST");
       }
       return doc.output("blob");
     };
 
-    msgEl.textContent   = "Assembling PDF…";
-    progBar.style.width = "70%";
+    // ── Step 2: decide quality ────────────────────────────────
+    let resultBlob;
 
-    let resultBlob = await buildPdf(qual);
+    if (targetBytes) {
+      // Target size mode: binary search ignores preset entirely
+      msgEl.textContent   = "Finding best quality for target size…";
+      progBar.style.width = "60%";
 
-    /* ── Binary-search quality to hit target size ── */
-    if (targetBytes && resultBlob.size > targetBytes) {
-      msgEl.textContent = "Optimising for target size…";
-      let lo = 0.05, hi = qual;
-      for (let i = 0; i < 10; i++) {
-        const mid  = (lo + hi) / 2;
-        const blob = await buildPdf(mid);
-        if (blob.size <= targetBytes) { resultBlob = blob; lo = mid; }
-        else { hi = mid; }
-        progBar.style.width = 70 + Math.round((i / 10) * 25) + "%";
-        if (hi - lo < 0.01) break;
+      // First check if even highest quality fits
+      const maxBlob = await buildPdf(0.97);
+      if (maxBlob.size <= targetBytes) {
+        // File already fits at max quality — great, use it
+        resultBlob = maxBlob;
+        progBar.style.width = "95%";
+      } else {
+        // Binary search from 0.97 down to 0.02
+        let lo = 0.02, hi = 0.97, bestBlob = null;
+        for (let i = 0; i < 16; i++) {
+          const mid  = (lo + hi) / 2;
+          msgEl.textContent   = `Trying quality ${Math.round(mid * 100)}%…`;
+          progBar.style.width = 60 + Math.round((i / 16) * 35) + "%";
+          const blob = await buildPdf(mid);
+          if (blob.size <= targetBytes) {
+            bestBlob = blob;
+            lo = mid;           // can try higher quality (bigger file is still ok)
+          } else {
+            hi = mid;           // too big, reduce quality
+          }
+          if (hi - lo < 0.008) break;
+        }
+        // If nothing fit (target impossibly small), take the smallest possible
+        resultBlob = bestBlob || await buildPdf(0.02);
       }
+    } else {
+      // Preset / custom mode — use preset quality, pages already at high res
+      msgEl.textContent   = "Assembling PDF…";
+      progBar.style.width = "65%";
+      resultBlob = await buildPdf(presetQual);
     }
 
     progBar.style.width = "100%";
 
-    /* ── Show results ── */
-    const saved  = _pdfcompOrigSize - resultBlob.size;
-    const pct    = Math.round((saved / _pdfcompOrigSize) * 100);
+    // ── Step 3: show result ───────────────────────────────────
+    const saved   = _pdfcompOrigSize - resultBlob.size;
+    const pct     = Math.round((saved / _pdfcompOrigSize) * 100);
     const outName = baseName(_pdfcompFile.name) + "-compressed.pdf";
 
-    document.getElementById("pdfcompResultOrig").textContent  = fmtBytes(_pdfcompOrigSize);
-    document.getElementById("pdfcompResultNew").textContent   = fmtBytes(resultBlob.size);
+    document.getElementById("pdfcompResultOrig").textContent = fmtBytes(_pdfcompOrigSize);
+    document.getElementById("pdfcompResultNew").textContent  = fmtBytes(resultBlob.size);
 
     const savedEl = document.getElementById("pdfcompResultSaved");
     if (saved > 0) {
-      savedEl.textContent  = `${fmtBytes(saved)} (${pct}% smaller)`;
-      savedEl.style.color  = "#28a745";
+      savedEl.textContent = `${fmtBytes(saved)} (${pct}% smaller)`;
+      savedEl.style.color = "#28a745";
+    } else if (targetBytes && resultBlob.size > targetBytes) {
+      savedEl.textContent = `⚠️ Could not reach ${fmtBytes(targetBytes)} — ${fmtBytes(resultBlob.size)} is the smallest possible`;
+      savedEl.style.color = "#ffc107";
     } else {
-      savedEl.textContent  = "PDF could not be reduced further";
-      savedEl.style.color  = "#ffc107";
+      savedEl.textContent = "Already at minimum size for this quality";
+      savedEl.style.color = "#ffc107";
     }
 
     const url = URL.createObjectURL(resultBlob);
     document.getElementById("pdfcompDownloadWrap").innerHTML = `
       <a class="tool-action-btn" href="${url}" download="${outName}">⬇️ Download Compressed PDF</a>
     `;
-
     document.getElementById("pdfcompResult").style.display = "block";
-    toolToast("PDF compressed ✅", "success");
+    toolToast("Done ✅", "success");
 
   } catch (err) {
     console.error("PDF compress error:", err);
