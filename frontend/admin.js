@@ -1095,7 +1095,7 @@ async function changeAdminPassword() {
 
         const res  = await fetch(`${API}/auth/admin-change-password-direct`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: getAdminToken() },
+            headers: { "Content-Type": "application/json", Authorization: getToken() },
             body: JSON.stringify({ newPassword: pass })
         });
         const data = await res.json();
