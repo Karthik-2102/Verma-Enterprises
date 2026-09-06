@@ -1,6 +1,5 @@
-const API = "http://localhost:5000/api";
-
-const BACKEND = "http://localhost:5000";
+const API = "https://verma-enterprises.onrender.com/api";
+const BACKEND = "https://verma-enterprises.onrender.com";
 
 /* Resolve file URL — handles both Cloudinary (full https) and legacy local paths */
 function resolveFileURL(path) {
