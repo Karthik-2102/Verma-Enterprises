@@ -1,8 +1,6 @@
-const API =
-"https://artistic-respect-production-e47c.up.railway.app/api";
+const API = "http://localhost:5000/api";
 
-const BACKEND =
-"https://artistic-respect-production-e47c.up.railway.app";
+const BACKEND = "http://localhost:5000";
 
 /* Resolve file URL — handles both Cloudinary (full https) and legacy local paths */
 function resolveFileURL(path) {
