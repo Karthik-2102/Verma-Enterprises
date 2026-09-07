@@ -297,7 +297,7 @@ function injectWhatsAppButton() {
   if (document.getElementById("whatsappBtn")) return;
   const btn = document.createElement("a");
   btn.id   = "whatsappBtn";
-  btn.href = "https://wa.me/919576828238?text=Hello%2C%20I%20need%20support%20with%20Verma%20Enterprises%20services.";
+  btn.href = "https://wa.me/919546853220?text=Hello%2C%20I%20need%20support%20with%20Verma%20Enterprises%20services.";
   btn.target = "_blank";
   btn.rel    = "noopener noreferrer";
   btn.setAttribute("aria-label", "WhatsApp Support");
